@@ -1,0 +1,17 @@
+{
+  "name": "playground-rollup",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "rollup -c -w",
+    "build": "rollup -c"
+  },
+  "devDependencies": {
+    "rollup": "^4.20.0",
+    "rollup-plugin-serve": "^3.0.0",
+    "rollup-plugin-livereload": "^2.0.5",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@inspecto/plugin": "workspace:*",
+    "@inspecto/core": "workspace:*"
+  }
+}

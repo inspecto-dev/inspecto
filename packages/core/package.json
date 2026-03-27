@@ -1,0 +1,48 @@
+{
+  "name": "@inspecto/core",
+  "version": "0.1.0",
+  "description": "Core browser runtime and server logic for Inspecto",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inspecto-dev/inspecto.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/inspecto-dev/inspecto/tree/main/packages/core#readme",
+  "bugs": {
+    "url": "https://github.com/inspecto-dev/inspecto/issues"
+  },
+  "author": "Inspecto Contributors",
+  "keywords": [
+    "ai",
+    "devtools",
+    "inspector",
+    "core"
+  ],
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@inspecto/types": "workspace:*",
+    "launch-ide": "^1.0.0",
+    "portfinder": "^1.0.32"
+  }
+}

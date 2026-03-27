@@ -1,0 +1,15 @@
+.vscode/**
+.vscode-test/**
+out/**
+src/**
+.gitignore
+yarn.lock
+pnpm-lock.yaml
+package-lock.json
+vsc-extension-quickstart.md
+.eslintrc.json
+**/*.map
+**/*.ts
+!dist/**/*.d.ts
+tests/**
+tsup.config.ts

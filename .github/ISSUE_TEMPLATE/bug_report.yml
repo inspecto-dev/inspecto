@@ -1,0 +1,49 @@
+name: Bug Report
+description: Create a report to help us improve Inspecto
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Please provide a code sandbox, minimal repository, or step-by-step instructions to reproduce the issue.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+  - type: input
+    id: framework
+    attributes:
+      label: Framework / Bundler
+      description: E.g., Vite + React, Webpack + Vue, Next.js, etc.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS / Environment
+      description: E.g., macOS, Windows, Linux, Browser Version
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Error Messages
+      description: Paste any relevant error logs or browser console output.
+      render: shell

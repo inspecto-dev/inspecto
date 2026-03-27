@@ -1,0 +1,42 @@
+{
+  "name": "@inspecto/types",
+  "version": "0.1.0",
+  "description": "Shared TypeScript definitions for the Inspecto monorepo",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inspecto-dev/inspecto.git",
+    "directory": "packages/types"
+  },
+  "homepage": "https://github.com/inspecto-dev/inspecto/tree/main/packages/types#readme",
+  "bugs": {
+    "url": "https://github.com/inspecto-dev/inspecto/issues"
+  },
+  "author": "Inspecto Contributors",
+  "keywords": [
+    "ai",
+    "devtools",
+    "inspector",
+    "types"
+  ],
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  }
+}

@@ -1,0 +1,5 @@
+export { init } from './commands/init.js'
+export { doctor } from './commands/doctor.js'
+export { teardown } from './commands/teardown.js'
+export type { InitOptions, BuildTool, PackageManager, InstallLock } from './types.js'
+export type { Framework } from './detect/framework.js'

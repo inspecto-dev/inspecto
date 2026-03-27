@@ -1,0 +1,14 @@
+{
+  "name": "playground-esbuild",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node build.js",
+    "build": "NODE_ENV=production node build.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.23.0",
+    "@inspecto/plugin": "workspace:*",
+    "@inspecto/core": "workspace:*"
+  }
+}

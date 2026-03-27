@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Inspecto Settings",
+  "description": "Configuration for .inspecto/settings.json and .inspecto/settings.local.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "ide": {
+      "type": "string",
+      "description": "IDE environment. Auto-detected via the VS Code extension; only override if needed. Currently only 'vscode' is supported.",
+      "enum": ["vscode"],
+      "default": "vscode"
+    },
+    "prefer": {
+      "type": "string",
+      "description": "Preferred AI tool to dispatch to. Must be one of the supported tool names. If omitted, the first key in 'providers' is used, or 'github-copilot' as the final fallback.",
+      "enum": ["github-copilot", "claude-code", "gemini", "codex", "coco"]
+    },
+    "hotKeys": {
+      "description": "Modifier keys to hold while clicking an element to activate the inspector. Set to false to disable hotkey activation entirely.",
+      "default": ["altKey"],
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["ctrlKey", "altKey", "metaKey", "shiftKey"]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        {
+          "type": "boolean",
+          "enum": [false]
+        }
+      ]
+    },
+    "includeSnippet": {
+      "type": "boolean",
+      "description": "Whether to inject the raw code snippet into the prompt. Default is false (saves tokens, lets IDE AI read the file directly).",
+      "default": false
+    },
+    "providers": {
+      "type": "object",
+      "description": "Per-tool configuration. Keys must be valid tool names. All fields are optional — omit 'type' to let the system auto-select the best mode (Plugin → CLI → Clipboard).",
+      "properties": {
+        "github-copilot": { "$ref": "#/definitions/providerConfig" },
+        "claude-code": { "$ref": "#/definitions/providerConfig" },
+        "gemini": { "$ref": "#/definitions/providerConfig" },
+        "codex": { "$ref": "#/definitions/providerConfig" },
+        "coco": { "$ref": "#/definitions/providerConfig" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "definitions": {
+    "providerConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Force a specific interaction mode. Omit to let the system auto-select. Setting this disables automatic fallback to other modes.",
+          "enum": ["plugin", "cli"]
+        },
+        "autoSend": {
+          "type": "boolean",
+          "description": "If true, the prompt is submitted immediately after injection. If false (default), the prompt is pasted into the input box for the user to review before sending.",
+          "default": false
+        },
+        "bin": {
+          "type": "string",
+          "description": "CLI executable name (resolved from PATH) or absolute path. CLI mode only.",
+          "examples": ["claude", "/usr/local/bin/codex"]
+        },
+        "args": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Extra arguments passed to the CLI on startup. CLI mode only. Supports variable substitution: ${workspaceRoot}, ${file}, ${relativeFile}, ${fileDirname}."
+        },
+        "cwd": {
+          "type": "string",
+          "description": "Working directory for the CLI process. CLI mode only. Defaults to ${workspaceRoot}. Supports variable substitution.",
+          "examples": ["${workspaceRoot}"]
+        },
+        "coldStartDelay": {
+          "type": "number",
+          "description": "Milliseconds to wait for the CLI REPL to initialize on first launch. CLI mode only.",
+          "default": 5000,
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

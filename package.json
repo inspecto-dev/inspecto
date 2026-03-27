@@ -1,0 +1,84 @@
+{
+  "name": "inspecto-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Click. Extract. Ship to AI. Bridge browser DOM inspection to your local AI assistant.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inspecto-dev/inspecto.git"
+  },
+  "homepage": "https://github.com/inspecto-dev/inspecto#readme",
+  "bugs": {
+    "url": "https://github.com/inspecto-dev/inspecto/issues"
+  },
+  "author": "Inspecto Contributors",
+  "keywords": [
+    "ai",
+    "devtools",
+    "inspector",
+    "react",
+    "vue",
+    "vite",
+    "webpack",
+    "rspack",
+    "rollup"
+  ],
+  "engines": {
+    "node": ">=22.22.0"
+  },
+  "scripts": {
+    "build": "turbo run build --filter=\"!./playground/*\"",
+    "dev": "turbo run dev --parallel",
+    "lint": "eslint .",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "changeset": "changeset",
+    "release": "turbo run build && changeset publish",
+    "clean": "turbo run clean",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/babel__traverse": "^7.28.0",
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^9.0.0",
+    "happy-dom": "^20.8.4",
+    "husky": "^9.1.7",
+    "jsdom": "^29.0.1",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.2.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "tsup": "^8.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0",
+    "typescript-eslint": "^8.57.2",
+    "undici": "5.28.4",
+    "vitest": "^1.4.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "typescript": "^5.4.0",
+      "undici": "5.28.4"
+    }
+  },
+  "packageManager": "pnpm@9.0.0",
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}

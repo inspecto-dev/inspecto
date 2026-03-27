@@ -1,0 +1,29 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build
+dist/
+build/
+.next/
+out/
+coverage/
+.turbo/
+
+# Miscellaneous
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+
+# Package locks
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
