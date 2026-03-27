@@ -62,13 +62,13 @@
     "turbo": "^2.0.0",
     "typescript": "^5.4.0",
     "typescript-eslint": "^8.57.2",
-    "undici": "5.28.4",
+    "undici": "5.29.0",
     "vitest": "^1.4.0"
   },
   "pnpm": {
     "overrides": {
       "typescript": "^5.4.0",
-      "undici": "5.28.4"
+      "undici": "5.29.0"
     }
   },
   "packageManager": "pnpm@9.0.0",
