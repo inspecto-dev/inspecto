@@ -1,0 +1,82 @@
+{
+  "name": "inspecto",
+  "private": true,
+  "displayName": "Inspecto - AI DOM Inspector",
+  "description": "Click any UI component in browser to instantly send its source code to your AI assistant.",
+  "version": "0.0.4",
+  "license": "MIT",
+  "icon": "icon.png",
+  "publisher": "inspecto",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inspecto-dev/inspecto.git",
+    "directory": "packages/ide"
+  },
+  "homepage": "https://github.com/inspecto-dev/inspecto/tree/main/packages/ide#readme",
+  "bugs": {
+    "url": "https://github.com/inspecto-dev/inspecto/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "AI"
+  ],
+  "keywords": [
+    "ai",
+    "inspector",
+    "copilot",
+    "claude",
+    "react",
+    "vue",
+    "dev-tools"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "workspaceContains:.inspecto",
+    "onUri"
+  ],
+  "contributes": {
+    "jsonValidation": [
+      {
+        "fileMatch": [
+          ".inspecto/settings*.json"
+        ],
+        "url": "./schema/settings.json"
+      },
+      {
+        "fileMatch": [
+          ".inspecto/prompts*.json"
+        ],
+        "url": "./schema/prompts.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "inspecto.help",
+        "title": "Inspecto: Help"
+      },
+      {
+        "command": "inspecto.reportIde",
+        "title": "Inspecto: Report IDE to Dev Server"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsup && rm -rf ./schema && cp -r ../../schema ./schema",
+    "dev": "tsup --watch",
+    "package": "pnpm build && vsce package --no-dependencies",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist schema *.vsix"
+  },
+  "dependencies": {
+    "@inspecto-dev/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "2.24.0",
+    "vitest": "^1.6.0"
+  }
+}

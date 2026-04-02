@@ -1,0 +1,18 @@
+{
+  "name": "playground-esbuild",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node my-custom-build.js",
+    "build": "NODE_ENV=production node my-custom-build.js"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@inspecto-dev/core": "workspace:*",
+    "@inspecto-dev/plugin": "workspace:*",
+    "esbuild": "^0.23.0"
+  }
+}

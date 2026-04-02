@@ -1,0 +1,34 @@
+{
+  "mode": "pre",
+  "tag": "alpha",
+  "initialVersions": {
+    "@inspecto-dev/cli": "0.2.0-alpha.0",
+    "@inspecto-dev/core": "0.2.0-alpha.0",
+    "inspecto": "0.0.2",
+    "@inspecto-dev/plugin": "0.2.0-alpha.0",
+    "@inspecto-dev/types": "0.2.0-alpha.0",
+    "nextjs": "0.1.0",
+    "react-rspack": "1.0.0",
+    "react-rspack-legacy": "1.0.0",
+    "vue-vite": "0.0.0",
+    "nuxtjs-playground": "0.0.0",
+    "playground-react-webpack": "0.0.0",
+    "playground-react-webpack4": "0.0.0",
+    "@inspecto-dev/docs": "0.1.0",
+    "playground-nextjs": "0.1.0",
+    "playground-nuxtjs": "0.0.0",
+    "playground-react-rspack": "1.0.0",
+    "playground-react-rspack-legacy": "1.0.0",
+    "playground-vue-vite": "0.0.0"
+  },
+  "changesets": [
+    "bold-badgers-own",
+    "chubby-parrots-scream",
+    "cold-seas-win",
+    "first-release",
+    "neat-islands-study",
+    "short-buses-dig",
+    "tame-grapes-appear",
+    "yummy-roses-study"
+  ]
+}

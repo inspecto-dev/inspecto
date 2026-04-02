@@ -1,0 +1,40 @@
+{
+  "name": "@inspecto-dev/cli",
+  "version": "0.2.0-alpha.6",
+  "description": "CLI tools for Inspecto onboarding and lifecycle management",
+  "keywords": [
+    "inspecto",
+    "cli",
+    "ai",
+    "devtools",
+    "scaffold",
+    "init"
+  ],
+  "type": "module",
+  "bin": {
+    "inspecto": "./bin/inspecto.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@inspecto-dev/types": "workspace:*",
+    "cac": "^6.7.14",
+    "magicast": "^0.5.2",
+    "ora": "^9.3.0",
+    "picocolors": "^1.0.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/prompts": "^2.4.9",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

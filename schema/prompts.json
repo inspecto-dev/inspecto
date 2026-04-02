@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Inspecto Prompts Configuration",
+  "description": "自定义 Inspecto AI 悬浮菜单中的 prompt 列表",
+  "anyOf": [
+    {
+      "type": "array",
+      "description": "默认追加模式：在此配置的项会追加到内置列表末尾。若与内置 ID 相同则覆盖。",
+      "items": {
+        "$ref": "#/definitions/intentItem"
+      }
+    },
+    {
+      "type": "object",
+      "description": "完全替换模式：当 $replace 为 true 时，仅显示在此定义的项。",
+      "properties": {
+        "$replace": {
+          "type": "boolean",
+          "enum": [true],
+          "description": "设为 true 以完全替换所有内置 intent。"
+        },
+        "items": {
+          "type": "array",
+          "description": "自定义的 prompt 列表。",
+          "items": {
+            "$ref": "#/definitions/intentItem"
+          }
+        }
+      },
+      "required": ["$replace", "items"]
+    }
+  ],
+  "definitions": {
+    "intentItem": {
+      "anyOf": [
+        {
+          "type": "string",
+          "description": "内置 Prompt 的 ID。",
+          "enum": ["explain", "fix-bug", "fix-styles", "refactor", "open-in-editor"]
+        },
+        {
+          "type": "object",
+          "description": "覆盖内置 prompt（id 与内置相同）或新增自定义 prompt（id 为新值）。",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "唯一标识符。与内置 ID 相同则覆盖，否则新增为自定义项追加到末尾。\n内置 ID：explain | fix-bug | fix-styles | refactor | open-in-editor"
+            },
+            "label": {
+              "type": "string",
+              "description": "在悬浮菜单中显示的按钮名称，不填则沿用内置默认"
+            },
+            "prompt": {
+              "type": "string",
+              "description": "完整替换内置 prompt 模板。\n\n**支持的变量** (输入 {{ 触发):\n- `{{file}}`: 当前组件的文件路径\n- `{{line}}`: 触发操作的代码行号\n- `{{column}}`: 触发操作的代码列号\n- `{{snippet}}`: 提取的组件代码片段\n- `{{name}}`: 识别到的组件名\n- `{{ext}}`: 文件后缀名 (如 tsx, vue)\n- `{{framework}}`: 检测到的框架名称 (如 React, Vue)"
+            },
+            "appendPrompt": {
+              "type": "string",
+              "description": "在内置 prompt 末尾追加内容（无需重写整个模板，常用于追加「请用中文回答」）。\n支持与 prompt 相同的变量。"
+            },
+            "prependPrompt": {
+              "type": "string",
+              "description": "在内置 prompt 开头前置内容。支持与 prompt 相同的变量。"
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "设为 false 可从菜单中暂时隐藏该项，而无需删除其配置内容。",
+              "default": true
+            },
+            "isAction": {
+              "type": "boolean",
+              "description": "设为 true 时点击触发本地操作而非发送 AI（如 open-in-editor）",
+              "default": false
+            }
+          },
+          "required": ["id"]
+        }
+      ]
+    }
+  }
+}
