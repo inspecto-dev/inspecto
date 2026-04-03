@@ -101,7 +101,7 @@
     "@babel/preset-env": "^7.24.7",
     "@babel/preset-react": "^7.24.7",
     "@babel/preset-typescript": "^7.24.7",
-    "@rspack/core": "0.3.14",
+    "@rspack/core": "0.7.5",
     "@vitejs/plugin-react": "^4.3.0",
     "@vitejs/plugin-vue": "^5.2.3",
     "babel-loader": "^10.1.1",
