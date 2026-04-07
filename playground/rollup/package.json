@@ -1,0 +1,24 @@
+{
+  "name": "playground-rollup",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "rollup -c -w",
+    "build": "NODE_ENV=production rollup -c"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@inspecto-dev/core": "workspace:*",
+    "@inspecto-dev/plugin": "workspace:*",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-replace": "^5.0.5",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.9.6",
+    "rollup-plugin-esbuild": "^6.1.1",
+    "rollup-plugin-serve": "^2.0.2"
+  }
+}

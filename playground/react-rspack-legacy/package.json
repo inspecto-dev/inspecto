@@ -1,0 +1,23 @@
+{
+  "name": "playground-react-rspack-legacy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rspack build",
+    "dev": "rspack serve"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@inspecto-dev/core": "workspace:*",
+    "@inspecto-dev/plugin": "workspace:*",
+    "@rspack/cli": "0.3.14",
+    "@rspack/core": "0.3.14",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "typescript": "^5.3.3"
+  }
+}

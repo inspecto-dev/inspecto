@@ -1,0 +1,7 @@
+pnpm exec lint-staged
+
+# Check docs build to prevent dead links and build failures
+if git diff --cached --name-only | grep -E "^packages/docs/.*\.(md|mts|ts|vue)$" > /dev/null; then
+  echo "Docs changed, running vitepress build check..."
+  pnpm --filter @inspecto-dev/docs docs:build
+fi

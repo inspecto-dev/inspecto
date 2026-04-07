@@ -1,0 +1,20 @@
+{
+  "name": "playground-nuxtjs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "pnpm --filter @inspecto-dev/types build && pnpm --filter @inspecto-dev/plugin build && nuxt prepare"
+  },
+  "devDependencies": {
+    "@inspecto-dev/core": "workspace:*",
+    "@inspecto-dev/plugin": "workspace:*",
+    "nuxt": "latest",
+    "vue": "latest",
+    "vue-router": "latest"
+  }
+}

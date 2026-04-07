@@ -1,0 +1,6 @@
+
+
+# Inspecto
+.inspecto/install.lock
+.inspecto/cache.json
+.inspecto/*.local.json

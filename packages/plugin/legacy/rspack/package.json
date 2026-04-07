@@ -1,0 +1,5 @@
+{
+  "main": "../../dist/legacy/rspack/index.cjs",
+  "module": "../../dist/legacy/rspack/index.js",
+  "types": "../../dist/legacy/rspack/index.d.ts"
+}

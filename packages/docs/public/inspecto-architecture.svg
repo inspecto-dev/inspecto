@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" width="800" height="360">
+  <defs>
+    <style>
+      @keyframes shoot {
+        0% { stroke-dashoffset: 600; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { stroke-dashoffset: -100; opacity: 0; }
+      }
+      @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-8px); }
+        100% { transform: translateY(0px); }
+      }
+      @keyframes pulse {
+        0% { transform: scale(0.8); opacity: 0.5; }
+        50% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(0.8); opacity: 0.5; }
+      }
+      
+      .arch-track {
+        fill: none;
+        stroke: #94a3b8;
+        stroke-width: 2;
+        stroke-dasharray: 6 6;
+        opacity: 0.3;
+      }
+      .arch-beam {
+        fill: none;
+        stroke-width: 4;
+        stroke-linecap: round;
+        stroke-dasharray: 80 1000;
+      }
+      .inspect-beam {
+        stroke-dashoffset: 1000;
+        animation: shoot 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+      .inspect-beam-delayed {
+        stroke-dashoffset: 1000;
+        animation: shoot 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        animation-delay: 0.5s;
+      }
+      .float-chip {
+        animation: float 3s ease-in-out infinite;
+      }
+      .pulse-dot {
+        animation: pulse 1.8s ease-in-out infinite;
+      }
+      
+      text {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+    </style>
+
+    <linearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#bd34fe" stop-opacity="0" />
+      <stop offset="100%" stop-color="#41d1ff" stop-opacity="1" />
+    </linearGradient>
+
+    <linearGradient id="glowGradientEditor" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a324db" stop-opacity="0" />
+      <stop offset="100%" stop-color="#bd34fe" stop-opacity="1" />
+    </linearGradient>
+
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Browser Icon -->
+    <g id="icon-browser">
+      <rect x="-30" y="-20" width="60" height="40" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>
+      <circle cx="-20" cy="-12" r="2" fill="#cbd5e1" />
+      <circle cx="-12" cy="-12" r="2" fill="#cbd5e1" />
+      <circle cx="-4" cy="-12" r="2" fill="#cbd5e1" />
+      <line x1="-30" y1="-4" x2="30" y2="-4" stroke="#94a3b8" stroke-width="1" />
+      <rect x="-20" y="4" width="40" height="8" rx="2" fill="#bd34fe" opacity="0.2" />
+    </g>
+
+    <!-- AI Assistant Icon -->
+    <g id="icon-ai">
+      <circle cx="0" cy="0" r="20" fill="#ffffff" stroke="#94a3b8" stroke-width="2" />
+      <path d="M -8,0 L 0,-8 L 8,0 L 0,8 Z" fill="none" stroke="#bd34fe" stroke-width="2" />
+    </g>
+
+    <!-- Editor Icon -->
+    <g id="icon-editor">
+      <rect x="-20" y="-24" width="40" height="48" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>
+      <line x1="-10" y1="-12" x2="10" y2="-12" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" />
+      <line x1="-10" y1="-4" x2="4" y2="-4" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" />
+      <line x1="-10" y1="4" x2="10" y2="4" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" />
+      <line x1="-10" y1="12" x2="0" y2="12" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round" />
+    </g>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#f8fafc" rx="20" />
+
+  <!-- IDE/AI Bounding Box -->
+  <g transform="translate(620, 180)">
+    <rect x="-95" y="-140" width="190" height="280" rx="20" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 4" opacity="0.8" />
+  </g>
+
+  <!-- Connection Tracks (Background paths) -->
+  <!-- Browser to AI -->
+  <path d="M 230,180 C 350,180 450,100 570,100" class="arch-track" />
+  
+  <!-- Browser to Editor -->
+  <path d="M 230,180 C 350,180 450,260 570,260" class="arch-track" />
+
+  <!-- Active Mode Animations (Showing all flows combined for the general architecture overview) -->
+  <g>
+    <path d="M 230,180 C 350,180 450,100 570,100" stroke="url(#glowGradient)" class="arch-beam inspect-beam" />
+    <path d="M 230,180 C 350,180 450,260 570,260" stroke="url(#glowGradientEditor)" class="arch-beam inspect-beam-delayed" />
+    
+    <g class="float-chip" style="animation-delay: 0s">
+      <rect x="360" y="126" width="114" height="24" rx="12" fill="#ffffff" stroke="#a324db" stroke-width="1.5" filter="url(#glow)"/>
+      <text x="417" y="142" text-anchor="middle" fill="#1e293b" font-size="11" font-weight="600" font-family="monospace">Context + Goal</text>
+    </g>
+
+    <g class="float-chip" style="animation-delay: 0.5s">
+      <rect x="330" y="246" width="90" height="24" rx="12" fill="#ffffff" stroke="#8a15ba" stroke-width="1.5" filter="url(#glow)"/>
+      <text x="375" y="262" text-anchor="middle" fill="#1e293b" font-size="11" font-weight="600" font-family="monospace">Open Source</text>
+    </g>
+
+    <!-- Little annotation badges popping out -->
+    <g class="pulse-dot" style="transform: translate(250px, 150px); animation-delay: 0s"><circle r="4" fill="#bd34fe"/></g>
+    <g class="pulse-dot" style="transform: translate(280px, 180px); animation-delay: 0.6s"><circle r="4" fill="#a324db"/></g>
+    <g class="pulse-dot" style="transform: translate(260px, 210px); animation-delay: 1.2s"><circle r="4" fill="#8a15ba"/></g>
+  </g>
+
+  <!-- Nodes -->
+  <!-- Browser Node -->
+  <g transform="translate(180, 180)">
+    <circle cx="0" cy="0" r="32" fill="#ffffff" stroke="#bd34fe" stroke-width="2" filter="url(#glow)" />
+    <use href="#icon-browser" />
+    <text x="0" y="52" text-anchor="middle" fill="#1e293b" font-size="14" font-weight="600">Browser</text>
+  </g>
+
+  <!-- AI Node -->
+  <g transform="translate(620, 100)">
+    <circle cx="0" cy="0" r="32" fill="#ffffff" stroke="#a324db" stroke-width="2" filter="url(#glow)" />
+    <use href="#icon-ai" />
+    <text x="0" y="52" text-anchor="middle" fill="#1e293b" font-size="14" font-weight="600">AI Assistant</text>
+  </g>
+
+  <!-- Editor Node -->
+  <g transform="translate(620, 260)">
+    <circle cx="0" cy="0" r="32" fill="#ffffff" stroke="#8a15ba" stroke-width="2" filter="url(#glow)" />
+    <use href="#icon-editor" />
+    <text x="0" y="52" text-anchor="middle" fill="#1e293b" font-size="14" font-weight="600">Source code</text>
+  </g>
+</svg>

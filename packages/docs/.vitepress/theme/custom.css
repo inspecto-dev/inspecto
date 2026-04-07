@@ -1,0 +1,1 @@
+\n.medium-zoom-overlay { z-index: 1000 !important; }\n.medium-zoom-image { z-index: 1001 !important; cursor: zoom-in !important; }\n.medium-zoom-image--opened { cursor: zoom-out !important; }

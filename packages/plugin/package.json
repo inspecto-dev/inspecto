@@ -1,0 +1,113 @@
+{
+  "name": "@inspecto-dev/plugin",
+  "version": "0.3.3",
+  "description": "Universal build tools plugin (Vite, Webpack, Rspack, Rollup, Esbuild) for Inspecto",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inspecto-dev/inspecto.git",
+    "directory": "packages/plugin"
+  },
+  "homepage": "https://github.com/inspecto-dev/inspecto/tree/main/packages/plugin#readme",
+  "bugs": {
+    "url": "https://github.com/inspecto-dev/inspecto/issues"
+  },
+  "author": "Inspecto Contributors",
+  "keywords": [
+    "ai",
+    "devtools",
+    "inspector",
+    "vite",
+    "webpack",
+    "rspack",
+    "rollup",
+    "unplugin"
+  ],
+  "files": [
+    "dist",
+    "legacy",
+    "rspack",
+    "rollup",
+    "vite",
+    "webpack"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "import": "./dist/vite.js",
+      "require": "./dist/vite.cjs"
+    },
+    "./webpack": {
+      "types": "./dist/webpack.d.ts",
+      "import": "./dist/webpack.js",
+      "require": "./dist/webpack.cjs"
+    },
+    "./rspack": {
+      "types": "./dist/rspack.d.ts",
+      "import": "./dist/rspack.js",
+      "require": "./dist/rspack.cjs"
+    },
+    "./rollup": {
+      "types": "./dist/rollup.d.ts",
+      "import": "./dist/rollup.js",
+      "require": "./dist/rollup.cjs"
+    },
+    "./legacy/rspack": {
+      "types": "./dist/legacy/rspack/index.d.ts",
+      "import": "./dist/legacy/rspack/index.js",
+      "require": "./dist/legacy/rspack/index.cjs"
+    },
+    "./legacy/webpack4": {
+      "types": "./dist/legacy/webpack4/index.d.ts",
+      "import": "./dist/legacy/webpack4/index.js",
+      "require": "./dist/legacy/webpack4/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "test": "vitest run --passWithNoTests"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.24.0",
+    "@babel/traverse": "^7.24.0",
+    "@babel/types": "^7.24.0",
+    "@inspecto-dev/types": "workspace:*",
+    "@vue/compiler-core": "^3.5.30",
+    "@vue/compiler-dom": "^3.5.30",
+    "@vue/compiler-sfc": "^3.5.30",
+    "defu": "^6.1.4",
+    "launch-ide": "^1.0.0",
+    "magic-string": "^0.30.0",
+    "portfinder": "^1.0.32",
+    "unplugin": "^1.10.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.7",
+    "@babel/preset-env": "^7.24.7",
+    "@babel/preset-react": "^7.24.7",
+    "@babel/preset-typescript": "^7.24.7",
+    "@rspack/core": "0.3.14",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@vitejs/plugin-vue": "^5.2.3",
+    "babel-loader": "^10.1.1",
+    "memfs": "^4.57.1",
+    "vite": "^8.0.2",
+    "webpack": "^5.105.4",
+    "webpack-cli": "^7.0.2"
+  }
+}

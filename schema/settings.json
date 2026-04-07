@@ -1,0 +1,176 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Inspecto Settings",
+  "description": "Configuration for .inspecto/settings.json and .inspecto/settings.local.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "ide": {
+      "type": "string",
+      "description": "IDE environment. Auto-detected via the VS Code extension; only override if needed. Currently supported: 'vscode', 'trae', 'trae-cn', 'cursor'.",
+      "enum": ["vscode", "trae", "trae-cn", "cursor"],
+      "default": "vscode"
+    },
+    "inspector.hotKey": {
+      "description": "Modifier keys to hold while clicking an element to activate the inspector. Set to false to disable hotkey activation entirely.",
+      "default": "alt",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "alt",
+            "shift",
+            "ctrl",
+            "meta",
+            "cmd",
+            "alt+shift",
+            "ctrl+shift",
+            "meta+shift",
+            "cmd+shift"
+          ]
+        },
+        {
+          "type": "boolean",
+          "enum": [false]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["ctrlKey", "altKey", "metaKey", "shiftKey"]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      ]
+    },
+    "inspector.theme": {
+      "type": "string",
+      "description": "Theme for the inspector panel. Default is auto.",
+      "enum": ["light", "dark", "auto"],
+      "default": "auto"
+    },
+    "prompt.autoSend": {
+      "type": "boolean",
+      "description": "Whether to automatically send the prompt when opened in the AI tool. Default is false (user must manually hit send).",
+      "default": false
+    },
+    "prompt.includeSnippet": {
+      "type": "boolean",
+      "description": "Whether to inject the raw code snippet into the prompt. Default is false (saves tokens, lets IDE AI read the file directly).",
+      "default": false
+    },
+    "prompt.runtimeContext": {
+      "type": "boolean",
+      "description": "Whether runtime-context evidence collection is enabled for inspect and annotate flows. When enabled, runtimeErrorCount/maxRuntimeErrors cover runtime-error, promise-rejection, and console-error evidence; failed requests are tracked separately.",
+      "default": false
+    },
+    "prompt.screenshotContext": {
+      "type": "boolean",
+      "description": "Whether the browser UI should expose optional screenshot context controls for inspect and annotate.",
+      "default": false
+    },
+    "prompt.runtimeContextPreview": {
+      "type": "boolean",
+      "description": "Whether the browser UI should show a runtime-context preview.",
+      "default": true
+    },
+    "prompt.runtimeContextMaxErrors": {
+      "type": "number",
+      "description": "Maximum non-request runtime evidence records to retain. Covers runtime-error, promise-rejection, and console-error evidence.",
+      "default": 3
+    },
+    "prompt.runtimeContextMaxRequests": {
+      "type": "number",
+      "description": "Maximum failed-request records to retain.",
+      "default": 2
+    },
+    "provider.default": {
+      "type": "string",
+      "description": "Preferred AI provider and mode to dispatch to. If omitted, a fallback is used.",
+      "enum": [
+        "copilot.extension",
+        "claude-code.extension",
+        "claude-code.cli",
+        "gemini.extension",
+        "gemini.cli",
+        "codex.extension",
+        "codex.cli",
+        "coco.cli",
+        "trae.builtin",
+        "cursor.builtin"
+      ]
+    },
+    "provider.claude-code.cli.bin": {
+      "type": "string",
+      "description": "Executable name or absolute path for Claude Code CLI."
+    },
+    "provider.claude-code.cli.args": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Extra startup arguments for Claude Code CLI."
+    },
+    "provider.claude-code.cli.cwd": {
+      "type": "string",
+      "description": "Working directory for the Claude Code CLI process. Supports ${workspaceRoot} etc."
+    },
+    "provider.claude-code.cli.coldStartDelay": {
+      "type": "number",
+      "description": "Wait time (ms) for CLI REPL cold start."
+    },
+
+    "provider.gemini.cli.bin": {
+      "type": "string",
+      "description": "Executable name or absolute path for Gemini CLI."
+    },
+    "provider.gemini.cli.args": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Extra startup arguments for Gemini CLI."
+    },
+    "provider.gemini.cli.cwd": {
+      "type": "string",
+      "description": "Working directory for the Gemini CLI process. Supports ${workspaceRoot} etc."
+    },
+    "provider.gemini.cli.coldStartDelay": {
+      "type": "number",
+      "description": "Wait time (ms) for CLI REPL cold start."
+    },
+
+    "provider.codex.cli.bin": {
+      "type": "string",
+      "description": "Executable name or absolute path for Codex CLI."
+    },
+    "provider.codex.cli.args": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Extra startup arguments for Codex CLI."
+    },
+    "provider.codex.cli.cwd": {
+      "type": "string",
+      "description": "Working directory for the Codex CLI process. Supports ${workspaceRoot} etc."
+    },
+    "provider.codex.cli.coldStartDelay": {
+      "type": "number",
+      "description": "Wait time (ms) for CLI REPL cold start."
+    },
+
+    "provider.coco.cli.bin": {
+      "type": "string",
+      "description": "Executable name or absolute path for Coco CLI."
+    },
+    "provider.coco.cli.args": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Extra startup arguments for Coco CLI."
+    },
+    "provider.coco.cli.cwd": {
+      "type": "string",
+      "description": "Working directory for the Coco CLI process. Supports ${workspaceRoot} etc."
+    },
+    "provider.coco.cli.coldStartDelay": {
+      "type": "number",
+      "description": "Wait time (ms) for CLI REPL cold start."
+    }
+  }
+}

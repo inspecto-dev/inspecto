@@ -1,0 +1,7 @@
+interface:
+  display_name: 'Inspecto Onboarding'
+  short_description: 'Set up Inspecto in Codex through the CLI flow'
+  default_prompt: 'Use $inspecto-onboarding-codex to set up Inspecto in the current project through the single-entry onboard flow.'
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,12 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm' # See documentation for possible values
+    directory: '/' # Location of package manifests
+    schedule:
+      interval: 'weekly'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']

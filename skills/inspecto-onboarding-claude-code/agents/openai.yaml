@@ -1,0 +1,7 @@
+interface:
+  display_name: 'Inspecto Onboarding'
+  short_description: 'Set up Inspecto in Claude Code through the CLI flow'
+  default_prompt: 'Use $inspecto-onboarding-claude-code to detect the current project, explain the Inspecto onboarding plan, ask for approval, and apply the setup.'
+
+policy:
+  allow_implicit_invocation: true
