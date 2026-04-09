@@ -4,6 +4,15 @@ Use this checklist to validate Inspecto after changes to launcher UX, inspect mo
 
 ## Target Matrix
 
+### Supported Bundlers & Frameworks
+
+- Vite (React, Vue)
+- Webpack 5 (React, Vue)
+- Webpack 4 (React, Vue) - Supported via legacy plugin
+- Rspack / Rsbuild (React, Vue)
+- Next.js (Webpack-based, experimental)
+- Nuxt.js (Vite-based)
+
 ### macOS
 
 - VS Code

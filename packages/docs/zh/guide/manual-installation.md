@@ -55,9 +55,22 @@ export default defineConfig({
 
 ### Webpack
 
+该插件同时支持 Webpack 5（默认）和 Webpack 4。
+
 ```javascript
-// webpack.config.js
+// webpack.config.js (适用于 Webpack 5)
 const { webpackPlugin: inspecto } = require('@inspecto-dev/plugin')
+
+module.exports = {
+  plugins: [inspecto()],
+}
+```
+
+如果你正在使用的是 **Webpack 4**（例如比较老的 Vue CLI 或 Create React App 项目），你需要引入配套的旧版插件：
+
+```javascript
+// webpack.config.js (适用于 Webpack 4)
+const { webpackPlugin: inspecto } = require('@inspecto-dev/plugin/legacy/webpack4')
 
 module.exports = {
   plugins: [inspecto()],
@@ -66,9 +79,22 @@ module.exports = {
 
 ### Rspack / Rsbuild
 
+该插件默认完美支持现代版本的 Rspack。
+
 ```typescript
 // rspack.config.ts
 import { rspackPlugin as inspecto } from '@inspecto-dev/plugin'
+
+export default {
+  plugins: [inspecto()],
+}
+```
+
+如果你使用的是较低版本的 Rspack（例如 `< 0.4.x`）尚未完全支持较新的 AST Transform API，请引入基于 loader 的旧版插件：
+
+```typescript
+// rspack.config.ts (适用于旧版 Rspack)
+import { rspackPlugin as inspecto } from '@inspecto-dev/plugin/legacy/rspack'
 
 export default {
   plugins: [inspecto()],
@@ -80,6 +106,21 @@ export default {
 与 assistant-first onboarding 或 `inspecto init` 不同，手动安装时**你必须自己为你的编辑器安装 Inspecto 配套扩展**。没有这个扩展，浏览器将无法把代码发送到你的 IDE 中。
 
 请参考 [IDE 扩展集成指南](../integrations/ide.md) 完成 VS Code、Cursor 或 Trae 中插件的安装。
+
+## 4. 配置项目参数
+
+由于你跳过了自动化的 CLI 初始化流程，Inspecto 目前并不知道你实际使用的是哪款 AI 助手或编辑器。因此你必须在项目根目录下手动创建一个配置文件。
+
+请在项目根目录创建 `.inspecto/settings.local.json` 文件，并填入以下配置（请根据你的实际环境替换 `ide` 和 `provider.default` 字段的值）：
+
+```json
+{
+  "ide": "vscode",
+  "provider.default": "copilot.extension"
+}
+```
+
+> **重要**：添加完配置文件后，请务必**重启你的开发服务器（Dev Server）**，以便插件读取到你的自定义配置。
 
 ---
 

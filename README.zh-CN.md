@@ -12,21 +12,30 @@
 
 👉 **[前往 inspecto-dev.github.io/inspecto 阅读完整文档](https://inspecto-dev.github.io/inspecto/zh/)**
 
-<p align="center">
-  <img src="packages/docs/public/demo/inspecto.gif" width="100%" alt="Inspecto 46秒演示" />
-</p>
-
-## 核心工作流
-
-<p align="center">
-  <img src="packages/docs/public/inspect-mode.png" width="32%" alt="Inspect mode screenshot" />
-  <img src="packages/docs/public/annotate-mode.png" width="32%" alt="Annotate mode screenshot" />
-  <img src="packages/docs/public/quick-jump.png" width="32%" alt="Quick jump screenshot" />
-</p>
-
-- `Inspect mode`：点击单个组件，立即 Ask AI
-- `Annotate mode`：跨多个组件记录 note，最后一次发送
-- `Quick jump`：用 `Alt` + `点击` 直接打开准确的源码位置
+<div align="center">
+  <table border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td width="33%" align="center">
+        <img src="packages/docs/public/inspect-mode.gif" width="100%" alt="Inspect mode workflow" />
+        <br/>
+        <b>Inspect mode</b><br/>
+        点击单个组件，立即 Ask AI
+      </td>
+      <td width="33%" align="center">
+        <img src="packages/docs/public/annotate-mode.gif" width="100%" alt="Annotate mode workflow" />
+        <br/>
+        <b>Annotate mode</b><br/>
+        跨组件记录，打包一次发送
+      </td>
+      <td width="33%" align="center">
+        <img src="packages/docs/public/quick-jump.gif" width="100%" alt="Quick jump workflow" />
+        <br/>
+        <b>Quick jump</b><br/>
+        用 <code>Alt</code>+<code>点击</code> 直达源码
+      </td>
+    </tr>
+  </table>
+</div>
 
 ## 快速开始
 

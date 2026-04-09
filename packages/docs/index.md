@@ -34,6 +34,18 @@ features:
     details: 'Seamlessly works with Vite, Webpack, Rspack, Rollup, esbuild, Next.js, and Nuxt.'
 ---
 
+## See It in Action
+
+<video controls playsinline muted preload="metadata" style="width: 100%; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18); margin: 8px 0 24px; box-sizing: border-box;">
+  <source :src="'/inspecto/demo/inspecto.mov'" type="video/quicktime" />
+  <source :src="'/inspecto/demo/inspecto.mov'" />
+  Your browser does not support the demo video. <a :href="'/inspecto/demo/inspecto.mov'">Download it here</a>.
+</video>
+
+## Why Inspecto?
+
+<img :src="'/inspecto/inspecto-workflow.png'" alt="Traditional vs Inspecto Workflow" style="width: 100%; border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.16); box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05); margin: 16px 0 48px;" />
+
 ## See the Three Workflows
 
 <script setup>
@@ -44,29 +56,25 @@ import HeroArchitecture from './components/HeroArchitecture.vue'
 
 <div class="mode-grid">
   <div class="mode-card">
-    <img :src="'/inspecto/inspect-mode.png'" alt="Inspect mode screenshot" />
+    <img :src="'/inspecto/inspect-mode.gif'" alt="Inspect mode workflow" />
     <h3>Inspect mode</h3>
     <p>Inspect a single component, automatically attach the right context, and ask AI instantly.</p>
   </div>
   <div class="mode-card">
-    <img :src="'/inspecto/annotate-mode.png'" alt="Annotate mode screenshot" />
+    <img :src="'/inspecto/annotate-mode.gif'" alt="Annotate mode workflow" />
     <h3>Annotate mode</h3>
     <p>Select multiple UI notes across components, add one overall goal, and send them as a single batch to AI.</p>
   </div>
   <div class="mode-card">
-    <img :src="'/inspecto/quick-jump.png'" alt="Quick jump screenshot" />
+    <img :src="'/inspecto/quick-jump.gif'" alt="Quick jump workflow" />
     <h3>Quick jump</h3>
     <p>Hold <code>Alt + Click</code> on any element to instantly open the exact source location, skipping manual search.</p>
   </div>
 </div>
 
-## See It in Action
+## Ecosystem
 
-<video controls playsinline muted preload="metadata" style="width: 100%; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18); margin: 8px 0 24px; box-sizing: border-box;">
-  <source :src="'/inspecto/demo/inspecto.mov'" type="video/quicktime" />
-  <source :src="'/inspecto/demo/inspecto.mov'" />
-  Your browser does not support the demo video. <a :href="'/inspecto/demo/inspecto.mov'">Download it here</a>.
-</video>
+<img :src="'/inspecto/inspecto-ecosystem.png'" alt="Inspecto Ecosystem and Integrations" style="width: 100%; border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.16); box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05); margin: 16px 0 48px;" />
 
 <div class="home-grid">
   <div class="home-panel">

@@ -12,21 +12,30 @@ English | [简体中文](./README.zh-CN.md)
 
 👉 **[Read the full documentation at inspecto-dev.github.io/inspecto](https://inspecto-dev.github.io/inspecto/)**
 
-<p align="center">
-  <img src="packages/docs/public/demo/inspecto.gif" width="100%" alt="Inspecto 46s Demo" />
-</p>
-
-## Core Workflows
-
-<p align="center">
-  <img src="packages/docs/public/inspect-mode.png" width="32%" alt="Inspect mode screenshot" />
-  <img src="packages/docs/public/annotate-mode.png" width="32%" alt="Annotate mode screenshot" />
-  <img src="packages/docs/public/quick-jump.png" width="32%" alt="Quick jump screenshot" />
-</p>
-
-- `Inspect mode`: click one component and ask AI right away
-- `Annotate mode`: collect notes across components, then send one batch
-- `Quick jump`: use `Alt` + `Click` to open the exact source location
+<div align="center">
+  <table border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td width="33%" align="center">
+        <img src="packages/docs/public/inspect-mode.gif" width="100%" alt="Inspect mode workflow" />
+        <br/>
+        <b>Inspect mode</b><br/>
+        Click one component and ask AI right away
+      </td>
+      <td width="33%" align="center">
+        <img src="packages/docs/public/annotate-mode.gif" width="100%" alt="Annotate mode workflow" />
+        <br/>
+        <b>Annotate mode</b><br/>
+        Collect notes across components, send one batch
+      </td>
+      <td width="33%" align="center">
+        <img src="packages/docs/public/quick-jump.gif" width="100%" alt="Quick jump workflow" />
+        <br/>
+        <b>Quick jump</b><br/>
+        Use <code>Alt</code> + <code>Click</code> to open exact source location
+      </td>
+    </tr>
+  </table>
+</div>
 
 ## Quick Start
 
