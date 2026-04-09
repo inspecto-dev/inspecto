@@ -128,7 +128,10 @@ export function createCli(_argv: readonly string[] = process.argv): CAC {
   cli
     .command('onboard', 'Run assistant-oriented Inspecto onboarding in one structured flow')
     .option('--json', 'Print machine-readable JSON output', { default: false })
-    .option('--target <packagePath>', 'Select a monorepo target package explicitly')
+    .option(
+      '--target <candidateIdOrPath>',
+      'Select the build target to onboard using a returned candidateId or compatible config path',
+    )
     .option('--yes', 'Accept a lightweight confirmation gate automatically', { default: false })
     .option('--shared', 'Write shared Inspecto settings instead of local-only settings')
     .option('--skip-install', 'Skip npm dependency installation')

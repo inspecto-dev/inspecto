@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const writeFileMock = vi.fn()
+const writeJSONMock = vi.fn()
+const readJSONMock = vi.fn()
 const existsMock = vi.fn()
 const chmodMock = vi.fn()
 const logMock = {
@@ -17,6 +19,8 @@ const runIntegrationAutomationMock = vi.fn()
 
 vi.mock('../src/utils/fs.js', () => ({
   writeFile: writeFileMock,
+  writeJSON: writeJSONMock,
+  readJSON: readJSONMock,
   exists: existsMock,
 }))
 
@@ -42,7 +46,9 @@ describe('integration install', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
+    vi.spyOn(process, 'cwd').mockReturnValue('/repo')
     existsMock.mockResolvedValue(false)
+    readJSONMock.mockResolvedValue(null)
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -145,6 +151,78 @@ describe('integration install', () => {
     )
   })
 
+  it('installs the Trae skill with a launcher script', async () => {
+    const { installIntegration } = await import('../src/commands/integration-install.js')
+
+    await installIntegration('trae')
+
+    expect(writeFileMock).toHaveBeenCalledWith(
+      '.trae/skills/inspecto-onboarding/SKILL.md',
+      '# mock asset',
+    )
+    expect(writeFileMock).toHaveBeenCalledWith(
+      '.trae/skills/inspecto-onboarding/scripts/run-inspecto.sh',
+      '# mock asset',
+    )
+    expect(chmodMock).toHaveBeenCalledWith(
+      '.trae/skills/inspecto-onboarding/scripts/run-inspecto.sh',
+      0o755,
+    )
+  })
+
+  it('persists an explicit project host ide into .inspecto/settings.local.json before onboarding launch', async () => {
+    const { installIntegration } = await import('../src/commands/integration-install.js')
+
+    await installIntegration('gemini', { ide: 'trae-cn' })
+
+    expect(writeJSONMock).toHaveBeenCalledWith('/repo/.inspecto/settings.local.json', {
+      ide: 'trae-cn',
+    })
+  })
+
+  it('merges the explicit host ide into existing local settings without dropping other keys', async () => {
+    readJSONMock.mockResolvedValue({
+      ide: 'trae',
+      'provider.default': 'coco.cli',
+    })
+
+    const { installIntegration } = await import('../src/commands/integration-install.js')
+
+    await installIntegration('gemini', { ide: 'trae-cn' })
+
+    expect(writeJSONMock).toHaveBeenCalledWith('/repo/.inspecto/settings.local.json', {
+      ide: 'trae-cn',
+      'provider.default': 'coco.cli',
+    })
+  })
+
+  it('does not persist host ide settings for user-level installs', async () => {
+    const { installIntegration } = await import('../src/commands/integration-install.js')
+
+    await installIntegration('codex', { scope: 'user', ide: 'cursor' })
+
+    expect(writeJSONMock).not.toHaveBeenCalled()
+  })
+
+  it('installs the Coco skill with a launcher script', async () => {
+    const { installIntegration } = await import('../src/commands/integration-install.js')
+
+    await installIntegration('coco')
+
+    expect(writeFileMock).toHaveBeenCalledWith(
+      '.trae/skills/inspecto-onboarding/SKILL.md',
+      '# mock asset',
+    )
+    expect(writeFileMock).toHaveBeenCalledWith(
+      '.trae/skills/inspecto-onboarding/scripts/run-inspecto.sh',
+      '# mock asset',
+    )
+    expect(chmodMock).toHaveBeenCalledWith(
+      '.trae/skills/inspecto-onboarding/scripts/run-inspecto.sh',
+      0o755,
+    )
+  })
+
   it('surfaces a blocked automation outcome as a warning with next-step guidance', async () => {
     runIntegrationAutomationMock.mockResolvedValue({
       status: 'blocked',
@@ -207,6 +285,7 @@ describe('integration install', () => {
     await installIntegration('codex', { preview: true, ide: 'cursor' })
 
     expect(writeFileMock).not.toHaveBeenCalled()
+    expect(writeJSONMock).not.toHaveBeenCalled()
     expect(chmodMock).not.toHaveBeenCalled()
     expect(fetchMock).not.toHaveBeenCalled()
     expect(logMock.info).toHaveBeenCalledWith('Step 1/6: Previewing Codex integration assets')
@@ -395,6 +474,20 @@ describe('integration install', () => {
       ],
       preferredInstall:
         'npx @inspecto-dev/cli integrations install codex --host-ide <vscode|cursor|trae|trae-cn>',
+    })
+  })
+
+  it('describes coco using the trae skill install target', async () => {
+    const { describeIntegration } = await import('../src/commands/integration-install.js')
+
+    expect(describeIntegration('coco')).toMatchObject({
+      assistant: 'coco',
+      targets: [
+        '.trae/skills/inspecto-onboarding/SKILL.md',
+        '.trae/skills/inspecto-onboarding/scripts/run-inspecto.sh',
+      ],
+      preferredInstall:
+        'npx @inspecto-dev/cli integrations install coco --host-ide <vscode|cursor|trae|trae-cn>',
     })
   })
 

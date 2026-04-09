@@ -63,9 +63,14 @@ export interface OnboardingContext {
 }
 
 export interface OnboardingTargetCandidate {
+  id?: string
+  candidateId?: string
   packagePath: string
   configPath: string
+  label?: string
   buildTool: BuildTool
+  isLegacyRspack?: boolean
+  isLegacyWebpack?: boolean
   frameworks: string[]
   automaticInjection: boolean
 }
@@ -75,6 +80,8 @@ export interface OnboardingTargetResolution {
   selected?: OnboardingTargetCandidate
   candidates: OnboardingTargetCandidate[]
   reason: string
+  selectionPurpose?: string
+  selectionInstructions?: string
 }
 
 export interface OnboardingSummary {

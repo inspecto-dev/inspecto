@@ -74,7 +74,7 @@ Here is a full list of supported assistants and where their integrations are ins
 | Cursor      | Native skill | `.cursor/skills/inspecto-onboarding/`    | Project-level. Run from the target project root. |
 | Gemini      | Native skill | `.gemini/skills/inspecto-onboarding/`    | Project-level. Run from the target project root. |
 | Trae        | Native skill | `.trae/skills/inspecto-onboarding/`      | Project-level. Run from the target project root. |
-| Coco        | Native skill | `.traecli/skills/inspecto-onboarding/`   | Project-level. Run from the target project root. |
+| Coco        | Native skill | `.trae/skills/inspecto-onboarding/`      | Project-level. Run from the target project root. |
 
 All onboarding integrations will by default write configuration into local-only files (`.inspecto/settings.local.json` and `.inspecto/prompts.local.json`), keeping your repository clean.
 
@@ -123,7 +123,7 @@ Use `inspecto integrations doctor <assistant> --host-ide <ide> --compact` only w
 The integrations work by exposing Inspecto's structured CLI onboarding contract to your assistant. When you ask it to set up Inspecto, it will execute:
 
 1. `onboard --json`: Analyzes the project and returns a structured plan.
-2. `onboard --json --target <packagePath>`: Reruns if target selection is needed in monorepos.
+2. `onboard --json --target <candidateId>`: Reruns if target selection is needed. This step chooses which local development build target should receive Inspecto and should use one of the explicit candidate ids returned by the previous response. The CLI also accepts a returned `configPath` as a compatibility fallback.
 3. `onboard --json --yes`: Applies the code mutations after your confirmation.
 4. Guides you through installing the IDE extension (a required step).
 5. Confirms the dev server start command.

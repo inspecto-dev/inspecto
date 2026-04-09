@@ -282,6 +282,33 @@ export async function collectDoctorResult(root = process.cwd()): Promise<DoctorR
     const settings = await readJSON(targetPath)
     if (settings) {
       checks.push(createDiagnostic('settings-valid', 'ok', `.inspecto/${fileName} valid`))
+
+      const configuredIde =
+        typeof (settings as Record<string, unknown>).ide === 'string'
+          ? ((settings as Record<string, unknown>).ide as string)
+          : undefined
+      const detectedIdeCandidates = ideProbe.detected.map(item => item.ide)
+      if (
+        configuredIde &&
+        detectedIdeCandidates.length > 0 &&
+        !detectedIdeCandidates.includes(configuredIde)
+      ) {
+        checks.push(
+          createDiagnostic(
+            'settings-ide-mismatch',
+            'warning',
+            `.inspecto/${fileName} sets ide=${configuredIde}, but the current environment looks like ${detectedIdeCandidates.join(', ')}. Inspecto will use the configured IDE from ${fileName}.`,
+            [
+              `Update .inspecto/${fileName} if you want Inspecto to target the currently detected IDE instead.`,
+            ],
+            {
+              configuredIde,
+              detectedIdeCandidates,
+              precedence: `configured ide from ${fileName}`,
+            },
+          ),
+        )
+      }
     } else {
       checks.push(
         createDiagnostic(

@@ -50,6 +50,37 @@ async function getResolvedPackageVersion(pkgName: string, root: string): Promise
   }
 }
 
+function parseFirstSemver(
+  version: string | null,
+): { major: number; minor: number; patch: number } | null {
+  if (!version) return null
+
+  const match = version.match(/(\d+)\.(\d+)\.(\d+)/)
+  if (!match) {
+    return null
+  }
+
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+  }
+}
+
+function isLegacyRspackVersion(version: string | null): boolean {
+  const parsed = parseFirstSemver(version)
+  if (!parsed) return false
+
+  return parsed.major === 0 && parsed.minor < 4
+}
+
+function isLegacyWebpackVersion(version: string | null): boolean {
+  const parsed = parseFirstSemver(version)
+  if (!parsed) return false
+
+  return parsed.major === 4
+}
+
 /** Supported build tools in v1 */
 const SUPPORTED_PATTERNS: { tool: BuildTool; files: string[]; label: string }[] = [
   {
@@ -76,7 +107,22 @@ const SUPPORTED_PATTERNS: { tool: BuildTool; files: string[]; label: string }[] 
   },
   {
     tool: 'webpack',
-    files: ['webpack.config.js', 'webpack.config.ts', 'webpack.config.mjs', 'webpack.config.cjs'],
+    files: [
+      'webpack.config.js',
+      'webpack.config.ts',
+      'webpack.config.mjs',
+      'webpack.config.cjs',
+      'webpack.config.common.js',
+      'webpack.config.common.ts',
+      'webpack.config.dev.js',
+      'webpack.config.dev.ts',
+      'webpack.config.prod.js',
+      'webpack.config.prod.ts',
+      'webpack.config.esbuild.js',
+      'webpack.config.esbuild.ts',
+      'webpack.config.build-pre.js',
+      'webpack.config.build-pre.ts',
+    ],
     label: 'Webpack',
   },
   {
@@ -280,6 +326,119 @@ interface PatternContext {
   scripts: Record<string, string>
 }
 
+function rankScriptCommand(name: string, command: string): number {
+  const haystack = `${name} ${command}`.toLowerCase()
+  let score = 0
+
+  if (/(^|[\s:_-])(start|dev|serve|watch)([\s:_-]|$)/.test(haystack)) score += 8
+  if (/(^|[\s:_-])(prod|build|release|stats)([\s:_-]|$)/.test(haystack)) score -= 3
+  if (/(^|[\s:_-])(dll|vendor)([\s:_-]|$)/.test(haystack)) score -= 6
+  if (haystack.includes('webpack-dev-server')) score += 3
+  if (haystack.includes('webpack')) score += 1
+  if (haystack.includes('rspack')) score += 1
+
+  return score
+}
+
+function extractConfigArgs(scriptContent: string): string[] {
+  return Array.from(scriptContent.matchAll(/(?:-c|--config)\s+([^\s'"`;]+)/g))
+    .map(match => match[1])
+    .filter((value): value is string => Boolean(value))
+}
+
+async function resolveScriptRelativeCandidate(
+  targetRoot: string,
+  scriptPath: string,
+  candidate: string,
+): Promise<string | null> {
+  const normalizedCandidate = candidate.replace(/^['"`]|['"`]$/g, '')
+  const normalizedRelativeCandidate = path.normalize(normalizedCandidate)
+  const possiblePaths: string[] = []
+
+  if (normalizedRelativeCandidate.startsWith('..')) {
+    possiblePaths.push(
+      path.normalize(path.join(path.dirname(scriptPath), normalizedRelativeCandidate)),
+    )
+  } else {
+    possiblePaths.push(normalizedRelativeCandidate)
+    possiblePaths.push(
+      path.normalize(path.join(path.dirname(scriptPath), normalizedRelativeCandidate)),
+    )
+  }
+
+  for (const possiblePath of possiblePaths) {
+    if (await exists(path.join(targetRoot, possiblePath))) {
+      return possiblePath.split(path.sep).join('/')
+    }
+  }
+
+  return null
+}
+
+async function resolveRspackConfigFromScript(
+  targetRoot: string,
+  scriptPath: string,
+): Promise<string | null> {
+  const scriptContent = await readFile(path.join(targetRoot, scriptPath))
+  if (!scriptContent) {
+    return null
+  }
+
+  for (const candidate of extractConfigArgs(scriptContent)) {
+    const resolved = await resolveScriptRelativeCandidate(targetRoot, scriptPath, candidate)
+    if (resolved) {
+      return resolved
+    }
+  }
+
+  const matches = scriptContent.matchAll(
+    /['"`]([^'"`\n]*rspack[^'"`\n]*config[^'"`\n]*\.(?:js|ts|mjs|cjs))['"`]/g,
+  )
+
+  for (const match of matches) {
+    const candidate = match[1]
+    if (!candidate) continue
+    const resolved = await resolveScriptRelativeCandidate(targetRoot, scriptPath, candidate)
+    if (resolved) {
+      return resolved
+    }
+  }
+
+  return null
+}
+
+async function resolveWebpackBaseConfigFromFile(
+  targetRoot: string,
+  configPath: string,
+): Promise<string | null> {
+  const configContent = await readFile(path.join(targetRoot, configPath))
+  if (!configContent) {
+    return null
+  }
+
+  for (const candidate of extractConfigArgs(configContent)) {
+    const resolved = await resolveScriptRelativeCandidate(targetRoot, configPath, candidate)
+    if (resolved) {
+      return resolved
+    }
+  }
+
+  const matches = configContent.matchAll(
+    /(?:configPath\s*=\s*|require\()\s*['"`]([^'"`\n]*webpack[^'"`\n]*config[^'"`\n]*\.(?:js|ts|mjs|cjs))['"`]/g,
+  )
+
+  for (const match of matches) {
+    const candidate = match[1]
+    if (!candidate) continue
+    const resolved = await resolveScriptRelativeCandidate(targetRoot, configPath, candidate)
+    if (resolved) {
+      return resolved
+    }
+  }
+
+  return null
+}
+
 async function detectPattern({
   pattern,
   workspaceRoot,
@@ -339,13 +498,47 @@ async function detectPattern({
       pattern.tool === 'rspack' ||
       pattern.tool === 'rsbuild')
   ) {
-    for (const cmd of Object.values(scripts)) {
+    const rankedScripts = Object.entries(scripts).sort(
+      ([leftName, leftCommand], [rightName, rightCommand]) =>
+        rankScriptCommand(rightName, rightCommand) - rankScriptCommand(leftName, leftCommand),
+    )
+
+    for (const [, cmd] of rankedScripts) {
+      if (pattern.tool === 'webpack' || pattern.tool === 'rspack') {
+        for (const configArg of extractConfigArgs(cmd)) {
+          const resolvedConfig = await resolveScriptRelativeCandidate(targetRoot, '', configArg)
+          if (resolvedConfig && (cmd.includes(pattern.tool) || cmd.includes(`${pattern.tool}-`))) {
+            if (pattern.tool === 'webpack') {
+              detectedFile =
+                (await resolveWebpackBaseConfigFromFile(targetRoot, resolvedConfig)) ??
+                resolvedConfig
+            } else {
+              detectedFile =
+                (await resolveRspackConfigFromScript(targetRoot, resolvedConfig)) ?? resolvedConfig
+            }
+            break
+          }
+        }
+
+        if (detectedFile) {
+          break
+        }
+      }
+
       if (cmd.includes('node ')) {
         const match = cmd.match(/node\s+([^\s]+\.(js|mjs|cjs|ts))/)
         if (match && match[1]) {
           if (await exists(path.join(targetRoot, match[1]))) {
             if (cmd.includes(pattern.tool) || match[1].includes(pattern.tool)) {
-              detectedFile = match[1]
+              if (pattern.tool === 'rspack') {
+                detectedFile =
+                  (await resolveRspackConfigFromScript(targetRoot, match[1])) ?? match[1]
+              } else if (pattern.tool === 'webpack') {
+                detectedFile =
+                  (await resolveWebpackBaseConfigFromFile(targetRoot, match[1])) ?? match[1]
+              } else {
+                detectedFile = match[1]
+              }
               break
             }
           }
@@ -393,16 +586,11 @@ async function detectPattern({
   let isLegacyWebpack = false
 
   if (pattern.tool === 'rspack') {
-    const version = resolvedVersion
-    if (
-      version &&
-      (version.includes('0.3.') || version.includes('0.2.') || version.includes('0.1.'))
-    ) {
+    if (isLegacyRspackVersion(resolvedVersion)) {
       isLegacyRspack = true
     }
   } else if (pattern.tool === 'webpack') {
-    const version = resolvedVersion
-    if ((version && version.includes('^4')) || version?.startsWith('4.')) {
+    if (isLegacyWebpackVersion(resolvedVersion)) {
       isLegacyWebpack = true
     }
   }

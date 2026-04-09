@@ -2,10 +2,11 @@ import fs from 'node:fs/promises'
 import { homedir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { exists, writeFile } from '../utils/fs.js'
+import { exists, readJSON, writeFile, writeJSON } from '../utils/fs.js'
 import { log } from '../utils/logger.js'
 import { writeCommandOutput } from '../utils/output.js'
 import { runIntegrationAutomation } from './integration-automation.js'
+import { isSupportedHostIde, type SupportedHostIde } from '../integrations/capabilities.js'
 
 const REPO_RAW_BASE = 'https://raw.githubusercontent.com/inspecto-dev/inspecto/main'
 const TOTAL_STEPS = 6
@@ -53,6 +54,11 @@ interface InstallPlan {
   assets: DownloadAsset[]
   successMessage: string
   nextStep: string
+}
+
+interface InspectoSettingsShape {
+  ide?: string
+  [key: string]: unknown
 }
 
 export interface IntegrationInstallResult {
@@ -117,7 +123,7 @@ const INTEGRATION_MANIFESTS: IntegrationManifest[] = [
   {
     assistant: 'coco',
     type: 'native-skill',
-    installTarget: '.traecli/skills/inspecto-onboarding/',
+    installTarget: '.trae/skills/inspecto-onboarding/',
     preferredInstall:
       'npx @inspecto-dev/cli integrations install coco --host-ide <vscode|cursor|trae|trae-cn>',
     cliSupported: true,
@@ -192,6 +198,10 @@ export async function installIntegration(
         await fs.chmod(asset.target, 0o755)
       }
     }
+  }
+
+  if (shouldPersistHostIdeSetting(options)) {
+    await persistHostIdeSetting(options.ide!)
   }
 
   const stepOneMessage = options.preview
@@ -292,6 +302,25 @@ export async function installIntegration(
   return result
 }
 
+function shouldPersistHostIdeSetting(
+  options: InstallIntegrationOptions,
+): options is InstallIntegrationOptions & { ide: SupportedHostIde } {
+  return (
+    !options.preview && !shouldSkipAutomationForInstall(options) && isSupportedHostIde(options.ide)
+  )
+}
+
+async function persistHostIdeSetting(ide: SupportedHostIde): Promise<void> {
+  const settingsPath = path.join(process.cwd(), '.inspecto', 'settings.local.json')
+  const existingSettings = await readJSON<InspectoSettingsShape>(settingsPath)
+  const mergedSettings =
+    existingSettings && typeof existingSettings === 'object'
+      ? { ...existingSettings, ide }
+      : { ide }
+
+  await writeJSON(settingsPath, mergedSettings)
+}
+
 function shouldSkipAutomationForInstall(options: InstallIntegrationOptions): boolean {
   return options.scope === 'user' && !options.preview
 }
@@ -375,6 +404,12 @@ function resolveInstallPlan(assistant: string, options: InstallIntegrationOption
             target: '.trae/skills/inspecto-onboarding/SKILL.md',
             localSource: 'skills/inspecto-onboarding-trae/SKILL.md',
           },
+          {
+            source: `${REPO_RAW_BASE}/skills/inspecto-onboarding-trae/scripts/run-inspecto.sh`,
+            target: '.trae/skills/inspecto-onboarding/scripts/run-inspecto.sh',
+            localSource: 'skills/inspecto-onboarding-trae/scripts/run-inspecto.sh',
+            executable: true,
+          },
         ],
         successMessage: 'Installed Trae skill to .trae/skills/inspecto-onboarding/SKILL.md',
         nextStep: 'Open a new Trae chat and verify the inspecto-onboarding skill is available.',
@@ -384,11 +419,17 @@ function resolveInstallPlan(assistant: string, options: InstallIntegrationOption
         assets: [
           {
             source: `${REPO_RAW_BASE}/skills/inspecto-onboarding-trae/SKILL.md`,
-            target: '.traecli/skills/inspecto-onboarding/SKILL.md',
+            target: '.trae/skills/inspecto-onboarding/SKILL.md',
             localSource: 'skills/inspecto-onboarding-trae/SKILL.md',
           },
+          {
+            source: `${REPO_RAW_BASE}/skills/inspecto-onboarding-trae/scripts/run-inspecto.sh`,
+            target: '.trae/skills/inspecto-onboarding/scripts/run-inspecto.sh',
+            localSource: 'skills/inspecto-onboarding-trae/scripts/run-inspecto.sh',
+            executable: true,
+          },
         ],
-        successMessage: 'Installed Coco skill to .traecli/skills/inspecto-onboarding/SKILL.md',
+        successMessage: 'Installed Coco skill to .trae/skills/inspecto-onboarding/SKILL.md',
         nextStep: 'Start a new Coco session.',
       }
     default:

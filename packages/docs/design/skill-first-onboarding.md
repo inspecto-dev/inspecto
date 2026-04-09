@@ -28,7 +28,7 @@ Inspecto onboarding is now designed as **assistant-first UX + CLI-as-engine**:
 Preferred assistant/runtime flow:
 
 1. Run `inspecto onboard --json`
-2. If `status = needs_target_selection`, rerun with `--target <packagePath>`
+2. If `status = needs_target_selection`, rerun with `--target <candidateId>` using one of the returned target candidates
 3. If `status = needs_confirmation`, show summary and rerun with `--yes`
 4. If `status = error`, run `inspecto doctor --json`
 

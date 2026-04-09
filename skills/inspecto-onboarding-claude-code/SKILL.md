@@ -17,7 +17,7 @@ Use Inspecto's structured CLI flow instead of hand-editing project files.
 ## Workflow
 
 1. Run `scripts/run-inspecto.sh onboard --json`.
-2. If the result returns `status: "needs_target_selection"`, show the target `candidates`, ask the user which app/package to use, then rerun with `--target <packagePath>`.
+2. If the result returns `status: "needs_target_selection"`, explain that this step chooses which local development build target should receive the Inspecto plugin and settings. Show the target `candidates`, ask the user which exact candidate to use, then rerun with `--target <candidateId>`, preferring the explicit `candidateId` field. The CLI also accepts a returned `configPath` as a compatibility fallback. Do not collapse the user's choice back to a package path when the same package has multiple build configs.
 3. If the result returns `status: "needs_confirmation"`, summarize `summary.headline`, `summary.changes`, `summary.risks`, and `summary.manualFollowUp`, then ask for approval before rerunning with `--yes`.
 4. If the user explicitly asked to see the plan before any changes, stop after the `needs_confirmation` summary and wait for approval.
 5. If the result returns `status: "partial_success"` and `diagnostics.nextSteps` includes IDE extension installation, treat that as a blocking onboarding follow-up. Do not move on to dev-server validation until the extension is installed automatically or the user confirms they completed the manual install.

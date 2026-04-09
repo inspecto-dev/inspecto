@@ -5,7 +5,7 @@ This page is kept for backward compatibility.
 Inspecto's recommended machine-readable onboarding contract is now single-entry:
 
 1. `inspecto onboard --json`
-2. if `status` is `needs_target_selection`, rerun with `--target <packagePath>`
+2. 如果 `status` 是 `needs_target_selection`，先说明这一步是在选择要接入 Inspecto 的本地开发构建目标，然后使用返回结果中的某个 candidate id 带上 `--target <candidateId>` 重新运行。CLI 也兼容接受返回里的 `configPath` 作为兜底值。
 3. if `status` is `needs_confirmation`, rerun with `--yes`
 4. use `inspecto doctor --json` only when onboarding returns `error` or unresolved diagnostics
 

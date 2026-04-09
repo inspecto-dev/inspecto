@@ -20,7 +20,7 @@ Inspecto 负责连接你的浏览器和 AI 助手。根据你的 AI 工具架构
 如果你在开发自己的 agent/runtime 集成，请直接使用结构化的 onboarding 流程：
 
 1. 运行 `inspecto onboard --json`
-2. 如果 `status` 是 `needs_target_selection`，带上 `--target <packagePath>` 重新运行
+2. 如果 `status` 是 `needs_target_selection`，先说明这一步是在选择要接入 Inspecto 的本地开发构建目标，然后使用返回结果中的某个 candidate id 带上 `--target <candidateId>` 重新运行。CLI 也兼容接受返回里的 `configPath` 作为兜底值。
 3. 如果 `status` 是 `needs_confirmation`，确认计划的变更后带上 `--yes` 重新运行
 4. 首先完成必选的 `ideExtension` 步骤（如果可能就自动安装，否则展示安装链接/命令）
 5. 然后遵循 `verification` 指导来重启 dev-server，或提示用户手动验证

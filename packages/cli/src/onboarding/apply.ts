@@ -91,13 +91,16 @@ function resultStatus(nextSteps: string[]): CommandStatus {
   return nextSteps.length > 0 ? 'warning' : 'ok'
 }
 
-function manualPlanSteps(plan: PlanResult): string[] {
-  return [
-    ...plan.blockers.map(blocker => blocker.message),
-    ...plan.actions
-      .filter(action => action.type === 'manual_step')
-      .map(action => action.description),
-  ]
+function manualPlanSteps(plan: PlanResult, includeBlockers = true): string[] {
+  const steps = plan.actions
+    .filter(action => action.type === 'manual_step')
+    .map(action => action.description)
+
+  if (!includeBlockers) {
+    return steps
+  }
+
+  return [...plan.blockers.map(blocker => blocker.message), ...steps]
 }
 
 export async function applyOnboardingPlan(
@@ -163,6 +166,10 @@ async function applyOnboardingPlanInternal(
   input: ApplyOnboardingInput,
 ): Promise<ApplyOnboardingResult> {
   const reporter = createReporter(input.options.quiet)
+  const additiveManualPlan =
+    input.plan?.strategy === 'manual' &&
+    input.allowManualPlanApply &&
+    input.plan.blockers.length === 0
 
   if (input.plan && input.plan.strategy !== 'supported' && !input.allowManualPlanApply) {
     return {
@@ -172,7 +179,7 @@ async function applyOnboardingPlanInternal(
         installFailed: false,
         injectionFailed: false,
         manualExtensionInstallNeeded: false,
-        nextSteps: manualPlanSteps(input.plan),
+        nextSteps: manualPlanSteps(input.plan, true),
       },
     }
   }
@@ -217,17 +224,19 @@ async function applyOnboardingPlanInternal(
   }
 
   let injectionFailed = Boolean(input.injectionSkippedRequiresManualConfig)
-  for (const target of input.supportedBuildTargets) {
-    const result = await injectPlugin(
-      input.repoRoot,
-      target,
-      input.options.dryRun,
-      input.options.quiet ?? false,
-    )
-    if (result.success) {
-      mutations.push(...result.mutations)
-    } else {
-      injectionFailed = true
+  if (!additiveManualPlan) {
+    for (const target of input.supportedBuildTargets) {
+      const result = await injectPlugin(
+        input.repoRoot,
+        target,
+        input.options.dryRun,
+        input.options.quiet ?? false,
+      )
+      if (result.success) {
+        mutations.push(...result.mutations)
+      } else {
+        injectionFailed = true
+      }
     }
   }
 
@@ -238,7 +247,40 @@ async function applyOnboardingPlanInternal(
       reporter.hint('Please fix the syntax errors manually, or delete it and re-run init')
       nextSteps.push(`Fix .inspecto/${settingsFileName} or delete it and rerun Inspecto setup.`)
     } else {
-      reporter.success(`.inspecto/${settingsFileName} already exists (skipped)`)
+      const mergedSettings =
+        existingSettings && typeof existingSettings === 'object'
+          ? { ...(existingSettings as Record<string, unknown>) }
+          : {}
+      let settingsChanged = false
+
+      if (input.selectedIDE?.supported && !mergedSettings.ide) {
+        mergedSettings.ide =
+          input.selectedIDE.ide.toLowerCase() === 'vscode'
+            ? 'vscode'
+            : input.selectedIDE.ide.toLowerCase()
+        settingsChanged = true
+      }
+
+      if (input.providerDefault && !mergedSettings['provider.default']) {
+        mergedSettings['provider.default'] = input.providerDefault
+        settingsChanged = true
+      }
+
+      if (settingsChanged) {
+        if (input.options.dryRun) {
+          reporter.dryRun(`Would update .inspecto/${settingsFileName}`)
+        } else {
+          await writeJSON(settingsPath, mergedSettings)
+          reporter.success(`Updated .inspecto/${settingsFileName} with missing defaults`)
+          mutations.push({
+            type: 'file_modified',
+            path: `.inspecto/${settingsFileName}`,
+            description: 'Merged missing Inspecto defaults into existing settings',
+          })
+        }
+      } else {
+        reporter.success(`.inspecto/${settingsFileName} already exists (skipped)`)
+      }
     }
   } else {
     const defaultSettings: Record<string, unknown> = {}
@@ -339,6 +381,9 @@ async function applyOnboardingPlanInternal(
     }
     if (manualExtensionInstallNeeded) {
       nextSteps.push('Install the Inspecto IDE extension manually')
+    }
+    if (additiveManualPlan && input.plan) {
+      nextSteps.push(...manualPlanSteps(input.plan, false))
     }
     if (input.manualConfigRequiredFor === 'Nuxt') {
       nextSteps.push(

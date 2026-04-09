@@ -113,7 +113,7 @@ bunx @inspecto-dev/cli@latest init
 如果你在开发自己的 skill、规则文件或 agent runtime，请优先使用单入口命令：
 
 1. `inspecto onboard --json`
-2. 如果 `status` 是 `needs_target_selection`，使用 `--target <packagePath>` 重试
+2. 如果 `status` 是 `needs_target_selection`，先说明这一步是在选择要接入 Inspecto 的本地开发构建目标，再使用返回结果中的某个 candidate id 带上 `--target <candidateId>` 重试。CLI 也兼容接受返回里的 `configPath` 作为兜底值。
 3. 如果 `status` 是 `needs_confirmation`，确认计划内容后，用 `--yes` 重试
 4. 将 `ideExtension` 视为必选步骤：可自动安装就自动安装，失败则在验证 dev server 前给出命令/链接引导
 5. IDE 插件设置完成后，再根据 `verification` 载荷自动重启 dev server，或提示用户手动验证

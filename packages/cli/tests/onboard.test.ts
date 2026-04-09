@@ -68,6 +68,101 @@ describe('target resolution', () => {
     expect(resolution.status).toBe('resolved')
     expect(resolution.selected?.packagePath).toBe('apps/web')
   })
+
+  it('requires explicit selection when one package has multiple supported build configs', () => {
+    const resolution = resolveOnboardingTarget({
+      repoRoot: '/repo',
+      buildTools: [
+        {
+          tool: 'vite',
+          configPath: 'finder/vite.config.mts',
+          label: 'Vite (finder/vite.config.mts)',
+          packagePath: 'finder',
+        },
+        {
+          tool: 'rspack',
+          configPath: 'finder/rspack-config/rspack.config.dev.ts',
+          label: 'Rspack (finder/rspack-config/rspack.config.dev.ts)',
+          packagePath: 'finder',
+          isLegacyRspack: true,
+        },
+      ],
+      frameworkSupportByPackage: {
+        finder: ['react'],
+      },
+    })
+
+    expect(resolution.status).toBe('needs_selection')
+    expect(resolution.candidates).toHaveLength(2)
+    expect(new Set(resolution.candidates.map(item => item.id)).size).toBe(2)
+    expect(new Set(resolution.candidates.map(item => item.candidateId)).size).toBe(2)
+    expect(resolution.candidates.map(item => item.configPath)).toEqual([
+      'finder/vite.config.mts',
+      'finder/rspack-config/rspack.config.dev.ts',
+    ])
+    expect(resolution.selectionPurpose).toContain('build target')
+    expect(resolution.selectionInstructions).toContain('--target <candidateId>')
+  })
+
+  it('resolves an explicitly selected build target by candidate id', () => {
+    const resolution = resolveOnboardingTarget({
+      repoRoot: '/repo',
+      buildTools: [
+        {
+          tool: 'vite',
+          configPath: 'finder/vite.config.mts',
+          label: 'Vite (finder/vite.config.mts)',
+          packagePath: 'finder',
+        },
+        {
+          tool: 'rspack',
+          configPath: 'finder/rspack-config/rspack.config.dev.ts',
+          label: 'Rspack (finder/rspack-config/rspack.config.dev.ts)',
+          packagePath: 'finder',
+          isLegacyRspack: true,
+        },
+      ],
+      frameworkSupportByPackage: {
+        finder: ['react'],
+      },
+      selectedPackagePath: 'finder:rspack:finder/rspack-config/rspack.config.dev.ts',
+    })
+
+    expect(resolution.status).toBe('resolved')
+    expect(resolution.selected?.buildTool).toBe('rspack')
+    expect(resolution.selected?.configPath).toBe('finder/rspack-config/rspack.config.dev.ts')
+    expect(resolution.selected?.isLegacyRspack).toBe(true)
+  })
+
+  it('resolves an explicitly selected build target by config path for root-level candidates', () => {
+    const resolution = resolveOnboardingTarget({
+      repoRoot: '/repo',
+      buildTools: [
+        {
+          tool: 'webpack',
+          configPath: 'webpack.config.common.js',
+          label: 'Webpack (webpack.config.common.js)',
+          packagePath: '',
+          isLegacyWebpack: true,
+        },
+        {
+          tool: 'webpack',
+          configPath: 'webpack.dll.config.js',
+          label: 'Webpack (webpack.dll.config.js)',
+          packagePath: '',
+          isLegacyWebpack: true,
+        },
+      ],
+      frameworkSupportByPackage: {
+        '': ['react'],
+      },
+      selectedPackagePath: 'webpack.config.common.js',
+    })
+
+    expect(resolution.status).toBe('resolved')
+    expect(resolution.selected?.configPath).toBe('webpack.config.common.js')
+    expect(resolution.selected?.buildTool).toBe('webpack')
+  })
 })
 
 describe('onboard command', () => {

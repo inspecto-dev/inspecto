@@ -113,7 +113,7 @@ If highlighting works but nothing reaches your editor, confirm that the Inspecto
 If you are building your own skill, rule, or agent runtime, prefer the single-entry command:
 
 1. `inspecto onboard --json`
-2. If `status: needs_target_selection`, rerun with `--target <packagePath>`
+2. If `status: needs_target_selection`, explain that this step chooses which local development build target should receive Inspecto, then rerun with `--target <candidateId>` using one of the returned target candidates. The CLI also accepts a returned `configPath` as a compatibility fallback.
 3. If `status: needs_confirmation`, confirm the planned changes and rerun with `--yes`
 4. Treat `ideExtension` as required: auto-install when possible; otherwise guide users with command/link fallback before verification
 5. After extension setup, use the `verification` payload to restart the dev server automatically when possible, or prompt the user to verify manually
