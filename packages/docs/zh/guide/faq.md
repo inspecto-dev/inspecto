@@ -46,6 +46,23 @@ npx @inspecto-dev/cli integrations doctor <assistant> --host-ide <ide>
 
 - **需要手动配置**：虽然 CLI 很智能，但有些高度自定义的项目脚手架（比如复杂的 Monorepo 或自定义的 Vite / Webpack 配置）可能会导致代码注入失败。这时请参考官方文档，按照**“手动接入”**的步骤，自己在 `vite.config.ts` 或 `webpack.config.js` 等构建配置文件中引入插件即可。
 
-### 4. 生产环境（线上）会受到影响吗？
+### 4. 日志里出现 `Failed to launch URI...` 或 “No application knows how to open URL ...”？
+
+- **这通常不是某个 assistant 本身的问题，而是宿主 IDE 配置或 URI scheme 不匹配**：Inspecto 在发送上下文、打开聊天或跳转文件时，会依赖宿主 IDE 的 URI scheme。如果你的机器实际安装的是某个 IDE 变体，但当前配置或安装选择落成了另一个变体，系统就可能拒绝打开对应的 URI。
+- **典型例子是 `Trae` 和 `Trae CN` 混用**：如果机器上安装的是 `Trae CN`，但运行时解析成了 `trae`，Inspecto 就会尝试打开 `trae://...`，然后被操作系统拒绝。类似问题也可能发生在 VS Code 和 Cursor 等其他 IDE 变体上。
+- **先用 doctor 看当前解析结果**：在项目根目录运行 `npx @inspecto-dev/cli integrations doctor <assistant> --host-ide <ide> --json`，确认 `hostIde` 是否符合你的实际 IDE。
+- **显式锁定宿主 IDE**：如果你确认自己使用的是某个特定 IDE，请在 `.inspecto/settings.local.json` 或 `.inspecto/settings.json` 中显式设置 `ide`。例如你使用 `Trae CN` 时，可以写成：
+
+```json
+{
+  "ide": "trae-cn",
+  "provider.default": "coco.cli"
+}
+```
+
+- **改完后重启 IDE 和 Dev Server**：这样可以确保运行时重新读取配置，并生成符合预期的 URI scheme。
+- **如果仍然失败**：请手动执行对应 IDE 的 URI scheme 测试命令（macOS 例如 `open "<scheme>://"`），确认系统是否已经正确注册该 IDE。
+
+### 5. 生产环境（线上）会受到影响吗？
 
 - **完全不会**。Inspecto 的插件和代码注入逻辑**只在开发环境中起作用**。在打包生产环境产物时，它会自动跳过，不会产生任何运行时开销，也绝对不会影响线上的性能和安全。

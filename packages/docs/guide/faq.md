@@ -46,6 +46,23 @@ If `doctor` finds no anomalies but Inspecto still isn't working normally, please
 
 - **Manual configuration required**: Although the CLI is smart, highly customized project setups (like complex Monorepos or custom Vite/Webpack configs) might cause automated code injection to fail. In this case, please refer to the official documentation and follow the **"Manual Installation"** steps to introduce the plugin in your `vite.config.ts` or `webpack.config.js` manually.
 
-### 4. Will the production (live) environment be affected?
+### 4. Why do I see `Failed to launch URI...` or “No application knows how to open URL ...”?
+
+- **This is usually not an assistant-specific issue. It is typically a host IDE configuration or URI scheme mismatch**: Inspecto relies on the host IDE's URI scheme when sending context, opening chat, or jumping to files. If the machine has one IDE variant installed but runtime resolves to another variant, the operating system may reject the URI.
+- **A common example is mixing up `Trae` and `Trae CN`**: if the machine has `Trae CN` installed but runtime resolves to `trae`, Inspecto will try to open `trae://...` and macOS will reject it. The same pattern can occur with VS Code and Cursor IDE variants as well.
+- **Use doctor to inspect the resolved host IDE**: Run `npx @inspecto-dev/cli integrations doctor <assistant> --host-ide <ide> --json` from the project root and confirm that `hostIde` matches the IDE you actually use.
+- **Pin the host IDE explicitly**: If you know which IDE variant you are using, set `ide` explicitly in `.inspecto/settings.local.json` or `.inspecto/settings.json`. For example, if you use `Trae CN`:
+
+```json
+{
+  "ide": "trae-cn",
+  "provider.default": "coco.cli"
+}
+```
+
+- **Restart the IDE and dev server after updating the config**: This ensures runtime picks up the new value and emits the expected URI scheme.
+- **If it still fails**: Run the matching URI scheme test for your IDE on macOS, for example `open "<scheme>://"` to verify that the operating system has registered that IDE correctly.
+
+### 5. Will the production (live) environment be affected?
 
 - **Not at all**. Inspecto's plugins and code injection logic **only operate in the development environment**. When bundling for production, it is automatically skipped, causing zero runtime overhead and absolutely no impact on production performance or security.

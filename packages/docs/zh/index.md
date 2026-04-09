@@ -34,6 +34,18 @@ features:
     details: '无缝支持 Vite、Webpack、Rspack、Rollup、esbuild、Next.js 以及 Nuxt 等主流构建工具与框架。'
 ---
 
+## 看一看实际效果
+
+<video controls playsinline muted preload="metadata" style="width: 100%; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18); margin: 8px 0 24px; box-sizing: border-box;">
+  <source :src="'/inspecto/demo/inspecto.mov'" type="video/quicktime" />
+  <source :src="'/inspecto/demo/inspecto.mov'" />
+  当前浏览器不支持直接播放，可<a :href="'/inspecto/demo/inspecto.mov'">点此下载视频</a>。
+</video>
+
+## 为什么选择 Inspecto？
+
+<img :src="'/inspecto/inspecto-workflow.png'" alt="Traditional vs Inspecto Workflow" style="width: 100%; border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.16); box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05); margin: 16px 0 48px;" />
+
 ## 三种工作流
 
 <script setup>
@@ -44,29 +56,25 @@ import HeroArchitecture from '../components/HeroArchitecture.vue'
 
 <div class="mode-grid">
   <div class="mode-card">
-    <img :src="'/inspecto/inspect-mode.png'" alt="Inspect mode screenshot" />
+    <img :src="'/inspecto/inspect-mode.gif'" alt="Inspect mode workflow" />
     <h3>Inspect mode</h3>
     <p>Inspect 单个组件，自动附带准确上下文，然后立即唤起 AI 提问。</p>
   </div>
   <div class="mode-card">
-    <img :src="'/inspecto/annotate-mode.png'" alt="Annotate mode screenshot" />
+    <img :src="'/inspecto/annotate-mode.gif'" alt="Annotate mode workflow" />
     <h3>Annotate mode</h3>
     <p>跨多个组件圈选多条修改意见，补充一个整体目标，再一次性打包发给 AI。</p>
   </div>
   <div class="mode-card">
-    <img :src="'/inspecto/quick-jump.png'" alt="Quick jump screenshot" />
+    <img :src="'/inspecto/quick-jump.gif'" alt="Quick jump workflow" />
     <h3>Quick jump</h3>
     <p>按住 <code>Alt + 点击</code> 页面元素，瞬间在编辑器中打开准确的源码位置，告别手动搜索。</p>
   </div>
 </div>
 
-## 看一看实际效果
+## 丰富的生态集成
 
-<video controls playsinline muted preload="metadata" style="width: 100%; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18); margin: 8px 0 24px; box-sizing: border-box;">
-  <source :src="'/inspecto/demo/inspecto.mov'" type="video/quicktime" />
-  <source :src="'/inspecto/demo/inspecto.mov'" />
-  当前浏览器不支持直接播放，可<a :href="'/inspecto/demo/inspecto.mov'">点此下载视频</a>。
-</video>
+<img :src="'/inspecto/inspecto-ecosystem.png'" alt="Inspecto Ecosystem and Integrations" style="width: 100%; border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.16); box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05); margin: 16px 0 48px;" />
 
 <div class="home-grid">
   <div class="home-panel">

@@ -55,9 +55,22 @@ export default defineConfig({
 
 ### Webpack
 
+The plugin supports both Webpack 5 (default) and Webpack 4.
+
 ```javascript
-// webpack.config.js
+// webpack.config.js (Webpack 5)
 const { webpackPlugin: inspecto } = require('@inspecto-dev/plugin')
+
+module.exports = {
+  plugins: [inspecto()],
+}
+```
+
+If you are using **Webpack 4** (e.g. older Vue CLI or CRA projects), import the legacy plugin instead:
+
+```javascript
+// webpack.config.js (Webpack 4)
+const { webpackPlugin: inspecto } = require('@inspecto-dev/plugin/legacy/webpack4')
 
 module.exports = {
   plugins: [inspecto()],
@@ -66,9 +79,22 @@ module.exports = {
 
 ### Rspack / Rsbuild
 
+The plugin supports modern Rspack versions out of the box.
+
 ```typescript
 // rspack.config.ts
 import { rspackPlugin as inspecto } from '@inspecto-dev/plugin'
+
+export default {
+  plugins: [inspecto()],
+}
+```
+
+If you are using an older version of Rspack (e.g., `< 0.4.x`) that does not fully support the new AST transformation APIs, import the legacy loader-based plugin:
+
+```typescript
+// rspack.config.ts (Older Rspack versions)
+import { rspackPlugin as inspecto } from '@inspecto-dev/plugin/legacy/rspack'
 
 export default {
   plugins: [inspecto()],
@@ -80,6 +106,21 @@ export default {
 Unlike assistant-first onboarding or `inspecto init`, manual installation does not manage the IDE plugin for you. **You must install the Inspecto companion extension for your editor yourself.** Without this extension, the browser will not be able to send code to your IDE.
 
 Please refer to the [IDE Extensions Guide](../integrations/ide.md) for instructions on installing the plugin in VS Code, Cursor, or Trae.
+
+## 4. Configure Project Settings
+
+Because you skipped the automated `init` CLI, Inspecto does not know which AI assistant or IDE you are using. You need to create a configuration file manually in your project root.
+
+Create a file named `.inspecto/settings.local.json` and add the following config (adjust the `ide` and `provider.default` fields to match your actual environment):
+
+```json
+{
+  "ide": "vscode",
+  "provider.default": "copilot.extension"
+}
+```
+
+> **Important**: After making these changes, remember to **restart your development server** so that the Inspecto plugin can pick up your custom settings.
 
 ---
 
