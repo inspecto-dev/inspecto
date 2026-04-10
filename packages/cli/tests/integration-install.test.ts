@@ -16,6 +16,8 @@ const logMock = {
   blank: vi.fn(),
 }
 const runIntegrationAutomationMock = vi.fn()
+const resolveIntegrationHostIdeMock = vi.fn()
+const resolveIntegrationDispatchModeMock = vi.fn()
 
 vi.mock('../src/utils/fs.js', () => ({
   writeFile: writeFileMock,
@@ -42,6 +44,14 @@ vi.mock('../src/commands/integration-automation.js', () => ({
   runIntegrationAutomation: runIntegrationAutomationMock,
 }))
 
+vi.mock('../src/commands/integration-host-ide.js', () => ({
+  resolveIntegrationHostIde: resolveIntegrationHostIdeMock,
+}))
+
+vi.mock('../src/commands/integration-dispatch-mode.js', () => ({
+  resolveIntegrationDispatchMode: resolveIntegrationDispatchModeMock,
+}))
+
 describe('integration install', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -61,6 +71,17 @@ describe('integration install', () => {
     runIntegrationAutomationMock.mockResolvedValue({
       status: 'launched',
       message: 'Onboarding launched in Cursor for Codex.',
+    })
+    resolveIntegrationHostIdeMock.mockResolvedValue({
+      ide: 'cursor',
+      source: 'explicit',
+      confidence: 'high',
+      candidates: ['cursor'],
+    })
+    resolveIntegrationDispatchModeMock.mockResolvedValue({
+      mode: 'extension',
+      ready: true,
+      reason: 'cursor_codex_extension',
     })
   })
 
@@ -177,13 +198,15 @@ describe('integration install', () => {
 
     expect(writeJSONMock).toHaveBeenCalledWith('/repo/.inspecto/settings.local.json', {
       ide: 'trae-cn',
+      'provider.default': 'gemini.extension',
     })
   })
 
-  it('merges the explicit host ide into existing local settings without dropping other keys', async () => {
+  it('updates the project host ide and provider.default to the selected assistant without dropping other keys', async () => {
     readJSONMock.mockResolvedValue({
       ide: 'trae',
       'provider.default': 'coco.cli',
+      'prompt.autoSend': true,
     })
 
     const { installIntegration } = await import('../src/commands/integration-install.js')
@@ -192,7 +215,19 @@ describe('integration install', () => {
 
     expect(writeJSONMock).toHaveBeenCalledWith('/repo/.inspecto/settings.local.json', {
       ide: 'trae-cn',
-      'provider.default': 'coco.cli',
+      'provider.default': 'gemini.extension',
+      'prompt.autoSend': true,
+    })
+  })
+
+  it('persists the selected assistant as provider.default so onboarding does not fall back to another detected tool', async () => {
+    const { installIntegration } = await import('../src/commands/integration-install.js')
+
+    await installIntegration('codex', { ide: 'cursor' })
+
+    expect(writeJSONMock).toHaveBeenCalledWith('/repo/.inspecto/settings.local.json', {
+      ide: 'cursor',
+      'provider.default': 'codex.extension',
     })
   })
 

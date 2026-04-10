@@ -6,7 +6,15 @@ import { exists, readJSON, writeFile, writeJSON } from '../utils/fs.js'
 import { log } from '../utils/logger.js'
 import { writeCommandOutput } from '../utils/output.js'
 import { runIntegrationAutomation } from './integration-automation.js'
+import { resolveIntegrationDispatchMode } from './integration-dispatch-mode.js'
+import { resolveIntegrationHostIde } from './integration-host-ide.js'
 import { isSupportedHostIde, type SupportedHostIde } from '../integrations/capabilities.js'
+import {
+  DEFAULT_PROVIDER_MODE,
+  VALID_MODES,
+  type Provider,
+  type ProviderMode,
+} from '@inspecto-dev/types'
 
 const REPO_RAW_BASE = 'https://raw.githubusercontent.com/inspecto-dev/inspecto/main'
 const TOTAL_STEPS = 6
@@ -58,6 +66,7 @@ interface InstallPlan {
 
 interface InspectoSettingsShape {
   ide?: string
+  'provider.default'?: string
   [key: string]: unknown
 }
 
@@ -200,8 +209,8 @@ export async function installIntegration(
     }
   }
 
-  if (shouldPersistHostIdeSetting(options)) {
-    await persistHostIdeSetting(options.ide!)
+  if (shouldPersistProjectOnboardingDefaults(options)) {
+    await persistProjectOnboardingDefaults(assistant as AssistantId, options)
   }
 
   const stepOneMessage = options.preview
@@ -302,7 +311,7 @@ export async function installIntegration(
   return result
 }
 
-function shouldPersistHostIdeSetting(
+function shouldPersistProjectOnboardingDefaults(
   options: InstallIntegrationOptions,
 ): options is InstallIntegrationOptions & { ide: SupportedHostIde } {
   return (
@@ -310,13 +319,58 @@ function shouldPersistHostIdeSetting(
   )
 }
 
-async function persistHostIdeSetting(ide: SupportedHostIde): Promise<void> {
+function isProviderAssistant(value: string): value is Provider {
+  return Object.prototype.hasOwnProperty.call(VALID_MODES, value)
+}
+
+async function resolveProviderDefaultForAssistant(
+  assistant: AssistantId,
+  ide: SupportedHostIde,
+): Promise<string | undefined> {
+  if (!isProviderAssistant(assistant)) {
+    return undefined
+  }
+
+  let mode: ProviderMode | undefined
+  if (assistant === 'codex' || assistant === 'claude-code' || assistant === 'gemini') {
+    const dispatchMode = await resolveIntegrationDispatchMode({ assistant, hostIde: ide })
+    mode = dispatchMode.mode ?? DEFAULT_PROVIDER_MODE[assistant]
+  } else {
+    mode = DEFAULT_PROVIDER_MODE[assistant]
+  }
+
+  if (!mode || !VALID_MODES[assistant].includes(mode)) {
+    return undefined
+  }
+
+  return `${assistant}.${mode}`
+}
+
+async function persistProjectOnboardingDefaults(
+  assistant: AssistantId,
+  options: InstallIntegrationOptions & { ide: SupportedHostIde },
+): Promise<void> {
   const settingsPath = path.join(process.cwd(), '.inspecto', 'settings.local.json')
   const existingSettings = await readJSON<InspectoSettingsShape>(settingsPath)
+  const resolvedHostIde = await resolveIntegrationHostIde({
+    explicitIde: options.ide,
+    cwd: process.cwd(),
+  })
+  const providerDefault =
+    resolvedHostIde.ide && resolvedHostIde.confidence !== 'low'
+      ? await resolveProviderDefaultForAssistant(assistant, resolvedHostIde.ide)
+      : undefined
   const mergedSettings =
     existingSettings && typeof existingSettings === 'object'
-      ? { ...existingSettings, ide }
-      : { ide }
+      ? {
+          ...existingSettings,
+          ide: options.ide,
+          ...(providerDefault ? { 'provider.default': providerDefault } : {}),
+        }
+      : {
+          ide: options.ide,
+          ...(providerDefault ? { 'provider.default': providerDefault } : {}),
+        }
 
   await writeJSON(settingsPath, mergedSettings)
 }

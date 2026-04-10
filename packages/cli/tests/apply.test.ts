@@ -739,6 +739,41 @@ describe('apply onboarding flow', () => {
     })
   })
 
+  it('inherits root inspecto defaults when writing package-local settings for a selected subproject', async () => {
+    vi.mocked(fsUtils.exists).mockImplementation(async filePath => {
+      return filePath === '/repo/.inspecto/settings.local.json'
+    })
+    vi.mocked(fsUtils.readJSON).mockImplementation(async filePath => {
+      if (filePath === '/repo/.inspecto/settings.local.json') {
+        return {
+          ide: 'vscode',
+          'provider.default': 'codex.extension',
+        }
+      }
+      return null
+    })
+
+    await applyOnboardingPlan({
+      repoRoot: '/repo',
+      projectRoot: '/repo/finder',
+      packageManager: 'pnpm',
+      supportedBuildTargets: [],
+      options: {
+        shared: false,
+        skipInstall: true,
+        dryRun: false,
+        noExtension: true,
+      },
+      selectedIDE: { ide: 'cursor', supported: true },
+      providerDefault: 'codex.extension',
+    })
+
+    expect(fsUtils.writeJSON).toHaveBeenCalledWith('/repo/finder/.inspecto/settings.local.json', {
+      ide: 'vscode',
+      'provider.default': 'codex.extension',
+    })
+  })
+
   it('prints the same short 3-step success guide when apply finishes cleanly', async () => {
     const context: OnboardingContext = {
       root: '/repo',

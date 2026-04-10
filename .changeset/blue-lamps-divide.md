@@ -11,3 +11,4 @@ Improve Inspecto onboarding reliability across assistant integrations.
 - improve webpack and rspack config detection, including wrapper-script resolution
 - support legacy Rspack and Webpack 4 onboarding with explicit manual follow-up
 - persist configured host IDE into project settings and clarify doctor precedence on IDE mismatches
+- preserve selected host IDE and assistant provider defaults when onboarding a subproject target

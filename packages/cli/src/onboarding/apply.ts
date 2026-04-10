@@ -50,6 +50,46 @@ interface ApplySpinner {
   fail(text: string): void
 }
 
+function normalizeSupportedIde(ide?: string): string | undefined {
+  if (!ide) return undefined
+  return ide.toLowerCase() === 'vscode' ? 'vscode' : ide.toLowerCase()
+}
+
+async function readInheritedSettingsDefaults(
+  repoRoot: string,
+  projectRoot: string,
+  settingsFileName: string,
+): Promise<{ ide?: string; providerDefault?: string }> {
+  if (path.resolve(repoRoot) === path.resolve(projectRoot)) {
+    return {}
+  }
+
+  const inheritedSettingsPath = path.join(repoRoot, '.inspecto', settingsFileName)
+  if (!(await exists(inheritedSettingsPath))) {
+    return {}
+  }
+
+  const inheritedSettings = await readJSON<Record<string, unknown>>(inheritedSettingsPath)
+  if (!inheritedSettings || typeof inheritedSettings !== 'object') {
+    return {}
+  }
+
+  const inheritedDefaults: { ide?: string; providerDefault?: string } = {}
+
+  if (typeof inheritedSettings.ide === 'string') {
+    const normalizedIde = normalizeSupportedIde(inheritedSettings.ide)
+    if (normalizedIde) {
+      inheritedDefaults.ide = normalizedIde
+    }
+  }
+
+  if (typeof inheritedSettings['provider.default'] === 'string') {
+    inheritedDefaults.providerDefault = inheritedSettings['provider.default']
+  }
+
+  return inheritedDefaults
+}
+
 export interface ApplyOnboardingResult {
   status: CommandStatus
   mutations: Mutation[]
@@ -190,6 +230,11 @@ async function applyOnboardingPlanInternal(
   const promptsFileName = input.options.shared ? 'prompts.json' : 'prompts.local.json'
   const settingsPath = path.join(settingsDir, settingsFileName)
   const promptsPath = path.join(settingsDir, promptsFileName)
+  const inheritedDefaults = await readInheritedSettingsDefaults(
+    input.repoRoot,
+    input.projectRoot,
+    settingsFileName,
+  )
   const runtimePackages = resolveRuntimePackages()
   const installCmd = getInstallCommand(input.packageManager, runtimePackages.installSpec)
   const nextSteps: string[] = []
@@ -253,16 +298,18 @@ async function applyOnboardingPlanInternal(
           : {}
       let settingsChanged = false
 
-      if (input.selectedIDE?.supported && !mergedSettings.ide) {
-        mergedSettings.ide =
-          input.selectedIDE.ide.toLowerCase() === 'vscode'
-            ? 'vscode'
-            : input.selectedIDE.ide.toLowerCase()
+      const desiredIde =
+        inheritedDefaults.ide ??
+        (input.selectedIDE?.supported ? normalizeSupportedIde(input.selectedIDE.ide) : undefined)
+
+      if (desiredIde && !mergedSettings.ide) {
+        mergedSettings.ide = desiredIde
         settingsChanged = true
       }
 
-      if (input.providerDefault && !mergedSettings['provider.default']) {
-        mergedSettings['provider.default'] = input.providerDefault
+      const desiredProviderDefault = inheritedDefaults.providerDefault ?? input.providerDefault
+      if (desiredProviderDefault && !mergedSettings['provider.default']) {
+        mergedSettings['provider.default'] = desiredProviderDefault
         settingsChanged = true
       }
 
@@ -284,16 +331,17 @@ async function applyOnboardingPlanInternal(
     }
   } else {
     const defaultSettings: Record<string, unknown> = {}
+    const desiredIde =
+      inheritedDefaults.ide ??
+      (input.selectedIDE?.supported ? normalizeSupportedIde(input.selectedIDE.ide) : undefined)
+    const desiredProviderDefault = inheritedDefaults.providerDefault ?? input.providerDefault
 
-    if (input.selectedIDE?.supported) {
-      defaultSettings.ide =
-        input.selectedIDE.ide.toLowerCase() === 'vscode'
-          ? 'vscode'
-          : input.selectedIDE.ide.toLowerCase()
+    if (desiredIde) {
+      defaultSettings.ide = desiredIde
     }
 
-    if (input.providerDefault) {
-      defaultSettings['provider.default'] = input.providerDefault
+    if (desiredProviderDefault) {
+      defaultSettings['provider.default'] = desiredProviderDefault
     }
 
     if (input.options.dryRun) {
