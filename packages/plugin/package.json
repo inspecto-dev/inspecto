@@ -1,6 +1,6 @@
 {
   "name": "@inspecto-dev/plugin",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Universal build tools plugin (Vite, Webpack, Rspack, Rollup, Esbuild) for Inspecto",
   "license": "MIT",
   "type": "module",

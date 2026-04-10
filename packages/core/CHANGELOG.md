@@ -1,5 +1,25 @@
 # @inspecto-dev/core
 
+## 0.3.4
+
+### Patch Changes
+
+- 58780b8: Improve Inspecto onboarding reliability across assistant integrations.
+  - add stable build target selection via candidate IDs
+  - improve webpack and rspack config detection, including wrapper-script resolution
+  - support legacy Rspack and Webpack 4 onboarding with explicit manual follow-up
+  - persist configured host IDE into project settings and clarify doctor precedence on IDE mismatches
+  - preserve selected host IDE and assistant provider defaults when onboarding a subproject target
+
+- a7cbda9: Improve inspect mode's `Fix UI` flow by attaching CSS context automatically.
+  - automatically include captured CSS context for the built-in `fix-ui` intent
+  - keep the header CSS toggle as an explicit override for non-UI intents
+  - add regression coverage to preserve the new intent-specific behavior
+
+- Updated dependencies [58780b8]
+- Updated dependencies [a7cbda9]
+  - @inspecto-dev/types@0.3.4
+
 ## 0.3.3
 
 ### Patch Changes
