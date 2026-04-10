@@ -18,6 +18,7 @@ import {
   formatRuntimeErrorCount,
   formatSourceAnchor,
   isFixIntent,
+  isFixUiIntent,
   showError,
 } from './menu-helpers.js'
 import {
@@ -352,8 +353,9 @@ export function showIntentMenu(
     }
   }
 
-  const resolveCssContextPrompt = (): string | null => {
-    if (!cssContextEnabled) return null
+  const resolveCssContextPrompt = (intent?: Pick<IntentConfig, 'id'>): string | null => {
+    const shouldAttachCssContext = cssContextEnabled || Boolean(intent && isFixUiIntent(intent))
+    if (!shouldAttachCssContext) return null
     try {
       return deps.captureCssContextPrompt?.() ?? null
     } catch {

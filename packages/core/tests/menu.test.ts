@@ -1087,6 +1087,89 @@ describe('Intent Menu DOM Interaction', () => {
     )
   })
 
+  it('automatically appends CSS context for the fix-ui intent without enabling the CSS header toggle', async () => {
+    const captureCssContextPrompt = vi.fn(
+      () =>
+        'Relevant CSS context:\n- button.primary\n  file=/src/App.tsx:10:5\n  computed: display=flex',
+    )
+
+    vi.mocked(http.fetchIdeInfo).mockResolvedValueOnce({
+      ide: 'vscode',
+      prompts: [
+        { id: 'fix-ui', label: 'Fix UI', aiIntent: 'fix', prompt: 'Fix UI issue' },
+        { id: 'explain', label: 'Explain Code', aiIntent: 'ask', prompt: 'Explain this code' },
+      ],
+    } as any)
+
+    showIntentMenu(
+      shadowRoot,
+      { file: '/src/App.tsx', line: 10, column: 5 },
+      100,
+      100,
+      {},
+      onCloseMock,
+      { captureCssContextPrompt },
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const cssToggle = shadowRoot.querySelector(
+      'button[aria-label="Attach CSS context"]',
+    ) as HTMLButtonElement | null
+    expect(cssToggle?.getAttribute('aria-pressed')).toBe('false')
+
+    const fixUiBtn = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Fix UI',
+    )
+    fixUiBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await new Promise(resolve => setTimeout(resolve, 130))
+
+    expect(captureCssContextPrompt).toHaveBeenCalledTimes(1)
+    expect(http.sendToAi).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        prompt: expect.stringContaining('Relevant CSS context:'),
+      }),
+    )
+
+    vi.mocked(http.sendToAi).mockClear()
+    captureCssContextPrompt.mockClear()
+
+    vi.mocked(http.fetchIdeInfo).mockResolvedValueOnce({
+      ide: 'vscode',
+      prompts: [
+        { id: 'fix-ui', label: 'Fix UI', aiIntent: 'fix', prompt: 'Fix UI issue' },
+        { id: 'explain', label: 'Explain Code', aiIntent: 'ask', prompt: 'Explain this code' },
+      ],
+    } as any)
+
+    showIntentMenu(
+      shadowRoot,
+      { file: '/src/App.tsx', line: 10, column: 5 },
+      100,
+      100,
+      {},
+      onCloseMock,
+      { captureCssContextPrompt },
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const explainBtn = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Explain Code',
+    )
+    explainBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await new Promise(resolve => setTimeout(resolve, 130))
+
+    expect(captureCssContextPrompt).not.toHaveBeenCalled()
+    expect(http.sendToAi).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        prompt: expect.not.stringContaining('Relevant CSS context:'),
+      }),
+    )
+  })
+
   it('includes runtime evidence in the final prompt when the bug icon is enabled and a real console.error was captured', async () => {
     const actualPromptModule = await vi.importActual<typeof import('../src/fix-bug-prompt.js')>(
       '../src/fix-bug-prompt.js',

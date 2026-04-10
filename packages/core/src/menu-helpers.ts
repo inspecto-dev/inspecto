@@ -69,6 +69,10 @@ export function isFixIntent(intent: Pick<IntentConfig, 'id' | 'aiIntent'>): bool
   return intent.aiIntent === 'fix'
 }
 
+export function isFixUiIntent(intent: Pick<IntentConfig, 'id'>): boolean {
+  return intent.id === 'fix-ui'
+}
+
 export function createRuntimeContextUi(
   runtimeContext: RuntimeContextEnvelope | null,
   options: InspectorOptions,
