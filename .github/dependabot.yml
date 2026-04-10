@@ -10,3 +10,8 @@ updates:
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
+    groups:
+      vue-all:
+        patterns:
+          - 'vue'
+          - '@vue/*'

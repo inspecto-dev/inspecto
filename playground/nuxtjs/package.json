@@ -14,7 +14,7 @@
     "@inspecto-dev/core": "workspace:*",
     "@inspecto-dev/plugin": "workspace:*",
     "nuxt": "latest",
-    "vue": "latest",
+    "vue": "^3.5.32",
     "vue-router": "latest"
   }
 }
