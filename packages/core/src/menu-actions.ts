@@ -7,6 +7,7 @@ import type {
 import { appendCssContextToPrompt } from './css-context.js'
 import { appendScreenshotContextToPrompt, buildPromptForIntent } from './fix-bug-prompt.js'
 import { fetchSnippet } from './http.js'
+import { isFixUiIntent } from './menu-helpers.js'
 import { menuItemClass } from './styles.js'
 
 export function createIntentActionButtons(input: {
@@ -18,7 +19,7 @@ export function createIntentActionButtons(input: {
     intent: Pick<IntentConfig, 'id' | 'aiIntent'>,
   ) => RuntimeContextEnvelope | null
   resolveScreenshotContext: () => Promise<ScreenshotContext | null>
-  resolveCssContextPrompt: () => string | null
+  resolveCssContextPrompt: (intent?: Pick<IntentConfig, 'id'>) => string | null
   onSend: (payload: {
     label: string
     button: HTMLButtonElement
@@ -53,7 +54,9 @@ export function createIntentActionButtons(input: {
 
         const requestRuntimeContext = input.resolveRuntimeContext(intent)
         const requestScreenshotContext = await input.resolveScreenshotContext()
-        const requestCssContextPrompt = input.resolveCssContextPrompt()
+        const requestCssContextPrompt = input.resolveCssContextPrompt(
+          isFixUiIntent(intent) ? intent : undefined,
+        )
         const prompt = appendCssContextToPrompt(
           appendScreenshotContextToPrompt(
             buildPromptForIntent(intent, input.location, snippetResult, requestRuntimeContext),
