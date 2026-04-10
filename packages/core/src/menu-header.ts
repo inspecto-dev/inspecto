@@ -24,8 +24,15 @@ export function createMenuHeaderDom(input: {
   headerCopy.style.display = 'flex'
   headerCopy.style.flexDirection = 'column'
   headerCopy.style.gap = '2px'
+  headerCopy.style.minWidth = '0'
+  headerCopy.style.flex = '1 1 auto'
 
   const title = document.createElement('strong')
+  title.style.display = 'block'
+  title.style.minWidth = '0'
+  title.style.whiteSpace = 'nowrap'
+  title.style.overflow = 'hidden'
+  title.style.textOverflow = 'ellipsis'
   title.textContent =
     input.targetLabel?.trim() || input.location.file.split('/').pop() || input.location.file
 

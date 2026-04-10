@@ -10,6 +10,7 @@ import type {
 } from '@inspecto-dev/types'
 import { openFile, fetchIdeInfo } from './http.js'
 import { applyIconToggleButtonState, createMenuHeaderDom } from './menu-header.js'
+import { resolveMenuPosition } from './menu-position.js'
 import {
   createAskInput,
   createMenuSection,
@@ -29,8 +30,6 @@ import {
   runtimeToggleBadgeClass,
   runtimeToggleClass,
 } from './styles.js'
-
-const MENU_WIDTH = 280
 
 const DISPLAY_NAMES: Record<Provider, string> = {
   copilot: 'GitHub Copilot',
@@ -72,6 +71,9 @@ export function showIntentMenu(
 
   const menu = document.createElement('div')
   menu.className = menuClass
+  menu.style.width = '304px'
+  menu.style.maxWidth = 'calc(100vw - 16px)'
+  menu.style.boxSizing = 'border-box'
 
   const {
     header,
@@ -180,9 +182,7 @@ export function showIntentMenu(
   const actionsSection = createMenuSection()
   menu.appendChild(actionsSection)
 
-  const viewportWidth = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
-  const safeWidth = viewportWidth > 0 ? viewportWidth : MENU_WIDTH
-  menu.style.left = `${Math.min(clickX, Math.max(safeWidth - MENU_WIDTH, 0))}px`
+  menu.style.left = `${clickX}px`
   menu.style.visibility = 'hidden'
   menu.style.display = 'block'
 
@@ -190,12 +190,18 @@ export function showIntentMenu(
 
   const updatePosition = () => {
     const rect = menu.getBoundingClientRect()
-    const viewportHeight = Math.max(
-      document.documentElement.clientHeight || 0,
-      window.innerHeight || 0,
-    )
-    const safeHeight = viewportHeight > 0 ? viewportHeight : rect.height + 16
-    menu.style.top = `${Math.min(clickY + 8, Math.max(safeHeight - rect.height - 8, 0))}px`
+    const { left: nextLeft, top: nextTop } = resolveMenuPosition({
+      clickX,
+      clickY,
+      menuRect: { width: rect.width, height: rect.height },
+      viewport: {
+        width: document.documentElement.clientWidth || window.innerWidth || 0,
+        height: document.documentElement.clientHeight || window.innerHeight || 0,
+      },
+    })
+
+    menu.style.left = `${nextLeft}px`
+    menu.style.top = `${nextTop}px`
   }
   updatePosition()
   menu.style.visibility = 'visible'
@@ -376,6 +382,7 @@ export function showIntentMenu(
       const built = await buildCustomInspectPrompt({
         location,
         ask: input.value.trim(),
+        targetLabel: deps.targetLabel,
         includeSnippet,
         maxSnippetLines,
         runtimeContext: requestRuntimeContext,

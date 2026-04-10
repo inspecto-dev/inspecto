@@ -55,7 +55,12 @@ export default function App() {
       <section className="hero panel">
         <div>
           <span className="hero-kicker">React + Vite playground</span>
-          <h1>Inspecto verification surface</h1>
+          <h1
+            className="document_docNavBar__L2vQJ document_hasDoc__jpd6x documentWithTOC
+  extremely_long_navigation_header_selector_that_should_wrap_properly"
+          >
+            Inspecto verification surface
+          </h1>
           <p className="hero-copy">
             Use this page to validate the real browser workflow: choose <strong>Inspect</strong> for
             one component, <strong>Annotate</strong> for batch notes, and use{' '}

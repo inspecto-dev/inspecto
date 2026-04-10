@@ -145,7 +145,9 @@ export const overlayMenuStyles = `
     border: 1px solid var(--inspecto-border-subtle);
     border-radius: var(--inspecto-radius-lg);
     padding: 10px;
-    min-width: 304px;
+    width: 304px;
+    max-width: calc(100vw - 16px);
+    box-sizing: border-box;
     box-shadow: var(--inspecto-shadow-floating);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     color: var(--inspecto-text-primary);

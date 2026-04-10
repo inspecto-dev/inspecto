@@ -73,6 +73,37 @@ describe('Overlay DOM Interaction', () => {
     expect(tooltip.textContent).toContain('/src/App.tsx:10:5') // source label
   })
 
+  it('truncates extremely long class names in the inspect tooltip', () => {
+    const { show } = createOverlay(shadowRoot)
+
+    const target = document.createElement('button')
+    target.className =
+      'document_docNavBar__L2vQJ document_hasDoc__jpd6x documentWithTOC extremely_long_navigation_header_selector_that_should_not_expand_the_tooltip_past_the_viewport'
+    document.body.appendChild(target)
+
+    target.getBoundingClientRect = () => ({
+      x: 100,
+      y: 200,
+      width: 120,
+      height: 40,
+      top: 200,
+      right: 220,
+      bottom: 240,
+      left: 100,
+      toJSON: () => {},
+    })
+
+    show(target, '/src/App.tsx:58:11')
+
+    const tooltip = shadowRoot.querySelector(`.${tooltipClass}`) as HTMLElement
+
+    expect(tooltip.textContent).toContain('.document_docNavBar__L2vQJ')
+    expect(tooltip.textContent).toContain('...')
+    expect(tooltip.textContent).not.toContain(
+      'extremely_long_navigation_header_selector_that_should_not_expand_the_tooltip_past_the_viewport',
+    )
+  })
+
   it('should hide overlay and tooltip when hide() is called', () => {
     const { show, hide } = createOverlay(shadowRoot)
 

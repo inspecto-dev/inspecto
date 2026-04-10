@@ -104,12 +104,14 @@ export function handleTrigger(ctx: unknown, event: MouseEvent): void {
   }
 
   if (state.shouldQuickJumpOnTrigger(event)) {
+    state.overlay.hide()
     state.cleanupMenu?.()
     state.cleanupMenu = null
     void openFile(loc)
     return
   }
 
+  state.overlay.hide()
   state.openInspectMenu(loc, event.clientX, event.clientY, target)
 }
 
