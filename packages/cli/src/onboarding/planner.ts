@@ -71,6 +71,31 @@ function buildToolBlockers(context: OnboardingContext): CommandMessage[] {
   return [message('missing-build-tool', 'No supported build tool detected')]
 }
 
+function buildToolWarnings(context: OnboardingContext): CommandMessage[] {
+  const warnings: CommandMessage[] = []
+
+  if (context.buildTools.supported.length === 1) {
+    const buildTool = context.buildTools.supported[0]!
+    if (buildTool.tool === 'rspack' && buildTool.isLegacyRspack) {
+      warnings.push(
+        message(
+          'legacy-rspack-requires-manual-config',
+          `Legacy Rspack detected at ${buildTool.configPath}. Inspecto must use the legacy Rspack plugin entry and manual config steps.`,
+        ),
+      )
+    } else if (buildTool.tool === 'webpack' && buildTool.isLegacyWebpack) {
+      warnings.push(
+        message(
+          'legacy-webpack4-requires-manual-config',
+          `Webpack 4 detected at ${buildTool.configPath}. Inspecto must use the legacy Webpack 4 plugin entry and manual config steps.`,
+        ),
+      )
+    }
+  }
+
+  return warnings
+}
+
 function frameworkBlockers(context: OnboardingContext): CommandMessage[] {
   if (context.frameworks.supported.length > 0) {
     return []
@@ -149,6 +174,36 @@ function manualBuildToolActions(context: OnboardingContext): PlanResult['actions
     ]
   }
 
+  const buildTool = context.buildTools.supported[0]
+  if (buildTool?.tool === 'rspack' && buildTool.isLegacyRspack) {
+    return [
+      {
+        type: 'install_dependency',
+        target: '@inspecto-dev/plugin @inspecto-dev/core',
+        description: `Install the Inspecto runtime packages with ${context.packageManager}.`,
+      },
+      {
+        type: 'manual_step',
+        target: buildTool.configPath,
+        description: `Update ${buildTool.configPath} to import \`rspackPlugin\` from \`@inspecto-dev/plugin/legacy/rspack\` and add it to the Rspack plugins array.`,
+      },
+    ]
+  }
+  if (buildTool?.tool === 'webpack' && buildTool.isLegacyWebpack) {
+    return [
+      {
+        type: 'install_dependency',
+        target: '@inspecto-dev/plugin @inspecto-dev/core',
+        description: `Install the Inspecto runtime packages with ${context.packageManager}.`,
+      },
+      {
+        type: 'manual_step',
+        target: buildTool.configPath,
+        description: `Update ${buildTool.configPath} to import \`webpackPlugin\` from \`@inspecto-dev/plugin/legacy/webpack4\` and add it to the Webpack plugins array.`,
+      },
+    ]
+  }
+
   return [
     {
       type: 'manual_step',
@@ -183,7 +238,10 @@ function manualFrameworkActions(context: OnboardingContext): PlanResult['actions
 
 export async function createDetectionResult(root: string): Promise<DetectionResult> {
   const context = await buildOnboardingContext(root)
-  const warnings = uniqueMessages([...unsupportedEnvironmentWarnings(context)])
+  const warnings = uniqueMessages([
+    ...unsupportedEnvironmentWarnings(context),
+    ...buildToolWarnings(context),
+  ])
 
   const buildToolResult = buildToolBlockers(context)
   const frameworkResult = frameworkBlockers(context)
@@ -209,18 +267,36 @@ export async function createDetectionResult(root: string): Promise<DetectionResu
 }
 
 export function createPlanResult(context: OnboardingContext): PlanResult {
-  const warnings = uniqueMessages(unsupportedEnvironmentWarnings(context))
+  const warnings = uniqueMessages([
+    ...unsupportedEnvironmentWarnings(context),
+    ...buildToolWarnings(context),
+  ])
   const blockers = uniqueMessages([...buildToolBlockers(context), ...frameworkBlockers(context)])
   const actions: PlanResult['actions'] = []
 
   let strategy: PlanResult['strategy'] = 'supported'
 
-  if (blockers.length > 0) {
+  const hasLegacyRspackManualPlan =
+    context.buildTools.supported.length === 1 &&
+    context.buildTools.supported[0]?.tool === 'rspack' &&
+    context.buildTools.supported[0]?.isLegacyRspack
+  const hasLegacyWebpackManualPlan =
+    context.buildTools.supported.length === 1 &&
+    context.buildTools.supported[0]?.tool === 'webpack' &&
+    context.buildTools.supported[0]?.isLegacyWebpack
+
+  if (blockers.length > 0 || hasLegacyRspackManualPlan || hasLegacyWebpackManualPlan) {
     strategy = 'manual'
     if (
       context.buildTools.unsupported.length > 0 ||
       context.buildTools.supported.length === 0 ||
-      context.buildTools.supported.length > 1
+      context.buildTools.supported.length > 1 ||
+      context.buildTools.supported.some(
+        buildTool => buildTool.tool === 'rspack' && buildTool.isLegacyRspack,
+      ) ||
+      context.buildTools.supported.some(
+        buildTool => buildTool.tool === 'webpack' && buildTool.isLegacyWebpack,
+      )
     ) {
       actions.push(...manualBuildToolActions(context))
     }

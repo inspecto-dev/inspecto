@@ -14,7 +14,7 @@ Use this workflow when an assistant skill needs to set up Inspecto in the curren
 ## Shared Flow
 
 1. Run `scripts/run-inspecto.sh onboard --json`.
-2. If the result returns `status: "needs_target_selection"`, ask the user to choose a target and rerun with `--target <packagePath>`.
+2. If the result returns `status: "needs_target_selection"`, explain that this step chooses which local development build target should receive the Inspecto plugin and settings. Ask the user to choose one returned target candidate and rerun with `--target <candidateId>`, preferring the explicit `candidateId` field. The CLI also accepts a returned `configPath` as a compatibility fallback. Do not collapse the selection back to a package path when multiple build configs exist in the same package.
 3. If the result returns `status: "needs_confirmation"`, summarize `summary` and ask for approval before rerunning with `--yes`.
 4. If the result returns `status: "partial_success"` and the remaining step is IDE extension installation, treat that as a required onboarding follow-up.
 5. If IDE extension installation must be done manually, guide the user with the documented install path before moving on:
@@ -53,4 +53,4 @@ The CLI command may need network access or permission escalation the first time 
 ## References
 
 - JSON contract and field semantics: `packages/docs/integrations/onboarding-contract.md`
-- Assistant entrypoint docs: `packages/docs/integrations/codex-skill.md`, `packages/docs/integrations/claude-code-skill.md`
+- Assistant entrypoint docs: `packages/docs/integrations/onboarding-skills.md`

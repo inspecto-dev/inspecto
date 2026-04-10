@@ -200,6 +200,47 @@ describe('doctor command', () => {
     )
   })
 
+  it('warns when configured ide and detected ide differ, and explains that config wins', async () => {
+    mockFailingInstall()
+    vi.mocked(fsUtils.exists).mockImplementation(async (filePath: string) => {
+      const existingPaths = new Set([
+        '/repo/package.json',
+        '/repo/vite.config.ts',
+        '/repo/node_modules/@inspecto-dev/plugin',
+        '/repo/.inspecto/settings.local.json',
+        '/repo/.gitignore',
+      ])
+      return existingPaths.has(filePath)
+    })
+    vi.mocked(fsUtils.readJSON).mockImplementation(async (filePath: string) => {
+      if (filePath === '/repo/node_modules/@inspecto-dev/plugin/package.json') {
+        return { version: '1.2.3' }
+      }
+      if (filePath === '/repo/.inspecto/settings.local.json') {
+        return { ide: 'trae-cn', 'provider.default': 'coco.cli' }
+      }
+      return null
+    })
+    vi.mocked(ide.detectIDE).mockResolvedValue({
+      detected: [{ ide: 'trae', supported: true }],
+    })
+
+    const result = await collectDoctorResult('/repo')
+
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'settings-ide-mismatch',
+          message:
+            '.inspecto/settings.local.json sets ide=trae-cn, but the current environment looks like trae. Inspecto will use the configured IDE from settings.local.json.',
+          hints: [
+            'Update .inspecto/settings.local.json if you want Inspecto to target the currently detected IDE instead.',
+          ],
+        }),
+      ]),
+    )
+  })
+
   it('preserves the human-readable doctor output in text mode', async () => {
     mockFailingInstall()
 

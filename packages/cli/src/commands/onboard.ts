@@ -39,6 +39,20 @@ function printOnboardResult(result: OnboardCommandResult): void {
   log.info(`Status: ${result.status}`)
   log.info(result.summary.headline)
 
+  if (result.status === 'needs_target_selection') {
+    if (result.target.selectionPurpose) {
+      log.warn(result.target.selectionPurpose)
+    }
+    for (const candidate of result.target.candidates) {
+      const identifier = candidate.candidateId ?? candidate.id ?? candidate.configPath
+      const label = candidate.label ?? candidate.configPath
+      log.hint(`${identifier}: ${label}`)
+    }
+    if (result.target.selectionInstructions) {
+      log.hint(result.target.selectionInstructions)
+    }
+  }
+
   for (const change of result.summary.changes) {
     log.hint(change)
   }

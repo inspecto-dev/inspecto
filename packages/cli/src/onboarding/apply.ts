@@ -50,6 +50,46 @@ interface ApplySpinner {
   fail(text: string): void
 }
 
+function normalizeSupportedIde(ide?: string): string | undefined {
+  if (!ide) return undefined
+  return ide.toLowerCase() === 'vscode' ? 'vscode' : ide.toLowerCase()
+}
+
+async function readInheritedSettingsDefaults(
+  repoRoot: string,
+  projectRoot: string,
+  settingsFileName: string,
+): Promise<{ ide?: string; providerDefault?: string }> {
+  if (path.resolve(repoRoot) === path.resolve(projectRoot)) {
+    return {}
+  }
+
+  const inheritedSettingsPath = path.join(repoRoot, '.inspecto', settingsFileName)
+  if (!(await exists(inheritedSettingsPath))) {
+    return {}
+  }
+
+  const inheritedSettings = await readJSON<Record<string, unknown>>(inheritedSettingsPath)
+  if (!inheritedSettings || typeof inheritedSettings !== 'object') {
+    return {}
+  }
+
+  const inheritedDefaults: { ide?: string; providerDefault?: string } = {}
+
+  if (typeof inheritedSettings.ide === 'string') {
+    const normalizedIde = normalizeSupportedIde(inheritedSettings.ide)
+    if (normalizedIde) {
+      inheritedDefaults.ide = normalizedIde
+    }
+  }
+
+  if (typeof inheritedSettings['provider.default'] === 'string') {
+    inheritedDefaults.providerDefault = inheritedSettings['provider.default']
+  }
+
+  return inheritedDefaults
+}
+
 export interface ApplyOnboardingResult {
   status: CommandStatus
   mutations: Mutation[]
@@ -91,13 +131,16 @@ function resultStatus(nextSteps: string[]): CommandStatus {
   return nextSteps.length > 0 ? 'warning' : 'ok'
 }
 
-function manualPlanSteps(plan: PlanResult): string[] {
-  return [
-    ...plan.blockers.map(blocker => blocker.message),
-    ...plan.actions
-      .filter(action => action.type === 'manual_step')
-      .map(action => action.description),
-  ]
+function manualPlanSteps(plan: PlanResult, includeBlockers = true): string[] {
+  const steps = plan.actions
+    .filter(action => action.type === 'manual_step')
+    .map(action => action.description)
+
+  if (!includeBlockers) {
+    return steps
+  }
+
+  return [...plan.blockers.map(blocker => blocker.message), ...steps]
 }
 
 export async function applyOnboardingPlan(
@@ -163,6 +206,10 @@ async function applyOnboardingPlanInternal(
   input: ApplyOnboardingInput,
 ): Promise<ApplyOnboardingResult> {
   const reporter = createReporter(input.options.quiet)
+  const additiveManualPlan =
+    input.plan?.strategy === 'manual' &&
+    input.allowManualPlanApply &&
+    input.plan.blockers.length === 0
 
   if (input.plan && input.plan.strategy !== 'supported' && !input.allowManualPlanApply) {
     return {
@@ -172,7 +219,7 @@ async function applyOnboardingPlanInternal(
         installFailed: false,
         injectionFailed: false,
         manualExtensionInstallNeeded: false,
-        nextSteps: manualPlanSteps(input.plan),
+        nextSteps: manualPlanSteps(input.plan, true),
       },
     }
   }
@@ -183,6 +230,11 @@ async function applyOnboardingPlanInternal(
   const promptsFileName = input.options.shared ? 'prompts.json' : 'prompts.local.json'
   const settingsPath = path.join(settingsDir, settingsFileName)
   const promptsPath = path.join(settingsDir, promptsFileName)
+  const inheritedDefaults = await readInheritedSettingsDefaults(
+    input.repoRoot,
+    input.projectRoot,
+    settingsFileName,
+  )
   const runtimePackages = resolveRuntimePackages()
   const installCmd = getInstallCommand(input.packageManager, runtimePackages.installSpec)
   const nextSteps: string[] = []
@@ -217,17 +269,19 @@ async function applyOnboardingPlanInternal(
   }
 
   let injectionFailed = Boolean(input.injectionSkippedRequiresManualConfig)
-  for (const target of input.supportedBuildTargets) {
-    const result = await injectPlugin(
-      input.repoRoot,
-      target,
-      input.options.dryRun,
-      input.options.quiet ?? false,
-    )
-    if (result.success) {
-      mutations.push(...result.mutations)
-    } else {
-      injectionFailed = true
+  if (!additiveManualPlan) {
+    for (const target of input.supportedBuildTargets) {
+      const result = await injectPlugin(
+        input.repoRoot,
+        target,
+        input.options.dryRun,
+        input.options.quiet ?? false,
+      )
+      if (result.success) {
+        mutations.push(...result.mutations)
+      } else {
+        injectionFailed = true
+      }
     }
   }
 
@@ -238,20 +292,56 @@ async function applyOnboardingPlanInternal(
       reporter.hint('Please fix the syntax errors manually, or delete it and re-run init')
       nextSteps.push(`Fix .inspecto/${settingsFileName} or delete it and rerun Inspecto setup.`)
     } else {
-      reporter.success(`.inspecto/${settingsFileName} already exists (skipped)`)
+      const mergedSettings =
+        existingSettings && typeof existingSettings === 'object'
+          ? { ...(existingSettings as Record<string, unknown>) }
+          : {}
+      let settingsChanged = false
+
+      const desiredIde =
+        inheritedDefaults.ide ??
+        (input.selectedIDE?.supported ? normalizeSupportedIde(input.selectedIDE.ide) : undefined)
+
+      if (desiredIde && !mergedSettings.ide) {
+        mergedSettings.ide = desiredIde
+        settingsChanged = true
+      }
+
+      const desiredProviderDefault = inheritedDefaults.providerDefault ?? input.providerDefault
+      if (desiredProviderDefault && !mergedSettings['provider.default']) {
+        mergedSettings['provider.default'] = desiredProviderDefault
+        settingsChanged = true
+      }
+
+      if (settingsChanged) {
+        if (input.options.dryRun) {
+          reporter.dryRun(`Would update .inspecto/${settingsFileName}`)
+        } else {
+          await writeJSON(settingsPath, mergedSettings)
+          reporter.success(`Updated .inspecto/${settingsFileName} with missing defaults`)
+          mutations.push({
+            type: 'file_modified',
+            path: `.inspecto/${settingsFileName}`,
+            description: 'Merged missing Inspecto defaults into existing settings',
+          })
+        }
+      } else {
+        reporter.success(`.inspecto/${settingsFileName} already exists (skipped)`)
+      }
     }
   } else {
     const defaultSettings: Record<string, unknown> = {}
+    const desiredIde =
+      inheritedDefaults.ide ??
+      (input.selectedIDE?.supported ? normalizeSupportedIde(input.selectedIDE.ide) : undefined)
+    const desiredProviderDefault = inheritedDefaults.providerDefault ?? input.providerDefault
 
-    if (input.selectedIDE?.supported) {
-      defaultSettings.ide =
-        input.selectedIDE.ide.toLowerCase() === 'vscode'
-          ? 'vscode'
-          : input.selectedIDE.ide.toLowerCase()
+    if (desiredIde) {
+      defaultSettings.ide = desiredIde
     }
 
-    if (input.providerDefault) {
-      defaultSettings['provider.default'] = input.providerDefault
+    if (desiredProviderDefault) {
+      defaultSettings['provider.default'] = desiredProviderDefault
     }
 
     if (input.options.dryRun) {
@@ -339,6 +429,9 @@ async function applyOnboardingPlanInternal(
     }
     if (manualExtensionInstallNeeded) {
       nextSteps.push('Install the Inspecto IDE extension manually')
+    }
+    if (additiveManualPlan && input.plan) {
+      nextSteps.push(...manualPlanSteps(input.plan, false))
     }
     if (input.manualConfigRequiredFor === 'Nuxt') {
       nextSteps.push(

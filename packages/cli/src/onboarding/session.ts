@@ -126,8 +126,9 @@ async function detectFrameworkSupportByPackage(
 
 async function buildTargetedContext(
   rootContext: OnboardingContext,
-  packagePath: string,
+  target: { id?: string; packagePath: string },
 ): Promise<OnboardingContext> {
+  const packagePath = normalizePackagePath(target.packagePath)
   const projectRoot = packagePath ? path.join(rootContext.root, packagePath) : rootContext.root
   const [frameworks, ides, providers] = await Promise.all([
     detectFrameworks(projectRoot),
@@ -140,7 +141,11 @@ async function buildTargetedContext(
     packageManager: rootContext.packageManager,
     buildTools: {
       supported: rootContext.buildTools.supported.filter(item => {
-        return normalizePackagePath(item.packagePath) === packagePath
+        const itemPackagePath = normalizePackagePath(item.packagePath)
+        if (target.id) {
+          return `${itemPackagePath || '.'}:${item.tool}:${item.configPath}` === target.id
+        }
+        return itemPackagePath === packagePath
       }),
       unsupported: [],
     },
@@ -327,7 +332,8 @@ export async function resolveOnboardingSession(
   if (target.status === 'needs_selection') {
     const plan = createPlanResult(rootContext)
     const summary: OnboardingSummary = {
-      headline: 'Inspecto found multiple plausible app targets and needs one selection.',
+      headline:
+        'Inspecto needs one build target selection before setup so it knows which local dev build should receive the plugin and settings.',
       changes: [],
       risks: [],
       manualFollowUp: [],
@@ -344,8 +350,7 @@ export async function resolveOnboardingSession(
     }
   }
 
-  const packagePath = normalizePackagePath(target.selected?.packagePath)
-  const context = await buildTargetedContext(rootContext, packagePath)
+  const context = await buildTargetedContext(rootContext, target.selected!)
   const verification = await buildVerification(context.root, context.packageManager)
   const plan = createPlanResult(context)
   const summary = buildOnboardingSummary(plan, context.root)
@@ -409,6 +414,7 @@ export async function applyResolvedOnboardingSession(
     selectedIDE: session.selectedIDE,
     providerDefault: session.providerDefault,
     plan: session.plan,
+    allowManualPlanApply: session.plan.strategy === 'manual' && session.plan.blockers.length === 0,
   })
 
   const diagnostics = buildExecutionDiagnostics(session, applyResult)

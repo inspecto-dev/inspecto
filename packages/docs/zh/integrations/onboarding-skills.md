@@ -74,7 +74,7 @@ Set up Inspecto in this project
 | Cursor      | Native skill | `.cursor/skills/inspecto-onboarding/`    | 项目级。请在目标项目根目录执行。 |
 | Gemini      | Native skill | `.gemini/skills/inspecto-onboarding/`    | 项目级。请在目标项目根目录执行。 |
 | Trae        | Native skill | `.trae/skills/inspecto-onboarding/`      | 项目级。请在目标项目根目录执行。 |
-| Coco        | Native skill | `.traecli/skills/inspecto-onboarding/`   | 项目级。请在目标项目根目录执行。 |
+| Coco        | Native skill | `.trae/skills/inspecto-onboarding/`      | 项目级。请在目标项目根目录执行。 |
 
 默认情况下，所有的 onboarding 集成都会将配置写入纯本地的文件（`.inspecto/settings.local.json` 和 `.inspecto/prompts.local.json`），保持你的代码仓库干净整洁。
 
@@ -123,7 +123,7 @@ npx @inspecto-dev/cli integrations install coco --host-ide trae-cn
 这些集成的工作原理，是将 Inspecto 的结构化 CLI onboarding 协议（contract）暴露给你的助手。当你请求它设置 Inspecto 时，它将执行：
 
 1. `onboard --json`：分析项目并返回结构化的计划。
-2. `onboard --json --target <packagePath>`：如果在 monorepo 中需要选择目标，则带上参数重新运行。
+2. `onboard --json --target <candidateId>`：如果需要选择目标，先说明这一步是在选择要接入 Inspecto 的本地开发构建目标，再使用上一次返回中的某个 candidate id 重新运行。CLI 也兼容接受返回里的 `configPath` 作为兜底值。
 3. `onboard --json --yes`：在获得你的确认后，应用代码变更。
 4. 引导你安装 IDE 插件（这是一个必选步骤）。
 5. 确认启动 dev server 的命令。

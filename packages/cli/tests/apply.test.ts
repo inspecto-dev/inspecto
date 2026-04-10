@@ -166,6 +166,173 @@ describe('apply onboarding flow', () => {
     })
   })
 
+  it('only injects the explicitly selected build target', async () => {
+    const rspackBuild: BuildToolDetection = {
+      tool: 'rspack',
+      configPath: 'finder/rspack.config.ts',
+      label: 'Rspack (finder/rspack.config.ts)',
+      packagePath: 'finder',
+    }
+
+    const result = await applyOnboardingPlan({
+      repoRoot: '/repo',
+      projectRoot: '/repo/finder',
+      packageManager: 'pnpm',
+      supportedBuildTargets: [rspackBuild],
+      options: {
+        shared: false,
+        skipInstall: false,
+        dryRun: false,
+        noExtension: false,
+      },
+      selectedIDE: { ide: 'vscode', supported: true },
+      providerDefault: 'codex.extension',
+      plan: {
+        status: 'ok',
+        warnings: [],
+        blockers: [],
+        strategy: 'supported',
+        actions: [],
+        defaults: {
+          shared: false,
+          extension: true,
+          provider: 'codex',
+          ide: 'vscode',
+        },
+      },
+    })
+
+    expect(astInjectorUtils.injectPlugin).toHaveBeenCalledTimes(1)
+    expect(astInjectorUtils.injectPlugin).toHaveBeenCalledWith('/repo', rspackBuild, false, false)
+    expect(result.postInstall.injectionFailed).toBe(false)
+  })
+
+  it('supports legacy rspack partial onboarding without attempting automatic injection', async () => {
+    const legacyRspackBuild: BuildToolDetection = {
+      tool: 'rspack',
+      configPath: 'finder/rspack-config/rspack.config.dev.ts',
+      label: 'Rspack (finder/rspack-config/rspack.config.dev.ts) [Legacy]',
+      packagePath: 'finder',
+      isLegacyRspack: true,
+    }
+
+    const result = await applyOnboardingPlan({
+      repoRoot: '/repo',
+      projectRoot: '/repo/finder',
+      packageManager: 'pnpm',
+      supportedBuildTargets: [legacyRspackBuild],
+      options: {
+        shared: false,
+        skipInstall: false,
+        dryRun: false,
+        noExtension: false,
+      },
+      selectedIDE: { ide: 'trae', supported: true },
+      providerDefault: 'coco.cli',
+      plan: {
+        status: 'warning',
+        warnings: [
+          {
+            code: 'legacy-rspack-requires-manual-config',
+            message:
+              'Legacy Rspack detected at finder/rspack-config/rspack.config.dev.ts. Inspecto must use the legacy Rspack plugin entry and manual config steps.',
+          },
+        ],
+        blockers: [],
+        strategy: 'manual',
+        actions: [
+          {
+            type: 'install_dependency',
+            target: '@inspecto-dev/plugin @inspecto-dev/core',
+            description: 'Install the Inspecto runtime packages with pnpm.',
+          },
+          {
+            type: 'manual_step',
+            target: 'finder/rspack-config/rspack.config.dev.ts',
+            description:
+              'Update finder/rspack-config/rspack.config.dev.ts to import `rspackPlugin` from `@inspecto-dev/plugin/legacy/rspack` and add it to the Rspack plugins array.',
+          },
+        ],
+        defaults: {
+          shared: false,
+          extension: true,
+          provider: 'coco',
+          ide: 'trae',
+        },
+      },
+      allowManualPlanApply: true,
+    })
+
+    expect(astInjectorUtils.injectPlugin).not.toHaveBeenCalled()
+    expect(result.status).toBe('warning')
+    expect(result.postInstall.nextSteps).toContain(
+      'Update finder/rspack-config/rspack.config.dev.ts to import `rspackPlugin` from `@inspecto-dev/plugin/legacy/rspack` and add it to the Rspack plugins array.',
+    )
+  })
+
+  it('supports webpack 4 partial onboarding without attempting automatic injection', async () => {
+    const legacyWebpackBuild: BuildToolDetection = {
+      tool: 'webpack',
+      configPath: 'app/webpack.config.js',
+      label: 'Webpack (app/webpack.config.js) [Webpack 4]',
+      packagePath: 'app',
+      isLegacyWebpack: true,
+    }
+
+    const result = await applyOnboardingPlan({
+      repoRoot: '/repo',
+      projectRoot: '/repo/app',
+      packageManager: 'pnpm',
+      supportedBuildTargets: [legacyWebpackBuild],
+      options: {
+        shared: false,
+        skipInstall: false,
+        dryRun: false,
+        noExtension: false,
+      },
+      selectedIDE: { ide: 'cursor', supported: true },
+      providerDefault: 'copilot.extension',
+      plan: {
+        status: 'warning',
+        warnings: [
+          {
+            code: 'legacy-webpack4-requires-manual-config',
+            message:
+              'Webpack 4 detected at app/webpack.config.js. Inspecto must use the legacy Webpack 4 plugin entry and manual config steps.',
+          },
+        ],
+        blockers: [],
+        strategy: 'manual',
+        actions: [
+          {
+            type: 'install_dependency',
+            target: '@inspecto-dev/plugin @inspecto-dev/core',
+            description: 'Install the Inspecto runtime packages with pnpm.',
+          },
+          {
+            type: 'manual_step',
+            target: 'app/webpack.config.js',
+            description:
+              'Update app/webpack.config.js to import `webpackPlugin` from `@inspecto-dev/plugin/legacy/webpack4` and add it to the Webpack plugins array.',
+          },
+        ],
+        defaults: {
+          shared: false,
+          extension: true,
+          provider: 'copilot',
+          ide: 'cursor',
+        },
+      },
+      allowManualPlanApply: true,
+    })
+
+    expect(astInjectorUtils.injectPlugin).not.toHaveBeenCalled()
+    expect(result.status).toBe('warning')
+    expect(result.postInstall.nextSteps).toContain(
+      'Update app/webpack.config.js to import `webpackPlugin` from `@inspecto-dev/plugin/legacy/webpack4` and add it to the Webpack plugins array.',
+    )
+  })
+
   it('uses onboarding context and planner output and prints JSON from the apply command', async () => {
     const context: OnboardingContext = {
       root: '/repo',
@@ -538,6 +705,73 @@ describe('apply onboarding flow', () => {
       'Fix .inspecto/settings.local.json or delete it and rerun Inspecto setup.',
     )
     expect(fsUtils.writeJSON).toHaveBeenCalledWith('/repo/.inspecto/prompts.local.json', [])
+  })
+
+  it('merges missing defaults into an existing valid local settings file', async () => {
+    vi.mocked(fsUtils.exists).mockImplementation(async filePath => {
+      return filePath === '/repo/.inspecto/settings.local.json'
+    })
+    vi.mocked(fsUtils.readJSON).mockImplementation(async filePath => {
+      if (filePath === '/repo/.inspecto/settings.local.json') {
+        return { ide: 'trae-cn' }
+      }
+      return null
+    })
+
+    await applyOnboardingPlan({
+      repoRoot: '/repo',
+      projectRoot: '/repo',
+      packageManager: 'pnpm',
+      supportedBuildTargets: [],
+      options: {
+        shared: false,
+        skipInstall: true,
+        dryRun: false,
+        noExtension: true,
+      },
+      selectedIDE: { ide: 'trae-cn', supported: true },
+      providerDefault: 'coco.cli',
+    })
+
+    expect(fsUtils.writeJSON).toHaveBeenCalledWith('/repo/.inspecto/settings.local.json', {
+      ide: 'trae-cn',
+      'provider.default': 'coco.cli',
+    })
+  })
+
+  it('inherits root inspecto defaults when writing package-local settings for a selected subproject', async () => {
+    vi.mocked(fsUtils.exists).mockImplementation(async filePath => {
+      return filePath === '/repo/.inspecto/settings.local.json'
+    })
+    vi.mocked(fsUtils.readJSON).mockImplementation(async filePath => {
+      if (filePath === '/repo/.inspecto/settings.local.json') {
+        return {
+          ide: 'vscode',
+          'provider.default': 'codex.extension',
+        }
+      }
+      return null
+    })
+
+    await applyOnboardingPlan({
+      repoRoot: '/repo',
+      projectRoot: '/repo/finder',
+      packageManager: 'pnpm',
+      supportedBuildTargets: [],
+      options: {
+        shared: false,
+        skipInstall: true,
+        dryRun: false,
+        noExtension: true,
+      },
+      selectedIDE: { ide: 'cursor', supported: true },
+      providerDefault: 'codex.extension',
+    })
+
+    expect(fsUtils.writeJSON).toHaveBeenCalledWith('/repo/finder/.inspecto/settings.local.json', {
+      ide: 'vscode',
+      'provider.default': 'codex.extension',
+    })
   })
 
   it('prints the same short 3-step success guide when apply finishes cleanly', async () => {

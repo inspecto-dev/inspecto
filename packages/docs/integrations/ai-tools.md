@@ -20,7 +20,7 @@ If you are setting up Inspecto manually in a terminal, use `inspecto init` as th
 If you are building your own agent/runtime integration, use the structured onboarding flow directly:
 
 1. `inspecto onboard --json`
-2. if `status` is `needs_target_selection`, rerun with `--target <packagePath>`
+2. if `status` is `needs_target_selection`, explain that this step chooses which local development build target should receive Inspecto, then rerun with `--target <candidateId>` using one returned target candidate. The CLI also accepts a returned `configPath` as a compatibility fallback.
 3. if `status` is `needs_confirmation`, confirm the planned changes and rerun with `--yes`
 4. complete the required `ideExtension` step first (auto-install when possible, otherwise show install links/commands)
 5. then follow `verification` guidance to restart or prompt for dev-server validation

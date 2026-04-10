@@ -269,6 +269,108 @@ describe('planner orchestration', () => {
     ])
   })
 
+  it('returns a legacy rspack partial-manual strategy when the selected build target is legacy rspack', () => {
+    const context: OnboardingContext = {
+      root: '/repo/finder',
+      packageManager: 'pnpm',
+      buildTools: {
+        supported: [
+          {
+            tool: 'rspack',
+            configPath: 'finder/rspack-config/rspack.config.dev.ts',
+            label: 'Rspack (finder/rspack-config/rspack.config.dev.ts) [Legacy]',
+            packagePath: 'finder',
+            isLegacyRspack: true,
+          },
+        ],
+        unsupported: [],
+      },
+      frameworks: {
+        supported: ['react'],
+        unsupported: [],
+      },
+      ides: [{ ide: 'trae', supported: true }],
+      providers: [{ id: 'coco', label: 'Coco CLI', supported: true, preferredMode: 'cli' }],
+    }
+
+    const result = planner.createPlanResult(context)
+
+    expect(result.status).toBe('warning')
+    expect(result.strategy).toBe('manual')
+    expect(result.blockers).toEqual([])
+    expect(result.warnings).toEqual([
+      {
+        code: 'legacy-rspack-requires-manual-config',
+        message:
+          'Legacy Rspack detected at finder/rspack-config/rspack.config.dev.ts. Inspecto must use the legacy Rspack plugin entry and manual config steps.',
+      },
+    ])
+    expect(result.actions).toEqual([
+      {
+        type: 'install_dependency',
+        target: '@inspecto-dev/plugin @inspecto-dev/core',
+        description: 'Install the Inspecto runtime packages with pnpm.',
+      },
+      {
+        type: 'manual_step',
+        target: 'finder/rspack-config/rspack.config.dev.ts',
+        description:
+          'Update finder/rspack-config/rspack.config.dev.ts to import `rspackPlugin` from `@inspecto-dev/plugin/legacy/rspack` and add it to the Rspack plugins array.',
+      },
+    ])
+  })
+
+  it('returns a webpack 4 partial-manual strategy when the selected build target is legacy webpack', () => {
+    const context: OnboardingContext = {
+      root: '/repo/app',
+      packageManager: 'pnpm',
+      buildTools: {
+        supported: [
+          {
+            tool: 'webpack',
+            configPath: 'app/webpack.config.js',
+            label: 'Webpack (app/webpack.config.js) [Webpack 4]',
+            packagePath: 'app',
+            isLegacyWebpack: true,
+          },
+        ],
+        unsupported: [],
+      },
+      frameworks: {
+        supported: ['react'],
+        unsupported: [],
+      },
+      ides: [{ ide: 'cursor', supported: true }],
+      providers: [{ id: 'copilot', label: 'Copilot', supported: true, preferredMode: 'extension' }],
+    }
+
+    const result = planner.createPlanResult(context)
+
+    expect(result.status).toBe('warning')
+    expect(result.strategy).toBe('manual')
+    expect(result.blockers).toEqual([])
+    expect(result.warnings).toEqual([
+      {
+        code: 'legacy-webpack4-requires-manual-config',
+        message:
+          'Webpack 4 detected at app/webpack.config.js. Inspecto must use the legacy Webpack 4 plugin entry and manual config steps.',
+      },
+    ])
+    expect(result.actions).toEqual([
+      {
+        type: 'install_dependency',
+        target: '@inspecto-dev/plugin @inspecto-dev/core',
+        description: 'Install the Inspecto runtime packages with pnpm.',
+      },
+      {
+        type: 'manual_step',
+        target: 'app/webpack.config.js',
+        description:
+          'Update app/webpack.config.js to import `webpackPlugin` from `@inspecto-dev/plugin/legacy/webpack4` and add it to the Webpack plugins array.',
+      },
+    ])
+  })
+
   it('blocks root-level apply planning when multiple supported build targets are detected', () => {
     const context: OnboardingContext = {
       root: '/repo',

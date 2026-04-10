@@ -111,4 +111,60 @@ describe('assistant integration bootstrap wrapper', () => {
       'project',
     ])
   })
+
+  it('installs coco raw assets into the trae skill directory', async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'inspecto-wrapper-'))
+    tempDirs.push(tempRoot)
+
+    const fakeBin = path.join(tempRoot, 'bin')
+    await fs.mkdir(fakeBin, { recursive: true })
+
+    await fs.writeFile(path.join(fakeBin, 'npx'), '#!/usr/bin/env bash\nexit 127\n', 'utf8')
+    await fs.chmod(path.join(fakeBin, 'npx'), 0o755)
+
+    await fs.writeFile(
+      path.join(fakeBin, 'curl'),
+      [
+        '#!/usr/bin/env bash',
+        'set -euo pipefail',
+        'out=""',
+        'while [[ $# -gt 0 ]]; do',
+        '  case "$1" in',
+        '    -o)',
+        '      out="$2"',
+        '      shift 2',
+        '      ;;',
+        '    *)',
+        '      shift',
+        '      ;;',
+        '  esac',
+        'done',
+        'printf "downloaded from wrapper\n" > "$out"',
+      ].join('\n'),
+      'utf8',
+    )
+    await fs.chmod(path.join(fakeBin, 'curl'), 0o755)
+
+    const scriptPath = path.resolve(__dirname, '../../../scripts/install.sh')
+
+    await execFileAsync('bash', [scriptPath, 'coco'], {
+      cwd: tempRoot,
+      env: {
+        ...process.env,
+        PATH: `${fakeBin}:${process.env.PATH ?? ''}`,
+      },
+    })
+
+    const installed = await fs.readFile(
+      path.join(tempRoot, '.trae/skills/inspecto-onboarding/SKILL.md'),
+      'utf8',
+    )
+    expect(installed).toBe('downloaded from wrapper\n')
+
+    const launcher = await fs.readFile(
+      path.join(tempRoot, '.trae/skills/inspecto-onboarding/scripts/run-inspecto.sh'),
+      'utf8',
+    )
+    expect(launcher).toBe('downloaded from wrapper\n')
+  })
 })

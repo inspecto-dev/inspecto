@@ -195,13 +195,17 @@ install_gemini_raw() {
 
 install_trae_raw() {
   download_file "${REPO_RAW_BASE}/skills/inspecto-onboarding-trae/SKILL.md" ".trae/skills/inspecto-onboarding/SKILL.md"
+  download_file "${REPO_RAW_BASE}/skills/inspecto-onboarding-trae/scripts/run-inspecto.sh" ".trae/skills/inspecto-onboarding/scripts/run-inspecto.sh"
+  chmod +x ".trae/skills/inspecto-onboarding/scripts/run-inspecto.sh"
   echo "Installed Trae skill to .trae/skills/inspecto-onboarding/SKILL.md"
   echo "Open a new Trae chat."
 }
 
 install_coco_raw() {
-  download_file "${REPO_RAW_BASE}/skills/inspecto-onboarding-trae/SKILL.md" ".traecli/skills/inspecto-onboarding/SKILL.md"
-  echo "Installed Coco skill to .traecli/skills/inspecto-onboarding/SKILL.md"
+  download_file "${REPO_RAW_BASE}/skills/inspecto-onboarding-trae/SKILL.md" ".trae/skills/inspecto-onboarding/SKILL.md"
+  download_file "${REPO_RAW_BASE}/skills/inspecto-onboarding-trae/scripts/run-inspecto.sh" ".trae/skills/inspecto-onboarding/scripts/run-inspecto.sh"
+  chmod +x ".trae/skills/inspecto-onboarding/scripts/run-inspecto.sh"
+  echo "Installed Coco skill to .trae/skills/inspecto-onboarding/SKILL.md"
   echo "Start a new Coco session."
 }
 
