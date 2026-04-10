@@ -90,7 +90,7 @@
     "@vue/compiler-core": "^3.5.32",
     "@vue/compiler-dom": "^3.5.32",
     "@vue/compiler-sfc": "^3.5.32",
-    "defu": "^6.1.4",
+    "defu": "^6.1.7",
     "launch-ide": "^1.0.0",
     "magic-string": "^0.30.0",
     "portfinder": "^1.0.32",
