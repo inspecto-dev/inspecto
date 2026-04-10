@@ -382,7 +382,7 @@ export function showIntentMenu(
       const built = await buildCustomInspectPrompt({
         location,
         ask: input.value.trim(),
-        targetLabel: deps.targetLabel,
+        ...(deps.targetLabel ? { targetLabel: deps.targetLabel } : {}),
         includeSnippet,
         maxSnippetLines,
         runtimeContext: requestRuntimeContext,
