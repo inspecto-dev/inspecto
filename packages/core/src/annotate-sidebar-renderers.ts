@@ -95,11 +95,14 @@ export function createAnnotateSidebarRenderers({
       titleEl.textContent = title
 
       const contentEl = document.createElement('div')
+      contentEl.style.minWidth = '0'
+      contentEl.style.whiteSpace = 'normal'
+      contentEl.style.overflowWrap = 'anywhere'
+      contentEl.style.wordBreak = 'break-word'
       if (typeof content === 'string') {
         contentEl.style.fontSize = '13px'
         contentEl.style.color = 'rgba(255, 255, 255, 0.9)'
         contentEl.style.lineHeight = '1.4'
-        contentEl.style.wordBreak = 'break-word'
         if (title === 'NOTE' && !chip.note.trim()) {
           contentEl.style.fontStyle = 'italic'
           contentEl.style.color = 'rgba(255, 255, 255, 0.4)'
@@ -114,9 +117,13 @@ export function createAnnotateSidebarRenderers({
     }
 
     const elementValue = document.createElement('div')
+    elementValue.style.minWidth = '0'
     elementValue.style.fontFamily = 'monospace'
     elementValue.style.fontSize = '13px'
     elementValue.style.color = '#9cdcfe'
+    elementValue.style.whiteSpace = 'normal'
+    elementValue.style.overflowWrap = 'anywhere'
+    elementValue.style.wordBreak = 'break-word'
     elementValue.textContent = chip.label
     activeTooltip.appendChild(createSection('ELEMENT', elementValue))
     activeTooltip.appendChild(createSection('NOTE', chip.note.trim() || 'No note provided'))
@@ -158,9 +165,12 @@ export function createAnnotateSidebarRenderers({
     chipElement.className = annotateSidebarChipClass
     chipElement.contentEditable = 'false'
     chipElement.style.margin = '0 4px'
+    chipElement.style.boxSizing = 'border-box'
     chipElement.style.display = 'inline-flex'
     chipElement.style.alignItems = 'center'
     chipElement.style.gap = '5px'
+    chipElement.style.minWidth = '0'
+    chipElement.style.maxWidth = 'calc(100% - 8px)'
     chipElement.style.verticalAlign = 'middle'
     chipElement.tabIndex = 0
     chipElement.setAttribute('role', 'button')
@@ -169,6 +179,11 @@ export function createAnnotateSidebarRenderers({
 
     const label = document.createElement('span')
     label.dataset.annotateChipLabel = 'true'
+    label.style.flex = '1 1 auto'
+    label.style.minWidth = '0'
+    label.style.overflow = 'hidden'
+    label.style.textOverflow = 'ellipsis'
+    label.style.whiteSpace = 'nowrap'
     label.textContent = chip.label
 
     const actionSlot = document.createElement('span')

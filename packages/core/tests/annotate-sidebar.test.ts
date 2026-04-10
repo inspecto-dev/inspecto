@@ -256,6 +256,39 @@ describe('annotate sidebar', () => {
     expect(onEditRecord).not.toHaveBeenCalled()
   })
 
+  it('constrains long prompt chips so they can truncate inside the composer input', () => {
+    const session = createEmptySession()
+    session.current = {
+      id: 'draft-1',
+      target: createTarget(
+        'target-current',
+        20,
+        'h1.document_docNavBar__L2vQJ.document_hasDoc__jpd6x.documentWithTOC',
+      ),
+      note: 'Explain hierarchy with the nav item.',
+      intent: 'review',
+    }
+
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(session, {
+        includedRecords: [],
+      }),
+    )
+
+    const chip = shadowRoot.querySelector('[data-annotate-chip-id="draft-1"]') as HTMLElement
+    const label = chip.querySelector('[data-annotate-chip-label="true"]') as HTMLElement
+
+    expect(chip.style.boxSizing).toBe('border-box')
+    expect(chip.style.maxWidth).toBe('calc(100% - 8px)')
+    expect(chip.style.minWidth).toBe('0')
+    expect(label.style.flex).toBe('1 1 auto')
+    expect(label.style.minWidth).toBe('0')
+    expect(label.style.overflow).toBe('hidden')
+    expect(label.style.textOverflow).toBe('ellipsis')
+    expect(label.style.whiteSpace).toBe('nowrap')
+  })
+
   it('shows file metadata without exposing the data-inspecto attribute name', () => {
     createAnnotateSidebar(shadowRoot, createSidebarOptions(createRecordSession()))
 
@@ -268,6 +301,43 @@ describe('annotate sidebar', () => {
     expect(shadowRoot.textContent).toContain('/repo/App.tsx:10:2')
     expect(shadowRoot.textContent).not.toContain('ATTRIBUTES')
     expect(shadowRoot.textContent).not.toContain('data-inspecto:')
+  })
+
+  it('applies wrapping styles to long element labels in the hover preview', () => {
+    const session = createRecordSession()
+    session.records = [
+      {
+        ...session.records[0],
+        target: createTarget(
+          'target-1',
+          10,
+          'header.document_docNavBar__L2vQJ.document_hasDoc__jpd6x.documentWithTOC',
+        ),
+      },
+    ]
+
+    createAnnotateSidebar(shadowRoot, createSidebarOptions(session))
+
+    const chip = shadowRoot.querySelector('[data-annotate-chip-id="record-1"]') as HTMLElement
+    expect(chip).not.toBeNull()
+
+    chip.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+
+    const preview = Array.from(shadowRoot.querySelectorAll('div')).find(
+      node => node instanceof HTMLDivElement && node.style.position === 'fixed',
+    ) as HTMLDivElement | undefined
+    const elementValue = Array.from(preview?.querySelectorAll('div') ?? []).find(
+      node =>
+        node.textContent ===
+        'header.document_docNavBar__L2vQJ.document_hasDoc__jpd6x.documentWithTOC',
+    ) as HTMLDivElement | undefined
+
+    expect(preview).toBeDefined()
+    expect(elementValue).toBeDefined()
+    expect(elementValue?.style.whiteSpace).toBe('normal')
+    expect(elementValue?.style.overflowWrap).toBe('anywhere')
+    expect(elementValue?.style.wordBreak).toBe('break-word')
+    expect(elementValue?.style.minWidth).toBe('0')
   })
 
   it('shows a delete affordance on chip hover and removes the chip through the callback', () => {

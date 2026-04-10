@@ -50,6 +50,7 @@ export async function openAndSendInspectPrompt(input: {
 export async function buildCustomInspectPrompt(input: {
   location: SourceLocation
   ask: string
+  targetLabel?: string
   includeSnippet: boolean
   maxSnippetLines: number
   runtimeContext?: RuntimeContextEnvelope | null
@@ -69,7 +70,11 @@ export async function buildCustomInspectPrompt(input: {
   const prompt = appendCssContextToPrompt(
     appendScreenshotContextToPrompt(
       appendRuntimeContextToPrompt(
-        buildPrompt(CUSTOM_PROMPT_TEMPLATE(input.ask.trim()), input.location, snippetResult),
+        buildPrompt(
+          buildCustomInspectPromptTemplate(input.ask.trim(), input.location, input.targetLabel),
+          input.location,
+          snippetResult,
+        ),
         input.runtimeContext?.records ?? [],
       ),
       input.screenshotContext ?? null,
@@ -81,4 +86,22 @@ export async function buildCustomInspectPrompt(input: {
     prompt,
     snippetText: snippetResult?.snippet || '',
   }
+}
+
+function buildCustomInspectPromptTemplate(
+  ask: string,
+  location: SourceLocation,
+  targetLabel?: string,
+): string {
+  const sections = [CUSTOM_PROMPT_TEMPLATE(ask)]
+
+  if (targetLabel?.trim()) {
+    sections.push(`Selected component:\n- ${targetLabel.trim()}`)
+  }
+
+  sections.push(
+    `Source location:\n- file: ${location.file}\n- location: ${location.line}:${location.column}`,
+  )
+
+  return sections.join('\n\n')
 }

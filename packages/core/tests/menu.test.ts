@@ -9,6 +9,7 @@ import {
   errorMsgClass,
   menuContextSummaryClass,
   runtimeToggleBadgeClass,
+  tooltipClass,
 } from '../src/styles.js'
 import * as http from '../src/http.js'
 import * as promptModule from '../src/fix-bug-prompt.js'
@@ -213,6 +214,57 @@ describe('Intent Menu DOM Interaction', () => {
     expect(openButton.style.borderStyle).toBe('solid')
     expect(openButton.style.borderColor).toBe('var(--inspecto-border-subtle)')
     expect(openButton.style.transition).toContain('box-shadow 0.15s ease')
+  })
+
+  it('constrains long inspect target labels inside the menu header', async () => {
+    showIntentMenu(
+      shadowRoot,
+      { file: '/src/App.tsx', line: 58, column: 11 },
+      100,
+      100,
+      {},
+      onCloseMock,
+      {
+        targetLabel:
+          'h1.document_docNavBar__L2vQJ.document_hasDoc__jpd6x.documentWithTOC.extremely_long_navigation_header_selector_that_should_truncate',
+      },
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const header = shadowRoot.querySelector('[class="inspecto-menu-title"]') as HTMLElement | null
+    const title = header?.querySelector('strong') as HTMLElement | null
+    const headerCopy = title?.parentElement as HTMLElement | null
+
+    expect(headerCopy?.style.minWidth).toBe('0')
+    expect(headerCopy?.style.flex).toBe('1 1 auto')
+    expect(title?.style.display).toBe('block')
+    expect(title?.style.minWidth).toBe('0')
+    expect(title?.style.whiteSpace).toBe('nowrap')
+    expect(title?.style.overflow).toBe('hidden')
+    expect(title?.style.textOverflow).toBe('ellipsis')
+  })
+
+  it('applies a viewport-safe max width to the inspect menu container', async () => {
+    showIntentMenu(
+      shadowRoot,
+      { file: '/src/App.tsx', line: 58, column: 11 },
+      100,
+      100,
+      {},
+      onCloseMock,
+      {
+        targetLabel:
+          'h1.document_docNavBar__L2vQJ.document_hasDoc__jpd6x.documentWithTOC.extremely_long_navigation_header_selector_that_should_truncate',
+      },
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const menu = shadowRoot.querySelector(`.${menuClass}`) as HTMLElement
+    expect(menu.style.boxSizing).toBe('border-box')
+    expect(menu.style.width).toBe('304px')
+    expect(menu.style.maxWidth).toBe('calc(100vw - 16px)')
   })
 
   it('keeps the inspect header actions aligned after hiding screenshot entry points', async () => {
@@ -1044,6 +1096,39 @@ describe('Intent Menu DOM Interaction', () => {
     )
   })
 
+  it('preserves selected component context in custom ask prompts', async () => {
+    showIntentMenu(
+      shadowRoot,
+      { file: '/src/App.tsx', line: 10, column: 5 },
+      100,
+      100,
+      {},
+      onCloseMock,
+      { targetLabel: 'button.primary' },
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const input = shadowRoot.querySelector(`.${menuInputClass}`) as HTMLInputElement
+    const sendIcon = shadowRoot.querySelector(`.${menuInputIconClass}`) as HTMLElement
+    input.value = 'Why is spacing broken here?'
+    sendIcon.click()
+    await new Promise(resolve => setTimeout(resolve, 220))
+
+    expect(http.sendToAi).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        prompt: expect.stringContaining('Selected component:\n- button.primary'),
+      }),
+    )
+    expect(http.sendToAi).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        prompt: expect.stringContaining('Source location:\n- file: /src/App.tsx\n- location: 10:5'),
+      }),
+    )
+  })
+
   it('appends CSS context to inspect sends when the CSS header toggle is enabled', async () => {
     const captureCssContextPrompt = vi.fn(
       () =>
@@ -1573,6 +1658,51 @@ describe('Intent Menu DOM Interaction', () => {
     expect(http.openFile).toHaveBeenCalledWith({ file: '/src/App.tsx', line: 10, column: 5 })
     expect(http.sendToAi).not.toHaveBeenCalled()
     expect(mountedShadowRoot.querySelector(`.${menuClass}`)).toBeNull()
+  })
+
+  it('hides the hover tooltip after opening the inspect menu', async () => {
+    vi.mocked(http.fetchIdeInfo).mockResolvedValue({
+      ide: 'vscode',
+      prompts: [{ id: 'explain', label: 'Explain', aiIntent: 'ask', prompt: 'Explain this code' }],
+    })
+
+    document.body.innerHTML =
+      '<button data-inspecto="/src/App.tsx:66:11" id="target">Target</button>'
+
+    const inspector = await mountInspector({ defaultActive: true, hotKeys: 'alt' })
+    expect(inspector).not.toBeNull()
+
+    const target = document.getElementById('target') as HTMLButtonElement
+    target.dispatchEvent(
+      new MouseEvent('mousemove', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 100,
+        clientY: 100,
+        altKey: true,
+      }),
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const mountedShadowRoot = (document.querySelector('inspecto-overlay') as HTMLElement)
+      .shadowRoot!
+    const tooltip = mountedShadowRoot.querySelector(`.${tooltipClass}`) as HTMLElement
+    expect(tooltip.style.display).toBe('block')
+
+    target.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 100,
+        clientY: 100,
+      }),
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(mountedShadowRoot.querySelector(`.${menuClass}`)).not.toBeNull()
+    expect(tooltip.style.display).toBe('none')
   })
 
   it('opens the source directly on hotkey-click even when inspect mode is already active', async () => {

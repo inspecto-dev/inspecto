@@ -13,6 +13,7 @@ import {
 
 const GAP = 8
 const EDGE_MARGIN = 4
+const MAX_CLASS_SUMMARY_LENGTH = 96
 
 export function createOverlay(shadowRoot: ShadowRoot): {
   show(el: Element, sourceLabel: string): void
@@ -76,7 +77,7 @@ export function createOverlay(shadowRoot: ShadowRoot): {
     const classes = Array.from(el.classList)
       .map(c => `.${c}`)
       .join('')
-    classSpan.textContent = classes
+    classSpan.textContent = summarizeClasses(classes)
 
     dimSpan.textContent = `${Math.round(rect.width)} × ${Math.round(rect.height)}`
 
@@ -144,4 +145,9 @@ export function createOverlay(shadowRoot: ShadowRoot): {
   }
 
   return { show, hide }
+}
+
+function summarizeClasses(classes: string): string {
+  if (classes.length <= MAX_CLASS_SUMMARY_LENGTH) return classes
+  return `${classes.slice(0, MAX_CLASS_SUMMARY_LENGTH - 3)}...`
 }
