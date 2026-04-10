@@ -88,7 +88,7 @@
     "@babel/types": "^7.24.0",
     "@inspecto-dev/types": "workspace:*",
     "@vue/compiler-core": "^3.5.30",
-    "@vue/compiler-dom": "^3.5.30",
+    "@vue/compiler-dom": "^3.5.32",
     "@vue/compiler-sfc": "^3.5.30",
     "defu": "^6.1.4",
     "launch-ide": "^1.0.0",
