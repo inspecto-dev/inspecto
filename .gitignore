@@ -107,3 +107,6 @@ packages/docs/.vitepress/cache
 
 # AI Agents config
 .agents
+
+# Inspecto
+.inspecto/dev.json

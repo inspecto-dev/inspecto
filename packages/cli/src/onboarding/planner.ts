@@ -2,6 +2,7 @@ import { buildOnboardingContext } from './context.js'
 import { getHostIdeLabel, isSupportedHostIde } from '../integrations/capabilities.js'
 import { createNextJsGuidance } from './nextjs-guidance.js'
 import { createNuxtGuidance } from './nuxt-guidance.js'
+import { createUmiGuidance } from './umi-guidance.js'
 import type {
   CommandMessage,
   CommandStatus,
@@ -245,8 +246,14 @@ function isGuidedNuxtScenario(context: OnboardingContext): boolean {
   )
 }
 
+function isGuidedUmiScenario(context: OnboardingContext): boolean {
+  return hasUnsupportedBuildTool(context, 'Umi') && context.frameworks.supported.includes('react')
+}
+
 function isGuidedMetaFrameworkScenario(context: OnboardingContext): boolean {
-  return isGuidedNextJsScenario(context) || isGuidedNuxtScenario(context)
+  return (
+    isGuidedNextJsScenario(context) || isGuidedNuxtScenario(context) || isGuidedUmiScenario(context)
+  )
 }
 
 function guidedBuildToolWarnings(
@@ -445,6 +452,55 @@ export function createPlanResult(context: OnboardingContext): PlanResult {
     return {
       status: 'warning',
       warnings: buildGuidedWarnings(context, 'Nuxt', 'vue'),
+      blockers: [],
+      strategy: 'guided',
+      actions,
+      defaults,
+      framework: guidance.framework,
+      metaFramework: guidance.metaFramework,
+      autoApplied: guidance.autoApplied,
+      pendingSteps: guidance.pendingSteps,
+      assistantPrompt: guidance.assistantPrompt,
+      patches: guidance.patches,
+    }
+  }
+
+  if (isGuidedUmiScenario(context)) {
+    const ide = supportedIde(context)
+    const provider = supportedProvider(context)
+    const guidance = createUmiGuidance(context.root)
+    const actions: PlanResult['actions'] = [
+      {
+        type: 'install_dependency',
+        target: '@inspecto-dev/plugin @inspecto-dev/core',
+        description: `Install the Inspecto runtime packages with ${context.packageManager}.`,
+      },
+    ]
+
+    if (shouldInstallInspectoExtension(ide) && ide) {
+      actions.push({
+        type: 'install_extension',
+        target: ide,
+        description: `Install the Inspecto ${getHostIdeLabel(ide as Parameters<typeof getHostIdeLabel>[0])} extension.`,
+      })
+    }
+
+    actions.push({
+      type: 'generate_patch_plan',
+      target: 'umi.config',
+      description: 'Generate a guided patch plan for the Umi Inspecto webpack integration.',
+    })
+
+    const defaults: PlanResult['defaults'] = {
+      shared: false,
+      extension: shouldInstallInspectoExtension(ide),
+      ...(provider ? { provider } : {}),
+      ...(ide ? { ide } : {}),
+    }
+
+    return {
+      status: 'warning',
+      warnings: buildGuidedWarnings(context, 'Umi', 'react'),
       blockers: [],
       strategy: 'guided',
       actions,

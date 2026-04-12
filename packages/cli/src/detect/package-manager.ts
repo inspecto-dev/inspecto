@@ -14,8 +14,8 @@ export async function detectPackageManager(root: string): Promise<PackageManager
     ['bun.lockb', 'bun'],
     ['bun.lock', 'bun'],
     ['pnpm-lock.yaml', 'pnpm'],
-    ['yarn.lock', 'yarn'],
     ['package-lock.json', 'npm'],
+    ['yarn.lock', 'yarn'],
   ]
 
   const results = await Promise.all(

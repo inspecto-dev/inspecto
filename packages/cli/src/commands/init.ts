@@ -24,7 +24,11 @@ import {
   promptMonorepoPackageChoice,
   promptUnsupportedFrameworkContinue,
 } from '../prompts.js'
-import { printNextJsManualInstructions, printNuxtManualInstructions } from '../instructions.js'
+import {
+  printNextJsManualInstructions,
+  printNuxtManualInstructions,
+  printUmiManualInstructions,
+} from '../instructions.js'
 
 export async function init(options: InitOptions): Promise<void> {
   const repoRoot = process.cwd()
@@ -183,6 +187,9 @@ export async function init(options: InitOptions): Promise<void> {
     }
     if (buildResult.unsupported.includes('Nuxt')) {
       printNuxtManualInstructions()
+    }
+    if (buildResult.unsupported.includes('Umi')) {
+      printUmiManualInstructions()
     }
   }
   if (buildResult.supported.length === 0 && buildResult.unsupported.length === 0) {

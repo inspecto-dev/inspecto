@@ -67,26 +67,31 @@ export function injectWebpack(
       })
     } else {
       // Fallback for frameworks like Next.js that don't use HtmlWebpackPlugin
-      compilation.hooks.processAssets.tapPromise(
-        {
-          name: 'inspecto-overlay',
-          stage: compiler.webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONS,
-        },
-        async (assets: any) => {
-          const port = await serverPortFn()
+      if (compilation.hooks.processAssets) {
+        // Webpack 5+
+        compilation.hooks.processAssets.tapPromise(
+          {
+            name: 'inspecto-overlay',
+            stage: compiler.webpack.Compilation.PROCESS_ASSETS_STAGE_ADDITIONS,
+          },
+          async (assets: any) => {
+            const port = await serverPortFn()
 
-          // Only inject into the main client entry chunks (e.g. main-app or main.js)
-          const mainAssetKey = Object.keys(assets).find(
-            key => key.endsWith('.js') && (key.includes('main') || key.includes('app')),
-          )
-          if (!mainAssetKey) return
+            // Only inject into the main client entry chunks (e.g. main-app, main.js, umi.js)
+            const mainAssetKey = Object.keys(assets).find(
+              key =>
+                key.endsWith('.js') &&
+                (key.includes('main') || key.includes('app') || key.includes('umi')),
+            )
+            if (!mainAssetKey) return
 
-          const originalSource = assets[mainAssetKey].source()
-          assets[mainAssetKey] = new compiler.webpack.sources.RawSource(
-            getWebpackAssetScript(port) + '\n' + originalSource,
-          )
-        },
-      )
+            const originalSource = assets[mainAssetKey].source()
+            assets[mainAssetKey] = new compiler.webpack.sources.RawSource(
+              getWebpackAssetScript(port) + '\n' + originalSource,
+            )
+          },
+        )
+      }
     }
   })
 }

@@ -237,8 +237,10 @@ export async function handleRequest(
 
     try {
       handleOpenFileRequest(body, serverState)
-    } catch {
-      serverLogger.warn(`Security: Blocked path traversal attempt in IDE_OPEN: ${body.file}`)
+    } catch (err: any) {
+      serverLogger.warn(
+        `Security: Blocked path traversal attempt in IDE_OPEN: ${body.file}. Reason: ${err.message}`,
+      )
       res.writeHead(403, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: 'Access denied: File is outside of project workspace' }))
       return
@@ -261,8 +263,10 @@ export async function handleRequest(
       // Security: Prevent path traversal attacks
       try {
         assertPathWithinProject(absolutePath, serverState.projectRoot)
-      } catch {
-        serverLogger.warn(`Security: Blocked path traversal attempt in PROJECT_SNIPPET: ${file}`)
+      } catch (err: any) {
+        serverLogger.warn(
+          `Security: Blocked path traversal attempt in PROJECT_SNIPPET: ${file}. Reason: ${err.message}`,
+        )
         res.writeHead(403, { 'Content-Type': 'application/json' })
         res.end(
           JSON.stringify({

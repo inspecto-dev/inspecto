@@ -5,13 +5,25 @@ import path from 'node:path'
 
 export class InspectoWebpack4Plugin {
   private options: any
+  private serverPort: number | null = null
 
   constructor(options: any = {}) {
     this.options = options
   }
 
+  private async ensureServer() {
+    if (this.serverPort === null) {
+      this.serverPort = await startServer()
+    }
+    return this.serverPort
+  }
+
   apply(compiler: any) {
     const clientPath = resolveClientModule()
+
+    compiler.hooks.beforeCompile.tapPromise('InspectoWebpack4Plugin', async () => {
+      await this.ensureServer()
+    })
 
     // 1. Inject the loader dynamically so we don't have to require users to configure loaders manually
     compiler.hooks.afterEnvironment.tap('InspectoWebpack4Plugin', () => {
@@ -45,7 +57,7 @@ export class InspectoWebpack4Plugin {
         HtmlWebpackPlugin.getHooks(compilation).alterAssetTagGroups.tapAsync(
           'InspectoWebpack4Plugin',
           async (data: any, cb: any) => {
-            const port = await startServer()
+            const port = await this.ensureServer()
             data.headTags.unshift({
               tagName: 'script',
               voidTag: false,
@@ -60,7 +72,7 @@ export class InspectoWebpack4Plugin {
         compilation.hooks.htmlWebpackPluginAlterAssetTags.tapAsync(
           'InspectoWebpack4Plugin',
           async (data: any, cb: any) => {
-            const port = await startServer()
+            const port = await this.ensureServer()
             data.head.unshift({
               tagName: 'script',
               voidTag: false,
