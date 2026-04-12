@@ -1,6 +1,5 @@
 import { createOverlay } from './overlay.js'
-import { showIntentMenu } from './menu.js'
-import { createEmptySession, updateCurrentRecordIntent } from './annotate-session.js'
+import { createEmptySession } from './annotate-session.js'
 import { createAnnotateSidebar } from './annotate-sidebar.js'
 import type { AnnotateSidebarOptions } from './annotate-sidebar.js'
 import { createAnnotateOverlay } from './annotate-overlay.js'
@@ -78,19 +77,8 @@ import {
   resolveAnnotateScreenshotElement as resolveAnnotateScreenshotTarget,
   syncRuntimeContextCapture as syncRuntimeCapture,
 } from './component-evidence.js'
-import {
-  ATTR_NAME,
-  createElementSelector,
-  findInspectable,
-  hotKeysHeld,
-  parseAttrValue,
-} from './component-utils.js'
-import {
-  createRuntimeContextCollector,
-  createRuntimeContextEnvelope,
-  selectRuntimeEvidence,
-} from './runtime-context.js'
-import { captureElementScreenshot } from './screenshot-context.js'
+import { createElementSelector } from './component-utils.js'
+import { createRuntimeContextCollector, createRuntimeContextEnvelope } from './runtime-context.js'
 import type {
   AnnotationTransport,
   AnnotationTarget,
@@ -102,7 +90,6 @@ import type {
   HotKeys,
   ScreenshotContext,
 } from '@inspecto-dev/types'
-import { sendAnnotationsToAi } from './http.js'
 export type InspectorMode = 'inspect' | 'annotate'
 type InspectoOptions = InspectorOptions & { mode?: InspectorMode }
 

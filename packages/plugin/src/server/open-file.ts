@@ -4,7 +4,7 @@ import type { OpenFileRequest, ServerState } from '@inspecto-dev/types'
 import { loadUserConfigSync } from '../config.js'
 import { createLogger } from '../utils/logger.js'
 import { getGlobalLogLevel } from '../config.js'
-import { assertPathWithinProject, resolveWorkspacePath } from './path-guards.js'
+import { assertPathWithinIdeOpenScope, resolveWorkspacePath } from './path-guards.js'
 
 const serverLogger = createLogger('inspecto:server', { logLevel: getGlobalLogLevel() })
 
@@ -27,7 +27,7 @@ export function handleOpenFileRequest(
 ): { success: true } {
   const absolutePath = resolveWorkspacePath(body.file, serverState.cwd)
 
-  assertPathWithinProject(absolutePath, serverState.projectRoot)
+  assertPathWithinIdeOpenScope(absolutePath, serverState.projectRoot)
 
   const userConfig = loadUserConfigSync(false, serverState.cwd, serverState.configRoot)
   const configuredIde = userConfig.ide

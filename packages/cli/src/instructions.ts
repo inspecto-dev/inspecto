@@ -28,6 +28,25 @@ export function printNuxtManualInstructions() {
   log.hint('3. Restart your Nuxt dev server after applying the guided patches.')
 }
 
+export function printUmiManualInstructions() {
+  log.blank()
+  log.hint('Umi supports guided setup in the current version.')
+  log.hint('1. Update `config/config.ts` or `.umirc.ts` to register the Inspecto webpack plugin:')
+  log.copyableCodeBlock([
+    "import { defineConfig } from 'umi'",
+    "import { webpack4Plugin } from '@inspecto-dev/plugin/legacy/webpack4'",
+    '',
+    'export default defineConfig({',
+    '  chainWebpack(memo) {',
+    "    if (process.env.NODE_ENV === 'development') {",
+    "      memo.plugin('inspecto').use(webpack4Plugin())",
+    '    }',
+    '  },',
+    '})',
+  ])
+  log.hint('2. Restart your Umi dev server after applying the guided patches.')
+}
+
 export function printNextJsManualInstructions() {
   log.blank()
   log.hint(

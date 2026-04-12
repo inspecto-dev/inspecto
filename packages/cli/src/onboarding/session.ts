@@ -361,7 +361,11 @@ export async function resolveOnboardingSession(
     ...(options.target ? { selectedPackagePath: options.target } : {}),
   })
 
-  if (target.candidates.length === 0) {
+  const isGuided = rootContext.buildTools.unsupported.some(t =>
+    ['Next.js', 'Nuxt', 'Umi'].includes(t),
+  )
+
+  if (target.candidates.length === 0 || isGuided) {
     const plan = createPlanResult(rootContext)
     const guidedStatus = plan.strategy === 'guided' ? 'partial_success' : 'error'
     const resolvedTarget =

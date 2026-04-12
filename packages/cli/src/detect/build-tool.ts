@@ -139,6 +139,11 @@ const SUPPORTED_PATTERNS: { tool: BuildTool; files: string[]; label: string }[] 
 
 /** Recognized but unsupported meta-frameworks — detect via dep + config file */
 const UNSUPPORTED_META: { name: string; dep: string; files: string[] }[] = [
+  {
+    name: 'Umi',
+    dep: 'umi',
+    files: ['.umirc.ts', '.umirc.js', 'config/config.ts', 'config/config.js'],
+  },
   { name: 'Next.js', dep: 'next', files: ['next.config.mjs', 'next.config.js', 'next.config.ts'] },
   { name: 'Nuxt', dep: 'nuxt', files: ['nuxt.config.ts', 'nuxt.config.js'] },
   { name: 'Remix', dep: '@remix-run/dev', files: ['remix.config.js', 'remix.config.ts'] },
@@ -297,7 +302,9 @@ export async function detectBuildTools(
     }
 
     const unsupportedChecks = UNSUPPORTED_META.map(async meta => {
-      if (!(meta.dep in allDeps)) return null
+      // Check if any dependency matches (supports exact match or scoped packages if necessary, but here we do exact match)
+      const hasDep = meta.dep in allDeps || Object.keys(allDeps).some(dep => dep.includes(meta.dep))
+      if (!hasDep) return null
       for (const file of meta.files) {
         if (await exists(path.join(target.absolutePath, file))) {
           return meta.name
