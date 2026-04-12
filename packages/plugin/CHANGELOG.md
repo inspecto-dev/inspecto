@@ -1,5 +1,13 @@
 # @inspecto-dev/plugin
 
+## 0.3.5
+
+### Patch Changes
+
+- 2be449f: fix: improve cli onboarding and default extension handling
+- Updated dependencies [2be449f]
+  - @inspecto-dev/types@0.3.5
+
 ## 0.3.4
 
 ### Patch Changes
