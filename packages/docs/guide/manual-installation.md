@@ -139,8 +139,9 @@ import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   webpack: (config, { dev, isServer }) => {
-    // Only inject during development and on the client-side
-    if (dev && !isServer) {
+    // Keep the plugin active in both server and client development compilers
+    // so App Router server components also receive Inspecto transforms.
+    if (dev) {
       config.plugins.push(inspecto())
     }
     return config

@@ -169,4 +169,24 @@ describe('resolveIntegrationHostIde', () => {
       candidates: ['cursor', 'vscode'],
     })
   })
+
+  it('ignores project artifacts when requested by integration install flows', async () => {
+    vi.mocked(fsUtils.exists).mockImplementation(async filePath => {
+      return filePath === '/repo/.trae'
+    })
+
+    const { resolveIntegrationHostIde } = await import('../src/commands/integration-host-ide.js')
+
+    await expect(
+      resolveIntegrationHostIde({
+        cwd: '/repo',
+        ignoreProjectArtifacts: true,
+      }),
+    ).resolves.toMatchObject({
+      ide: null,
+      confidence: 'low',
+      source: 'none',
+      candidates: [],
+    })
+  })
 })

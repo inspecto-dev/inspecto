@@ -12,6 +12,7 @@ export type HostIdeSource = 'explicit' | 'config' | 'env' | 'artifact' | 'ambigu
 export interface ResolveIntegrationHostIdeOptions {
   explicitIde?: string
   cwd?: string
+  ignoreProjectArtifacts?: boolean
 }
 
 export interface ResolvedIntegrationHostIde {
@@ -51,7 +52,7 @@ export async function resolveIntegrationHostIde(
   const envCandidates = detectEnvHostIdes()
   if (envCandidates.length === 1) {
     return {
-      ide: envCandidates[0],
+      ide: envCandidates[0]!,
       confidence: 'high',
       source: 'env',
       candidates: envCandidates,
@@ -67,22 +68,24 @@ export async function resolveIntegrationHostIde(
     }
   }
 
-  const artifactCandidates = await detectArtifactHostIdes(cwd)
-  if (artifactCandidates.length === 1) {
-    return {
-      ide: artifactCandidates[0],
-      confidence: 'medium',
-      source: 'artifact',
-      candidates: artifactCandidates,
+  if (!options.ignoreProjectArtifacts) {
+    const artifactCandidates = await detectArtifactHostIdes(cwd)
+    if (artifactCandidates.length === 1) {
+      return {
+        ide: artifactCandidates[0]!,
+        confidence: 'medium',
+        source: 'artifact',
+        candidates: artifactCandidates,
+      }
     }
-  }
 
-  if (artifactCandidates.length > 1) {
-    return {
-      ide: null,
-      confidence: 'low',
-      source: 'ambiguous',
-      candidates: artifactCandidates,
+    if (artifactCandidates.length > 1) {
+      return {
+        ide: null,
+        confidence: 'low',
+        source: 'ambiguous',
+        candidates: artifactCandidates,
+      }
     }
   }
 

@@ -244,6 +244,23 @@ describe('init in monorepo roots', () => {
     expect(instructionUtils.printNuxtManualInstructions).not.toHaveBeenCalled()
   })
 
+  it('prints detailed Nuxt guided instructions when Nuxt is detected', async () => {
+    vi.mocked(buildToolUtils.detectBuildTools).mockResolvedValue({
+      supported: [],
+      unsupported: ['Nuxt'],
+    })
+
+    await init({
+      shared: false,
+      skipInstall: true,
+      dryRun: true,
+      noExtension: true,
+      force: false,
+    })
+
+    expect(instructionUtils.printNuxtManualInstructions).toHaveBeenCalled()
+  })
+
   it('preserves detected preferred mode for an explicit provider override', async () => {
     vi.mocked(buildToolUtils.detectBuildTools).mockResolvedValue({
       supported: [

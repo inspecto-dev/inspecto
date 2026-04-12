@@ -63,8 +63,8 @@ function buildCandidates(input: ResolveOnboardingTargetInput): OnboardingTargetC
       configPath: buildTool.configPath,
       label: buildTool.label,
       buildTool: buildTool.tool,
-      isLegacyRspack: buildTool.isLegacyRspack,
-      isLegacyWebpack: buildTool.isLegacyWebpack,
+      ...(buildTool.isLegacyRspack ? { isLegacyRspack: true } : {}),
+      ...(buildTool.isLegacyWebpack ? { isLegacyWebpack: true } : {}),
       frameworks: input.frameworkSupportByPackage[packagePath] ?? [],
       automaticInjection: true,
     }
@@ -162,7 +162,7 @@ export function resolveOnboardingTarget(
   if (candidates.length === 1) {
     return {
       status: 'resolved',
-      selected: candidates[0],
+      selected: candidates[0]!,
       candidates,
       reason: 'Only one supported target was detected.',
       selectionPurpose: buildSelectionPurpose(),

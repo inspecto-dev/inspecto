@@ -175,8 +175,8 @@ export async function init(options: InitOptions): Promise<void> {
   if (buildResult.unsupported.length > 0) {
     const names = buildResult.unsupported.join(', ')
     manualConfigRequiredFor = buildResult.unsupported[0] || ''
-    log.warn(`Detected ${names} — automatic plugin injection is not supported in current version`)
-    log.hint('You can still manually configure it by modifying your configuration file')
+    log.warn(`Detected ${names} — guided onboarding is available in the current version`)
+    log.hint('Inspecto can prepare the remaining patch plan and assistant handoff for this stack.')
 
     if (buildResult.unsupported.includes('Next.js')) {
       printNextJsManualInstructions()

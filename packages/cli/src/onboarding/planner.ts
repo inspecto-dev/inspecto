@@ -1,4 +1,7 @@
 import { buildOnboardingContext } from './context.js'
+import { getHostIdeLabel, isSupportedHostIde } from '../integrations/capabilities.js'
+import { createNextJsGuidance } from './nextjs-guidance.js'
+import { createNuxtGuidance } from './nuxt-guidance.js'
 import type {
   CommandMessage,
   CommandStatus,
@@ -37,11 +40,19 @@ function supportedIde(context: OnboardingContext): string | undefined {
   return context.ides.find(ide => ide.supported)?.ide
 }
 
+function shouldInstallInspectoExtension(ide?: string): boolean {
+  return Boolean(ide && isSupportedHostIde(ide))
+}
+
 function supportedProvider(context: OnboardingContext): string | undefined {
   return context.providers.find(provider => provider.supported)?.id
 }
 
 function buildToolBlockers(context: OnboardingContext): CommandMessage[] {
+  if (isGuidedMetaFrameworkScenario(context)) {
+    return []
+  }
+
   if (context.buildTools.unsupported.length > 0) {
     return [
       message(
@@ -214,6 +225,71 @@ function manualBuildToolActions(context: OnboardingContext): PlanResult['actions
   ]
 }
 
+function hasUnsupportedBuildTool(context: OnboardingContext, buildTool: string): boolean {
+  return context.buildTools.unsupported.includes(buildTool)
+}
+
+function isGuidedNextJsScenario(context: OnboardingContext): boolean {
+  return (
+    context.buildTools.supported.length === 0 &&
+    hasUnsupportedBuildTool(context, 'Next.js') &&
+    context.frameworks.supported.includes('react')
+  )
+}
+
+function isGuidedNuxtScenario(context: OnboardingContext): boolean {
+  return (
+    context.buildTools.supported.length === 0 &&
+    hasUnsupportedBuildTool(context, 'Nuxt') &&
+    context.frameworks.supported.includes('vue')
+  )
+}
+
+function isGuidedMetaFrameworkScenario(context: OnboardingContext): boolean {
+  return isGuidedNextJsScenario(context) || isGuidedNuxtScenario(context)
+}
+
+function guidedBuildToolWarnings(
+  context: OnboardingContext,
+  guidedBuildTool: string,
+): CommandMessage[] {
+  return context.buildTools.unsupported
+    .filter(buildTool => buildTool !== guidedBuildTool)
+    .map(buildTool =>
+      message(
+        'additional-unsupported-build-tool',
+        `Additional unsupported build tool also detected: ${buildTool}`,
+      ),
+    )
+}
+
+function guidedFrameworkWarnings(context: OnboardingContext, framework: string): CommandMessage[] {
+  return context.frameworks.unsupported
+    .filter(item => item !== framework)
+    .map(item =>
+      message(
+        'additional-unsupported-framework',
+        `Additional unsupported framework also detected: ${item}`,
+      ),
+    )
+}
+
+function buildGuidedWarnings(
+  context: OnboardingContext,
+  guidedBuildTool: string,
+  guidedFramework: string,
+): CommandMessage[] {
+  return uniqueMessages([
+    ...guidedBuildToolWarnings(context, guidedBuildTool),
+    ...guidedFrameworkWarnings(context, guidedFramework),
+    ...unsupportedEnvironmentWarnings(context),
+  ]).filter(
+    warning =>
+      warning.message !==
+      `Unsupported framework(s) also detected: ${context.frameworks.unsupported.join(', ')}`,
+  )
+}
+
 function manualFrameworkActions(context: OnboardingContext): PlanResult['actions'] {
   if (context.frameworks.unsupported.length > 0) {
     return [
@@ -267,6 +343,121 @@ export async function createDetectionResult(root: string): Promise<DetectionResu
 }
 
 export function createPlanResult(context: OnboardingContext): PlanResult {
+  if (isGuidedNextJsScenario(context)) {
+    const ide = supportedIde(context)
+    const provider = supportedProvider(context)
+    const guidance = createNextJsGuidance(context.root)
+    const actions: PlanResult['actions'] = [
+      {
+        type: 'install_dependency',
+        target: '@inspecto-dev/plugin @inspecto-dev/core',
+        description: `Install the Inspecto runtime packages with ${context.packageManager}.`,
+      },
+    ]
+
+    if (shouldInstallInspectoExtension(ide) && ide) {
+      actions.push({
+        type: 'install_extension',
+        target: ide,
+        description: `Install the Inspecto ${getHostIdeLabel(ide as Parameters<typeof getHostIdeLabel>[0])} extension.`,
+      })
+    }
+
+    actions.push(
+      {
+        type: 'generate_patch_plan',
+        target: 'next.config',
+        description: 'Generate a guided patch plan for the Next.js Inspecto webpack integration.',
+      },
+      {
+        type: 'manual_confirmation',
+        target: context.root,
+        description:
+          'Complete the remaining client-side Inspecto mount step in your assistant or editor.',
+      },
+    )
+
+    const defaults: PlanResult['defaults'] = {
+      shared: false,
+      extension: shouldInstallInspectoExtension(ide),
+      ...(provider ? { provider } : {}),
+      ...(ide ? { ide } : {}),
+    }
+
+    return {
+      status: 'warning',
+      warnings: buildGuidedWarnings(context, 'Next.js', 'react'),
+      blockers: [],
+      strategy: 'guided',
+      actions,
+      defaults,
+      framework: guidance.framework,
+      metaFramework: guidance.metaFramework,
+      routerMode: guidance.routerMode,
+      autoApplied: guidance.autoApplied,
+      pendingSteps: guidance.pendingSteps,
+      assistantPrompt: guidance.assistantPrompt,
+      patches: guidance.patches,
+    }
+  }
+
+  if (isGuidedNuxtScenario(context)) {
+    const ide = supportedIde(context)
+    const provider = supportedProvider(context)
+    const guidance = createNuxtGuidance(context.root)
+    const actions: PlanResult['actions'] = [
+      {
+        type: 'install_dependency',
+        target: '@inspecto-dev/plugin @inspecto-dev/core',
+        description: `Install the Inspecto runtime packages with ${context.packageManager}.`,
+      },
+    ]
+
+    if (shouldInstallInspectoExtension(ide) && ide) {
+      actions.push({
+        type: 'install_extension',
+        target: ide,
+        description: `Install the Inspecto ${getHostIdeLabel(ide as Parameters<typeof getHostIdeLabel>[0])} extension.`,
+      })
+    }
+
+    actions.push(
+      {
+        type: 'generate_patch_plan',
+        target: 'nuxt.config',
+        description: 'Generate a guided patch plan for the Nuxt Inspecto Vite integration.',
+      },
+      {
+        type: 'manual_confirmation',
+        target: context.root,
+        description:
+          'Complete the remaining Nuxt client plugin mount step in your assistant or editor.',
+      },
+    )
+
+    const defaults: PlanResult['defaults'] = {
+      shared: false,
+      extension: shouldInstallInspectoExtension(ide),
+      ...(provider ? { provider } : {}),
+      ...(ide ? { ide } : {}),
+    }
+
+    return {
+      status: 'warning',
+      warnings: buildGuidedWarnings(context, 'Nuxt', 'vue'),
+      blockers: [],
+      strategy: 'guided',
+      actions,
+      defaults,
+      framework: guidance.framework,
+      metaFramework: guidance.metaFramework,
+      autoApplied: guidance.autoApplied,
+      pendingSteps: guidance.pendingSteps,
+      assistantPrompt: guidance.assistantPrompt,
+      patches: guidance.patches,
+    }
+  }
+
   const warnings = uniqueMessages([
     ...unsupportedEnvironmentWarnings(context),
     ...buildToolWarnings(context),
@@ -319,18 +510,19 @@ export function createPlanResult(context: OnboardingContext): PlanResult {
     }
 
     const ide = supportedIde(context)
-    if (ide === 'vscode') {
+    if (shouldInstallInspectoExtension(ide) && ide) {
       actions.push({
         type: 'install_extension',
-        target: 'vscode',
-        description: 'Install the Inspecto VS Code extension.',
+        target: ide,
+        description: `Install the Inspecto ${getHostIdeLabel(ide as Parameters<typeof getHostIdeLabel>[0])} extension.`,
       })
     }
   }
 
+  const ide = supportedIde(context)
   const defaults: PlanResult['defaults'] = {
     shared: false,
-    extension: supportedIde(context) === 'vscode',
+    extension: shouldInstallInspectoExtension(ide),
   }
 
   const provider = supportedProvider(context)
@@ -338,7 +530,6 @@ export function createPlanResult(context: OnboardingContext): PlanResult {
     defaults.provider = provider
   }
 
-  const ide = supportedIde(context)
   if (ide) {
     defaults.ide = ide
   }
@@ -355,6 +546,10 @@ export function createPlanResult(context: OnboardingContext): PlanResult {
 
 export function planManualFollowUp(result: PlanResult): string[] {
   return result.actions
-    .filter(action => action.type === 'manual_step')
+    .filter(action =>
+      ['manual_step', 'generate_patch_plan', 'generate_file', 'manual_confirmation'].includes(
+        action.type,
+      ),
+    )
     .map(action => action.description)
 }

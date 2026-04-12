@@ -266,7 +266,7 @@ export async function installIntegration(
 
   const automationResult = await runIntegrationAutomation(
     assistant,
-    { ...options, silent },
+    { ...options, silent, ignoreProjectArtifacts: true },
     process.cwd(),
   )
   const result: IntegrationInstallResult = {

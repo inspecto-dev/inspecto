@@ -9,6 +9,18 @@ if [[ -n "${INSPECTO_DEV_REPO:-}" && -f "${INSPECTO_DEV_REPO}/packages/cli/dist/
   exec node "${INSPECTO_DEV_REPO}/packages/cli/dist/bin.js" "$@"
 fi
 
+if [[ -f ".inspecto/dev.json" ]]; then
+  dev_cli_bin="$(sed -n 's/.*"cliBin"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .inspecto/dev.json | head -n 1)"
+  if [[ -n "${dev_cli_bin:-}" && -f "${dev_cli_bin}" ]]; then
+    exec node "${dev_cli_bin}" "$@"
+  fi
+
+  dev_repo="$(sed -n 's/.*"devRepo"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' .inspecto/dev.json | head -n 1)"
+  if [[ -n "${dev_repo:-}" && -f "${dev_repo}/packages/cli/dist/bin.js" ]]; then
+    exec node "${dev_repo}/packages/cli/dist/bin.js" "$@"
+  fi
+fi
+
 if [[ -f "./packages/cli/bin/inspecto.js" && -d "./packages/cli/dist" ]]; then
   exec node ./packages/cli/bin/inspecto.js "$@"
 fi

@@ -1,5 +1,6 @@
 export { apply } from './commands/apply.js'
 export { detect } from './commands/detect.js'
+export { devLink, devStatus, devUnlink } from './commands/dev-config.js'
 export { init } from './commands/init.js'
 export { collectDoctorResult, doctor } from './commands/doctor.js'
 export { integrationDoctor } from './commands/integration-doctor.js'

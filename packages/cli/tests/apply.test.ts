@@ -33,7 +33,9 @@ vi.mock('../src/detect/package-manager.js', async () => {
 
 vi.mock('../src/utils/fs.js', () => ({
   exists: vi.fn(),
+  readFile: vi.fn(),
   readJSON: vi.fn(),
+  writeFile: vi.fn(),
   writeJSON: vi.fn(),
 }))
 
@@ -80,7 +82,9 @@ describe('apply onboarding flow', () => {
       mutations: [{ type: 'file_modified', path: 'vite.config.ts' }],
     })
     vi.mocked(fsUtils.exists).mockResolvedValue(false)
+    vi.mocked(fsUtils.readFile).mockResolvedValue(null)
     vi.mocked(fsUtils.readJSON).mockResolvedValue(null)
+    vi.mocked(fsUtils.writeFile).mockResolvedValue()
     vi.mocked(gitignoreUtils.updateGitignore).mockResolvedValue()
     vi.mocked(extensionUtils.installExtension).mockResolvedValue({
       type: 'extension_installed',
@@ -330,6 +334,321 @@ describe('apply onboarding flow', () => {
     expect(result.status).toBe('warning')
     expect(result.postInstall.nextSteps).toContain(
       'Update app/webpack.config.js to import `webpackPlugin` from `@inspecto-dev/plugin/legacy/webpack4` and add it to the Webpack plugins array.',
+    )
+  })
+
+  it('auto-applies high-confidence Next.js config patches for guided plans', async () => {
+    vi.mocked(fsUtils.readFile).mockImplementation(async filePath => {
+      if (filePath === '/repo/next.config.mjs') {
+        return 'export default {\n  reactStrictMode: true,\n}\n'
+      }
+      return null
+    })
+
+    const result = await applyOnboardingPlan({
+      repoRoot: '/repo',
+      projectRoot: '/repo',
+      packageManager: 'pnpm',
+      supportedBuildTargets: [],
+      options: {
+        shared: false,
+        skipInstall: false,
+        dryRun: false,
+        noExtension: false,
+      },
+      selectedIDE: { ide: 'vscode', supported: true },
+      providerDefault: 'codex.extension',
+      plan: {
+        status: 'warning',
+        warnings: [],
+        blockers: [],
+        strategy: 'guided',
+        actions: [
+          {
+            type: 'install_dependency',
+            target: '@inspecto-dev/plugin @inspecto-dev/core',
+            description: 'Install the Inspecto runtime packages with pnpm.',
+          },
+          {
+            type: 'generate_patch_plan',
+            target: 'next.config',
+            description:
+              'Generate a guided patch plan for the Next.js Inspecto webpack integration.',
+          },
+          {
+            type: 'manual_confirmation',
+            target: '/repo',
+            description:
+              'Complete the remaining client-side Inspecto mount step in your assistant or editor.',
+          },
+        ],
+        defaults: {
+          provider: 'codex',
+          ide: 'vscode',
+          shared: false,
+          extension: true,
+        },
+        framework: 'react',
+        metaFramework: 'Next.js',
+        routerMode: 'app',
+        autoApplied: ['dependencies', 'inspecto_settings'],
+        pendingSteps: [
+          'Review the generated Next.js patch plan for next.config.mjs.',
+          'Complete the remaining client-side mount step for your App Router entry.',
+        ],
+        assistantPrompt: 'Complete the remaining Inspecto onboarding for this Next.js project.',
+        patches: [
+          {
+            path: 'next.config.mjs',
+            status: 'planned',
+            reason: 'next_config_object_export',
+            confidence: 'high',
+            snippet:
+              "import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'\n\nwebpack(config, { dev, isServer }) {\n  if (dev && !isServer) {\n    config.plugins.push(inspecto())\n  }\n  return config\n}",
+          },
+        ],
+      },
+      allowManualPlanApply: true,
+    })
+
+    expect(astInjectorUtils.injectPlugin).not.toHaveBeenCalled()
+    expect(fsUtils.writeFile).toHaveBeenCalledWith(
+      '/repo/next.config.mjs',
+      expect.stringContaining("import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'"),
+    )
+    expect(fsUtils.writeFile).toHaveBeenCalledWith(
+      '/repo/next.config.mjs',
+      expect.stringContaining('if (dev) {\n      config.plugins.push(inspecto())'),
+    )
+    expect(result.mutations).toEqual(
+      expect.arrayContaining([
+        {
+          type: 'file_modified',
+          path: 'next.config.mjs',
+          description: 'Automatically configured Inspecto guided Next.js patch',
+        },
+      ]),
+    )
+    expect(result.postInstall.nextSteps).toContain(
+      'Complete the remaining client-side Inspecto mount step in your assistant or editor.',
+    )
+  })
+
+  it('auto-applies high-confidence Next.js patches for exported nextConfig objects', async () => {
+    vi.mocked(fsUtils.readFile).mockImplementation(async filePath => {
+      if (filePath === '/repo/next.config.ts') {
+        return "import type { NextConfig } from 'next'\nconst nextConfig: NextConfig = {\n  reactStrictMode: true,\n}\n\nexport default nextConfig\n"
+      }
+      return null
+    })
+
+    const result = await applyOnboardingPlan({
+      repoRoot: '/repo',
+      projectRoot: '/repo',
+      packageManager: 'pnpm',
+      supportedBuildTargets: [],
+      options: {
+        shared: false,
+        skipInstall: false,
+        dryRun: false,
+        noExtension: false,
+      },
+      selectedIDE: { ide: 'vscode', supported: true },
+      providerDefault: 'codex.extension',
+      plan: {
+        status: 'warning',
+        warnings: [],
+        blockers: [],
+        strategy: 'guided',
+        actions: [],
+        defaults: {
+          provider: 'codex',
+          ide: 'vscode',
+          shared: false,
+          extension: true,
+        },
+        framework: 'react',
+        metaFramework: 'Next.js',
+        routerMode: 'app',
+        autoApplied: ['dependencies', 'inspecto_settings'],
+        pendingSteps: [
+          'Review the generated Next.js patch plan for next.config.ts.',
+          'Complete the remaining client-side mount step for your App Router entry.',
+        ],
+        assistantPrompt: 'Complete the remaining Inspecto onboarding for this Next.js project.',
+        patches: [
+          {
+            path: 'next.config.ts',
+            status: 'planned',
+            reason: 'next_config_object_export',
+            confidence: 'high',
+            snippet:
+              "import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'\n\nwebpack(config, { dev, isServer }) {\n  if (dev && !isServer) {\n    config.plugins.push(inspecto())\n  }\n  return config\n}",
+          },
+        ],
+      },
+      allowManualPlanApply: true,
+    })
+
+    expect(fsUtils.writeFile).toHaveBeenCalledWith(
+      '/repo/next.config.ts',
+      expect.stringContaining("import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'"),
+    )
+    expect(fsUtils.writeFile).toHaveBeenCalledWith(
+      '/repo/next.config.ts',
+      expect.stringContaining(
+        'const nextConfig: NextConfig = {\n  webpack(config, { dev, isServer }) {',
+      ),
+    )
+    expect(fsUtils.writeFile).toHaveBeenCalledWith(
+      '/repo/next.config.ts',
+      expect.not.stringContaining('!isServer'),
+    )
+    expect(result.mutations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: 'next.config.ts',
+          description: 'Automatically configured Inspecto guided Next.js patch',
+        }),
+      ]),
+    )
+  })
+
+  it('preserves manual patch follow-up for guided Next.js plans that are not auto-applicable', async () => {
+    const result = await applyOnboardingPlan({
+      repoRoot: '/repo',
+      projectRoot: '/repo',
+      packageManager: 'pnpm',
+      supportedBuildTargets: [],
+      options: {
+        shared: false,
+        skipInstall: false,
+        dryRun: false,
+        noExtension: false,
+      },
+      selectedIDE: { ide: 'vscode', supported: true },
+      providerDefault: 'codex.extension',
+      plan: {
+        status: 'warning',
+        warnings: [],
+        blockers: [],
+        strategy: 'guided',
+        actions: [
+          {
+            type: 'generate_patch_plan',
+            target: 'next.config',
+            description:
+              'Generate a guided patch plan for the Next.js Inspecto webpack integration.',
+          },
+        ],
+        defaults: {
+          provider: 'codex',
+          ide: 'vscode',
+          shared: false,
+          extension: true,
+        },
+        framework: 'react',
+        metaFramework: 'Next.js',
+        routerMode: 'pages',
+        pendingSteps: ['Review the generated Next.js patch plan for next.config.js.'],
+        patches: [
+          {
+            path: 'next.config.js',
+            status: 'manual_patch_required',
+            reason: 'next_config_wrapped_export',
+            confidence: 'medium',
+            snippet: 'module.exports = withBundleAnalyzer({ /* ... */ })',
+          },
+        ],
+      },
+      allowManualPlanApply: true,
+    })
+
+    expect(astInjectorUtils.injectPlugin).not.toHaveBeenCalled()
+    expect(fsUtils.writeFile).not.toHaveBeenCalledWith('/repo/next.config.js', expect.any(String))
+    expect(result.postInstall.nextSteps).toContain(
+      'Generate a guided patch plan for the Next.js Inspecto webpack integration.',
+    )
+  })
+
+  it('auto-applies high-confidence Nuxt config patches for guided plans', async () => {
+    vi.mocked(fsUtils.readFile).mockImplementation(async filePath => {
+      if (filePath === '/repo/nuxt.config.ts') {
+        return 'export default defineNuxtConfig({\n  devtools: { enabled: true },\n})\n'
+      }
+      return null
+    })
+
+    const result = await applyOnboardingPlan({
+      repoRoot: '/repo',
+      projectRoot: '/repo',
+      packageManager: 'pnpm',
+      supportedBuildTargets: [],
+      options: {
+        shared: false,
+        skipInstall: false,
+        dryRun: false,
+        noExtension: false,
+      },
+      selectedIDE: { ide: 'vscode', supported: true },
+      providerDefault: 'codex.extension',
+      plan: {
+        status: 'warning',
+        warnings: [],
+        blockers: [],
+        strategy: 'guided',
+        actions: [
+          {
+            type: 'generate_patch_plan',
+            target: 'nuxt.config',
+            description: 'Generate a guided patch plan for the Nuxt Inspecto Vite integration.',
+          },
+        ],
+        defaults: {
+          provider: 'codex',
+          ide: 'vscode',
+          shared: false,
+          extension: true,
+        },
+        framework: 'vue',
+        metaFramework: 'Nuxt',
+        pendingSteps: [
+          'Review the generated Nuxt patch plan for nuxt.config.ts.',
+          'Complete the remaining Nuxt client plugin mount step in plugins/inspecto.client.ts.',
+        ],
+        patches: [
+          {
+            path: 'nuxt.config.ts',
+            status: 'planned',
+            reason: 'nuxt_config_object_export',
+            confidence: 'high',
+            snippet:
+              "import { vitePlugin as inspecto } from '@inspecto-dev/plugin'\n\nexport default defineNuxtConfig({\n  vite: {\n    plugins: [inspecto()],\n  },\n})",
+          },
+          {
+            path: 'plugins/inspecto.client.ts',
+            status: 'manual_patch_required',
+            reason: 'nuxt_client_plugin_mount',
+            confidence: 'medium',
+            snippet: 'export default defineNuxtPlugin(() => {})',
+          },
+        ],
+      },
+      allowManualPlanApply: true,
+    })
+
+    expect(fsUtils.writeFile).toHaveBeenCalledWith(
+      '/repo/nuxt.config.ts',
+      expect.stringContaining("import { vitePlugin as inspecto } from '@inspecto-dev/plugin'"),
+    )
+    expect(result.mutations).toEqual(
+      expect.arrayContaining([
+        {
+          type: 'file_modified',
+          path: 'nuxt.config.ts',
+          description: 'Automatically configured Inspecto guided Next.js patch',
+        },
+      ]),
     )
   })
 

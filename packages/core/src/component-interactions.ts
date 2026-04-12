@@ -16,6 +16,7 @@ type InteractionContext = {
   pendingAnnotateViewportFrame: number | null
   overlay: { hide(): void; show(target: Element, label: string): void }
   shadowRootEl: ShadowRoot
+  style: CSSStyleDeclaration
   cleanupMenu: (() => void) | null
   options: {
     screenshotContext?: { enabled?: boolean }
@@ -53,6 +54,11 @@ export function handleMouseMove(ctx: unknown, event: MouseEvent): void {
   state.lastPointerY = event.clientY
   state.updateLauncherEye()
 
+  if (state.cleanupMenu !== null) {
+    state.overlay.hide()
+    return
+  }
+
   const isActive = state.isInspectorActive(event)
   if (!isActive) {
     state.overlay.hide()
@@ -80,6 +86,7 @@ export function handleMouseMove(ctx: unknown, event: MouseEvent): void {
 
 export function handleTrigger(ctx: unknown, event: MouseEvent): void {
   const state = asInteractionContext(ctx)
+  if (state.cleanupMenu !== null) return
   if (!state.isInspectorActive(event)) return
 
   const target = findInspectable(event.target as Element)
@@ -105,7 +112,6 @@ export function handleTrigger(ctx: unknown, event: MouseEvent): void {
 
   if (state.shouldQuickJumpOnTrigger(event)) {
     state.overlay.hide()
-    state.cleanupMenu?.()
     state.cleanupMenu = null
     void openFile(loc)
     return
@@ -148,6 +154,7 @@ export function openInspectMenu(
 ): void {
   const state = asInteractionContext(ctx)
   state.cleanupMenu?.()
+  state.style.pointerEvents = 'auto'
 
   state.cleanupMenu = showIntentMenu(
     state.shadowRootEl,
@@ -156,6 +163,7 @@ export function openInspectMenu(
     clientY,
     state.options,
     () => {
+      state.style.pointerEvents = 'none'
       state.cleanupMenu = null
     },
     {

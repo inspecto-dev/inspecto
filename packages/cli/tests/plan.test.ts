@@ -14,7 +14,7 @@ describe('planner orchestration', () => {
     vi.resetAllMocks()
   })
 
-  it('blocks unsupported build stacks and returns a manual action', () => {
+  it('returns guided onboarding actions for Next.js projects', () => {
     const context: OnboardingContext = {
       root: '/repo',
       packageManager: 'pnpm',
@@ -32,28 +32,114 @@ describe('planner orchestration', () => {
 
     const result = planner.createPlanResult(context)
 
-    expect(result.status).toBe('blocked')
-    expect(result.strategy).toBe('manual')
-    expect(result.blockers).toEqual([
-      {
-        code: 'unsupported-build-tool',
-        message: 'Detected unsupported build tool(s): Next.js',
+    expect(result.status).toBe('warning')
+    expect(result.strategy).toBe('guided')
+    expect(result.blockers).toEqual([])
+    expect(result.framework).toBe('react')
+    expect(result.metaFramework).toBe('Next.js')
+    expect(result.autoApplied).toEqual(['dependencies', 'inspecto_settings'])
+    expect(result.pendingSteps).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Review the generated Next.js patch plan'),
+        expect.stringContaining('Complete the remaining client-side mount step'),
+      ]),
+    )
+    expect(result.assistantPrompt).toContain('Complete the remaining Inspecto onboarding')
+    expect(result.actions).toEqual(
+      expect.arrayContaining([
+        {
+          type: 'install_dependency',
+          target: '@inspecto-dev/plugin @inspecto-dev/core',
+          description: 'Install the Inspecto runtime packages with pnpm.',
+        },
+        {
+          type: 'install_extension',
+          target: 'vscode',
+          description: 'Install the Inspecto VS Code extension.',
+        },
+        {
+          type: 'generate_patch_plan',
+          target: 'next.config',
+          description: 'Generate a guided patch plan for the Next.js Inspecto webpack integration.',
+        },
+        {
+          type: 'manual_confirmation',
+          target: '/repo',
+          description:
+            'Complete the remaining client-side Inspecto mount step in your assistant or editor.',
+        },
+      ]),
+    )
+  })
+
+  it('returns guided onboarding actions for Nuxt projects', () => {
+    const context: OnboardingContext = {
+      root: '/repo',
+      packageManager: 'pnpm',
+      buildTools: {
+        supported: [],
+        unsupported: ['Nuxt'],
       },
-    ])
-    expect(result.actions).toEqual([
-      {
-        type: 'manual_step',
-        target: 'Next.js',
-        description:
-          'Inspecto cannot auto-configure this build stack yet. Follow the manual setup guide for the detected framework or build tool.',
+      frameworks: {
+        supported: ['vue'],
+        unsupported: [],
       },
-    ])
-    expect(result.defaults).toEqual({
-      provider: 'codex',
-      ide: 'vscode',
-      shared: false,
-      extension: true,
-    })
+      ides: [{ ide: 'vscode', supported: true }],
+      providers: [{ id: 'codex', label: 'Codex CLI', supported: true, preferredMode: 'cli' }],
+    }
+
+    const result = planner.createPlanResult(context)
+
+    expect(result.status).toBe('warning')
+    expect(result.strategy).toBe('guided')
+    expect(result.blockers).toEqual([])
+    expect(result.framework).toBe('vue')
+    expect(result.metaFramework).toBe('Nuxt')
+    expect(result.pendingSteps).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Review the generated Nuxt patch plan'),
+        expect.stringContaining('Complete the remaining Nuxt client plugin mount step'),
+      ]),
+    )
+    expect(result.actions).toEqual(
+      expect.arrayContaining([
+        {
+          type: 'generate_patch_plan',
+          target: 'nuxt.config',
+          description: 'Generate a guided patch plan for the Nuxt Inspecto Vite integration.',
+        },
+      ]),
+    )
+  })
+
+  it('keeps Next.js in guided mode when additional unsupported build tools are also detected', () => {
+    const context: OnboardingContext = {
+      root: '/repo',
+      packageManager: 'pnpm',
+      buildTools: {
+        supported: [],
+        unsupported: ['Next.js', 'CustomStack'],
+      },
+      frameworks: {
+        supported: ['react'],
+        unsupported: [],
+      },
+      ides: [{ ide: 'vscode', supported: true }],
+      providers: [{ id: 'codex', label: 'Codex CLI', supported: true, preferredMode: 'cli' }],
+    }
+
+    const result = planner.createPlanResult(context)
+
+    expect(result.strategy).toBe('guided')
+    expect(result.blockers).toEqual([])
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([
+        {
+          code: 'additional-unsupported-build-tool',
+          message: 'Additional unsupported build tool also detected: CustomStack',
+        },
+      ]),
+    )
   })
 
   it('blocks mixed supported and unsupported build tools instead of taking the supported auto path', () => {
@@ -318,6 +404,80 @@ describe('planner orchestration', () => {
           'Update finder/rspack-config/rspack.config.dev.ts to import `rspackPlugin` from `@inspecto-dev/plugin/legacy/rspack` and add it to the Rspack plugins array.',
       },
     ])
+  })
+
+  it('plans Inspecto extension installation for Cursor by default', () => {
+    const context: OnboardingContext = {
+      root: '/repo',
+      packageManager: 'pnpm',
+      buildTools: {
+        supported: [
+          {
+            tool: 'vite',
+            configPath: 'vite.config.ts',
+            label: 'Vite (vite.config.ts)',
+          },
+        ],
+        unsupported: [],
+      },
+      frameworks: {
+        supported: ['react'],
+        unsupported: [],
+      },
+      ides: [{ ide: 'cursor', supported: true }],
+      providers: [{ id: 'copilot', label: 'Copilot', supported: true, preferredMode: 'extension' }],
+    }
+
+    const result = planner.createPlanResult(context)
+
+    expect(result.actions).toContainEqual({
+      type: 'install_extension',
+      target: 'cursor',
+      description: 'Install the Inspecto Cursor extension.',
+    })
+    expect(result.defaults).toMatchObject({
+      provider: 'copilot',
+      ide: 'cursor',
+      shared: false,
+      extension: true,
+    })
+  })
+
+  it('plans Inspecto extension installation for Trae CN by default', () => {
+    const context: OnboardingContext = {
+      root: '/repo',
+      packageManager: 'pnpm',
+      buildTools: {
+        supported: [
+          {
+            tool: 'vite',
+            configPath: 'vite.config.ts',
+            label: 'Vite (vite.config.ts)',
+          },
+        ],
+        unsupported: [],
+      },
+      frameworks: {
+        supported: ['react'],
+        unsupported: [],
+      },
+      ides: [{ ide: 'trae-cn', supported: true }],
+      providers: [{ id: 'gemini', label: 'Gemini', supported: true, preferredMode: 'extension' }],
+    }
+
+    const result = planner.createPlanResult(context)
+
+    expect(result.actions).toContainEqual({
+      type: 'install_extension',
+      target: 'trae-cn',
+      description: 'Install the Inspecto Trae CN extension.',
+    })
+    expect(result.defaults).toMatchObject({
+      provider: 'gemini',
+      ide: 'trae-cn',
+      shared: false,
+      extension: true,
+    })
   })
 
   it('returns a webpack 4 partial-manual strategy when the selected build target is legacy webpack', () => {

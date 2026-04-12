@@ -24,6 +24,7 @@ interface IntegrationAutomationOptions {
   inspectoVsix?: string
   preview?: boolean
   silent?: boolean
+  ignoreProjectArtifacts?: boolean
 }
 
 interface IntegrationAutomationDetails {
@@ -93,6 +94,7 @@ export async function runIntegrationAutomation(
   const resolvedHostIde = await resolveIntegrationHostIde({
     ...(options.ide ? { explicitIde: options.ide } : {}),
     ...(cwd ? { cwd } : {}),
+    ...(options.ignoreProjectArtifacts ? { ignoreProjectArtifacts: true } : {}),
   })
 
   const details: IntegrationAutomationDetails = {

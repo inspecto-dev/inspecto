@@ -24,6 +24,8 @@ Use Inspecto's structured CLI flow instead of hand-editing project files. Always
 8. Only after the IDE extension step is complete, read the onboarding result's `verification` field.
 9. If `verification.available` is `true` and `verification.devCommand` is present, offer to start that exact command immediately for validation.
 10. Otherwise, use `verification.message` and tell the user to start their normal dev server command manually.
+11. If the result includes `handoff.patches`, treat those patches as the primary source of truth for any remaining manual work. Apply the generated patches directly before exploring external docs or unrelated files.
+12. Only fall back to extra documentation or broader repo exploration when a returned patch is clearly insufficient or conflicts with the local project structure.
 
 ## Fast Path
 
@@ -46,6 +48,7 @@ For the normal "set up Inspecto in this project" request, start with `onboard --
 - Do not create a project-local `scripts/run-inspecto.sh`. Use the installed skill launcher or a directly available `inspecto` executable.
 - Use the CLI's `verification` payload as the source of truth for dev-server validation. Do not guess custom start commands.
 - Do not suggest restarting or validating the local dev server until the IDE extension step is complete.
+- Prefer `handoff.patches`, `handoff.pendingSteps`, and `handoff.assistantPrompt` over ad-hoc investigation. Do not start with Next.js or Nuxt documentation searches when the CLI already returned concrete patch targets.
 
 ## Local Debugging
 

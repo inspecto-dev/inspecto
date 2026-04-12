@@ -279,6 +279,40 @@ describe('integration install', () => {
     )
   })
 
+  it('blocks automatic onboarding when no explicit host ide, config, or env signal is available', async () => {
+    runIntegrationAutomationMock.mockResolvedValue({
+      status: 'blocked',
+      message:
+        'Automatic setup stopped: Inspecto could not determine which IDE should receive onboarding.',
+      nextStep:
+        'Re-run with --host-ide <vscode|cursor|trae|trae-cn> or run the command from the target IDE terminal to continue automatic setup.',
+    })
+    resolveIntegrationHostIdeMock.mockResolvedValue({
+      ide: null,
+      source: 'none',
+      confidence: 'low',
+      candidates: [],
+    })
+
+    const { installIntegration } = await import('../src/commands/integration-install.js')
+
+    await installIntegration('coco')
+
+    expect(runIntegrationAutomationMock).toHaveBeenCalledWith(
+      'coco',
+      expect.objectContaining({
+        ignoreProjectArtifacts: true,
+      }),
+      '/repo',
+    )
+    expect(logMock.warn).toHaveBeenCalledWith(
+      'Automatic setup stopped: Inspecto could not determine which IDE should receive onboarding.',
+    )
+    expect(logMock.hint).toHaveBeenCalledWith(
+      'Re-run with --host-ide <vscode|cursor|trae|trae-cn> or run the command from the target IDE terminal to continue automatic setup.',
+    )
+  })
+
   it('surfaces a partial automation outcome as a warning with follow-up guidance', async () => {
     runIntegrationAutomationMock.mockResolvedValue({
       status: 'partial',
@@ -660,6 +694,37 @@ describe('integration install', () => {
       failOnBlocked: true,
       json: true,
     })
+  })
+
+  it('wires the dev command group to link, status, and unlink handlers', async () => {
+    const linkCommand = vi.fn().mockResolvedValue(undefined)
+    const statusCommand = vi.fn().mockResolvedValue(undefined)
+    const unlinkCommand = vi.fn().mockResolvedValue(undefined)
+
+    vi.doMock('../src/commands/init.js', () => ({ init: vi.fn() }))
+    vi.doMock('../src/commands/doctor.js', () => ({ doctor: vi.fn() }))
+    vi.doMock('../src/commands/teardown.js', () => ({ teardown: vi.fn() }))
+    vi.doMock('../src/commands/detect.js', () => ({ detect: vi.fn() }))
+    vi.doMock('../src/commands/plan.js', () => ({ plan: vi.fn() }))
+    vi.doMock('../src/commands/apply.js', () => ({ apply: vi.fn() }))
+    vi.doMock('../src/commands/dev-config.js', () => ({
+      devLink: linkCommand,
+      devStatus: statusCommand,
+      devUnlink: unlinkCommand,
+    }))
+
+    const { runCli } = await import('../src/bin.js')
+
+    await runCli(['node', 'inspecto', 'dev', 'link', '--cli-bin', '/tmp/inspecto/bin.js'])
+    await runCli(['node', 'inspecto', 'dev', 'status', '--json'])
+    await runCli(['node', 'inspecto', 'dev', 'unlink'])
+
+    expect(linkCommand).toHaveBeenCalledWith({
+      cliBin: '/tmp/inspecto/bin.js',
+      json: false,
+    })
+    expect(statusCommand).toHaveBeenCalledWith(true)
+    expect(unlinkCommand).toHaveBeenCalledWith(false)
   })
 
   it('sets a non-zero exit code when integrations doctor reports a blocked result', async () => {

@@ -23,6 +23,8 @@ Use this workflow when an assistant skill needs to set up Inspecto in the curren
    - `https://open-vsx.org/extension/inspecto/inspecto`
 6. If the result returns `status: "error"`, summarize `diagnostics` and run `doctor --json` only when explicit recovery diagnostics are still needed.
 7. Only after the IDE extension step is complete, use the onboarding result's `verification` payload. If `verification.available` is `true` and `verification.devCommand` is present, offer to start that exact command for validation. Otherwise, tell the user to run their usual dev command manually using `verification.message`.
+8. If the result includes `handoff.patches`, treat them as the primary source of truth for any remaining manual work. Apply the generated patches directly before exploring framework docs or unrelated project files.
+9. Only do broader documentation or repo exploration when a returned patch is clearly insufficient or conflicts with the local project structure.
 
 ## Guardrails
 
@@ -35,6 +37,7 @@ Use this workflow when an assistant skill needs to set up Inspecto in the curren
 - Do not create a project-local wrapper script as part of onboarding. Use the installed skill launcher or a directly available `inspecto` executable.
 - Use the CLI's `verification` payload as the source of truth for dev-server validation.
 - Do not suggest restarting or validating the local dev server until the IDE extension step is complete.
+- Prefer `handoff.patches`, `handoff.pendingSteps`, and `handoff.assistantPrompt` over ad-hoc investigation. Do not start with Next.js or Nuxt documentation searches when the CLI already returned concrete patch targets.
 
 ## Command Runner
 
