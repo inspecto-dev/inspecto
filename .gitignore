@@ -104,3 +104,6 @@ packages/ide/schema/
 .inspecto/cache.json
 .worktrees/
 packages/docs/.vitepress/cache
+
+# AI Agents config
+.agents
