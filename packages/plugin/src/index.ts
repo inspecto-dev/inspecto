@@ -1,6 +1,6 @@
 import { createUnplugin } from 'unplugin'
 import type { UnpluginOptions } from '@inspecto-dev/types'
-import { shouldTransform } from './transform/utils.js'
+import { extractTransformFilePath, shouldTransform } from './transform/utils.js'
 import { transformRouter, transformJsx } from './transform/index.js'
 import { startServer, serverState } from './server/index.js'
 import { resolveClientModule } from './injectors/utils.js'
@@ -28,8 +28,6 @@ const DEFAULT_OPTIONS: Required<UnpluginOptions> = {
 }
 
 const DEFAULT_PORT = 5678
-
-const getCleanId = (id: string) => id.split('?')[0]!
 
 const InspectoPlugin = createUnplugin<UnpluginOptions | undefined>((userOptions = {}) => {
   const options: Required<UnpluginOptions> = {
@@ -143,17 +141,16 @@ const InspectoPlugin = createUnplugin<UnpluginOptions | undefined>((userOptions 
 
     transformInclude(id) {
       if (isProduction || !id) return false
-      const cleanId = getCleanId(id)
-      return shouldTransform(cleanId, options)
+      return shouldTransform(id, options)
     },
 
     transform(code, id) {
       if (isProduction || !id) return null
 
-      const cleanId = getCleanId(id)
+      const { filePath } = extractTransformFilePath(id)
 
       const result = transformRouter({
-        filePath: cleanId,
+        filePath,
         source: code,
         projectRoot,
         pluginOptions: options,

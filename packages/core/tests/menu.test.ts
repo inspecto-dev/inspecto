@@ -1705,6 +1705,52 @@ describe('Intent Menu DOM Interaction', () => {
     expect(tooltip.style.display).toBe('none')
   })
 
+  it('does not resume inspect hover targeting while the menu is open', async () => {
+    vi.mocked(http.fetchIdeInfo).mockResolvedValue({
+      ide: 'vscode',
+      prompts: [{ id: 'fix', label: 'Fix Bug', aiIntent: 'fix', prompt: 'Fix this bug' }],
+    })
+
+    document.body.innerHTML =
+      '<button data-inspecto="/src/App.tsx:66:11" id="target">Target</button>'
+
+    const inspector = await mountInspector({ defaultActive: true, hotKeys: 'alt' })
+    expect(inspector).not.toBeNull()
+
+    const target = document.getElementById('target') as HTMLButtonElement
+    target.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 100,
+        clientY: 100,
+      }),
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const mountedShadowRoot = (document.querySelector('inspecto-overlay') as HTMLElement)
+      .shadowRoot!
+    const tooltip = mountedShadowRoot.querySelector(`.${tooltipClass}`) as HTMLElement
+
+    expect(mountedShadowRoot.querySelector(`.${menuClass}`)).not.toBeNull()
+    expect(tooltip.style.display).toBe('none')
+
+    document.body.dispatchEvent(
+      new MouseEvent('mousemove', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 140,
+        clientY: 140,
+        altKey: true,
+      }),
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(tooltip.style.display).toBe('none')
+  })
+
   it('opens the source directly on hotkey-click even when inspect mode is already active', async () => {
     document.body.innerHTML =
       '<button data-inspecto="/src/App.tsx:10:5" id="target">Target</button>'
@@ -1787,5 +1833,47 @@ describe('Intent Menu DOM Interaction', () => {
         button => button.getAttribute('aria-label') === 'Open in Editor',
       ),
     ).toBe(true)
+  })
+
+  it('switches the overlay host into interactive mode while the menu is open so menu actions stay clickable', async () => {
+    document.body.innerHTML =
+      '<button data-inspecto="/src/App.tsx:10:5" id="target">Target</button>'
+
+    const inspector = await mountInspector({ defaultActive: true })
+    expect(inspector).not.toBeNull()
+
+    document.getElementById('target')!.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 100,
+        clientY: 100,
+      }),
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const mountedShadowRoot = host.shadowRoot!
+    const menu = mountedShadowRoot.querySelector(`.${menuClass}`) as HTMLElement
+
+    expect(menu).not.toBeNull()
+    expect(host.style.position).toBe('fixed')
+    expect(host.style.inset).toBe('0')
+    expect(host.style.pointerEvents).toBe('auto')
+    expect(menu.style.pointerEvents).toBe('auto')
+
+    document.body.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 10,
+        clientY: 10,
+      }),
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(host.style.pointerEvents).toBe('none')
   })
 })

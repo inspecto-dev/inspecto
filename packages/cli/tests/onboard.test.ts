@@ -267,6 +267,173 @@ describe('onboard command', () => {
     expect(result.verification?.devCommand).toBe('pnpm dev')
   })
 
+  it('keeps guided Next.js patch metadata in deferred JSON output', async () => {
+    const session: ResolvedOnboardingSession = {
+      status: 'needs_confirmation',
+      target: {
+        status: 'guided',
+        candidates: [],
+        reason: 'Awaiting confirmation before guided onboarding.',
+      },
+      summary: {
+        headline: 'Inspecto can partially onboard /repo, but manual follow-up remains.',
+        changes: ['Install the Inspecto runtime packages with pnpm.'],
+        risks: [],
+        manualFollowUp: [
+          'Generate a guided patch plan for the Next.js Inspecto webpack integration.',
+          'Complete the remaining client-side Inspecto mount step in your assistant or editor.',
+        ],
+      },
+      confirmation: {
+        required: true,
+        question:
+          'Proceed with Inspecto onboarding using the proposed default target and settings?',
+      },
+      verification: {
+        available: true,
+        devCommand: 'pnpm dev',
+        message: 'Start the local dev server with `pnpm dev` to verify Inspecto in the browser.',
+      },
+      context: {
+        root: '/repo',
+        packageManager: 'pnpm',
+        buildTools: { supported: [], unsupported: ['Next.js'] },
+        frameworks: { supported: ['react'], unsupported: [] },
+        ides: [{ ide: 'vscode', supported: true }],
+        providers: [{ id: 'codex', label: 'Codex CLI', supported: true, preferredMode: 'cli' }],
+      },
+      plan: {
+        status: 'warning',
+        warnings: [],
+        blockers: [],
+        strategy: 'guided',
+        actions: [],
+        defaults: {
+          provider: 'codex',
+          ide: 'vscode',
+          shared: false,
+          extension: true,
+        },
+        framework: 'react',
+        metaFramework: 'Next.js',
+        routerMode: 'app',
+        autoApplied: ['dependencies', 'inspecto_settings'],
+        pendingSteps: [
+          'Review the generated Next.js patch plan for next.config.mjs.',
+          'Complete the remaining client-side mount step for your App Router entry.',
+        ],
+        assistantPrompt: 'Complete the remaining Inspecto onboarding for this Next.js project.',
+        patches: [
+          {
+            path: 'next.config.mjs',
+            status: 'planned',
+            reason: 'next_config_object_export',
+            confidence: 'high',
+            snippet: '...',
+          },
+          {
+            path: 'app/layout.tsx',
+            status: 'manual_patch_required',
+            reason: 'next_app_router_mount',
+            confidence: 'medium',
+            snippet: '...',
+          },
+        ],
+      },
+      projectRoot: '/repo',
+      selectedIDE: { ide: 'vscode', supported: true },
+      providerDefault: 'codex.cli',
+      framework: 'react',
+      metaFramework: 'Next.js',
+      routerMode: 'app',
+      autoApplied: ['dependencies', 'inspecto_settings'],
+      pendingSteps: [
+        'Review the generated Next.js patch plan for next.config.mjs.',
+        'Complete the remaining client-side mount step for your App Router entry.',
+      ],
+      assistantPrompt: 'Complete the remaining Inspecto onboarding for this Next.js project.',
+      patches: [
+        {
+          path: 'next.config.mjs',
+          status: 'planned',
+          reason: 'next_config_object_export',
+          confidence: 'high',
+          snippet: '...',
+        },
+        {
+          path: 'app/layout.tsx',
+          status: 'manual_patch_required',
+          reason: 'next_app_router_mount',
+          confidence: 'medium',
+          snippet: '...',
+        },
+      ],
+    }
+
+    const deferred: OnboardCommandResult = {
+      status: 'needs_confirmation',
+      target: session.target,
+      summary: session.summary,
+      confirmation: session.confirmation,
+      ideExtension: {
+        required: true,
+        installed: false,
+        manualRequired: true,
+        installCommand: 'code --install-extension inspecto.inspecto',
+        marketplaceUrl: 'https://marketplace.visualstudio.com/items?itemName=inspecto.inspecto',
+        openVsxUrl: 'https://open-vsx.org/extension/inspecto/inspecto',
+      },
+      verification: session.verification,
+      framework: 'react',
+      metaFramework: 'Next.js',
+      routerMode: 'app',
+      autoApplied: ['dependencies', 'inspecto_settings'],
+      pendingSteps: [
+        'Review the generated Next.js patch plan for next.config.mjs.',
+        'Complete the remaining client-side mount step for your App Router entry.',
+      ],
+      assistantPrompt: 'Complete the remaining Inspecto onboarding for this Next.js project.',
+      patches: [
+        {
+          path: 'next.config.mjs',
+          status: 'planned',
+          reason: 'next_config_object_export',
+          confidence: 'high',
+          snippet: '...',
+        },
+        {
+          path: 'app/layout.tsx',
+          status: 'manual_patch_required',
+          reason: 'next_app_router_mount',
+          confidence: 'medium',
+          snippet: '...',
+        },
+      ],
+    }
+
+    vi.mocked(resolveOnboardingSession).mockResolvedValue(session)
+    vi.mocked(buildDeferredOnboardResult).mockReturnValue(deferred)
+
+    const result = await onboard({ json: true })
+
+    expect(result.metaFramework).toBe('Next.js')
+    expect(result.routerMode).toBe('app')
+    expect(result.handoff?.metaFramework).toBe('Next.js')
+    expect(result.handoff?.pendingSteps).toEqual(
+      expect.arrayContaining([
+        'Review the generated Next.js patch plan for next.config.mjs.',
+        'Complete the remaining client-side mount step for your App Router entry.',
+      ]),
+    )
+    expect(result.assistantPrompt).toContain('Complete the remaining Inspecto onboarding')
+    expect(result.patches).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: 'next.config.mjs', reason: 'next_config_object_export' }),
+        expect.objectContaining({ path: 'app/layout.tsx', reason: 'next_app_router_mount' }),
+      ]),
+    )
+  })
+
   it('returns needs_target_selection without applying when target selection is ambiguous', async () => {
     const session: ResolvedOnboardingSession = {
       status: 'needs_target_selection',
@@ -452,6 +619,255 @@ describe('onboard command', () => {
         String(call[0]).includes('code --install-extension inspecto.inspecto'),
       ),
     ).toBe(false)
+  })
+
+  it('prints guided patch targets and assistant handoff in text mode', async () => {
+    const session: ResolvedOnboardingSession = {
+      status: 'partial_success',
+      target: {
+        status: 'resolved',
+        selected: {
+          packagePath: '',
+          configPath: 'next.config.mjs',
+          buildTool: 'webpack',
+          frameworks: ['react'],
+          automaticInjection: false,
+        },
+        candidates: [],
+        reason: 'Guided onboarding is available.',
+      },
+      summary: {
+        headline: 'Inspecto can partially onboard /repo, but manual follow-up remains.',
+        changes: ['Install the Inspecto runtime packages with pnpm.'],
+        risks: [],
+        manualFollowUp: [
+          'Generate a guided patch plan for the Next.js Inspecto webpack integration.',
+          'Complete the remaining client-side Inspecto mount step in your assistant or editor.',
+        ],
+      },
+      confirmation: { required: false },
+      verification: {
+        available: true,
+        devCommand: 'pnpm dev',
+        message: 'Start the local dev server with `pnpm dev` to verify Inspecto in the browser.',
+      },
+      context: {
+        root: '/repo',
+        packageManager: 'pnpm',
+        buildTools: { supported: [], unsupported: ['Next.js'] },
+        frameworks: { supported: ['react'], unsupported: [] },
+        ides: [{ ide: 'vscode', supported: true }],
+        providers: [{ id: 'codex', label: 'Codex CLI', supported: true, preferredMode: 'cli' }],
+      },
+      plan: {
+        status: 'warning',
+        warnings: [],
+        blockers: [],
+        strategy: 'guided',
+        actions: [],
+        defaults: {
+          provider: 'codex',
+          ide: 'vscode',
+          shared: false,
+          extension: true,
+        },
+      },
+      projectRoot: '/repo',
+      selectedIDE: { ide: 'vscode', supported: true },
+      providerDefault: 'codex.cli',
+    }
+
+    const applied: OnboardCommandResult = {
+      status: 'partial_success',
+      target: session.target,
+      summary: session.summary,
+      confirmation: session.confirmation,
+      ideExtension: {
+        required: true,
+        installed: true,
+        manualRequired: false,
+        installCommand: 'code --install-extension inspecto.inspecto',
+        marketplaceUrl: 'https://marketplace.visualstudio.com/items?itemName=inspecto.inspecto',
+        openVsxUrl: 'https://open-vsx.org/extension/inspecto/inspecto',
+      },
+      verification: session.verification,
+      diagnostics: {
+        warnings: [],
+        errors: [],
+        nextSteps: [
+          'Generate a guided patch plan for the Next.js Inspecto webpack integration.',
+          'Complete the remaining client-side Inspecto mount step in your assistant or editor.',
+        ],
+      },
+      metaFramework: 'Next.js',
+      routerMode: 'app',
+      pendingSteps: [
+        'Review the generated Next.js patch plan for next.config.mjs.',
+        'Complete the remaining client-side mount step for your App Router entry.',
+      ],
+      assistantPrompt: 'Complete the remaining Inspecto onboarding for this Next.js project.',
+      patches: [
+        {
+          path: 'next.config.mjs',
+          status: 'planned',
+          reason: 'next_config_object_export',
+          confidence: 'high',
+          snippet: '...',
+        },
+        {
+          path: 'app/layout.tsx',
+          status: 'manual_patch_required',
+          reason: 'next_app_router_mount',
+          confidence: 'medium',
+          snippet: '...',
+        },
+      ],
+    }
+
+    vi.mocked(resolveOnboardingSession).mockResolvedValue(session)
+    vi.mocked(applyResolvedOnboardingSession).mockResolvedValue(applied)
+
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+
+    await onboard({ json: false })
+
+    expect(consoleSpy.mock.calls.some(call => String(call[0]).includes('next.config.mjs'))).toBe(
+      true,
+    )
+    expect(
+      consoleSpy.mock.calls.some(call =>
+        String(call[0]).includes('Complete the remaining Inspecto onboarding'),
+      ),
+    ).toBe(true)
+    expect(
+      consoleSpy.mock.calls.some(call =>
+        String(call[0]).includes(
+          'Complete the remaining client-side mount step for your App Router entry.',
+        ),
+      ),
+    ).toBe(true)
+  })
+
+  it('keeps guided Nuxt handoff metadata in applied JSON output', async () => {
+    const session: ResolvedOnboardingSession = {
+      status: 'partial_success',
+      target: {
+        status: 'resolved',
+        selected: {
+          packagePath: '',
+          configPath: 'nuxt.config.ts',
+          buildTool: 'vite',
+          frameworks: ['vue'],
+          automaticInjection: false,
+        },
+        candidates: [],
+        reason: 'Guided onboarding is available.',
+      },
+      summary: {
+        headline: 'Inspecto can partially onboard /repo, but manual follow-up remains.',
+        changes: ['Install the Inspecto runtime packages with pnpm.'],
+        risks: [],
+        manualFollowUp: [
+          'Generate a guided patch plan for the Nuxt Inspecto Vite integration.',
+          'Complete the remaining Nuxt client plugin mount step in your assistant or editor.',
+        ],
+      },
+      confirmation: { required: false },
+      verification: {
+        available: true,
+        devCommand: 'pnpm dev',
+        message: 'Start the local dev server with `pnpm dev` to verify Inspecto in the browser.',
+      },
+      context: {
+        root: '/repo',
+        packageManager: 'pnpm',
+        buildTools: { supported: [], unsupported: ['Nuxt'] },
+        frameworks: { supported: ['vue'], unsupported: [] },
+        ides: [{ ide: 'vscode', supported: true }],
+        providers: [{ id: 'codex', label: 'Codex CLI', supported: true, preferredMode: 'cli' }],
+      },
+      plan: {
+        status: 'warning',
+        warnings: [],
+        blockers: [],
+        strategy: 'guided',
+        actions: [],
+        defaults: {
+          provider: 'codex',
+          ide: 'vscode',
+          shared: false,
+          extension: true,
+        },
+      },
+      projectRoot: '/repo',
+      selectedIDE: { ide: 'vscode', supported: true },
+      providerDefault: 'codex.cli',
+    }
+
+    const applied: OnboardCommandResult = {
+      status: 'partial_success',
+      target: session.target,
+      summary: session.summary,
+      confirmation: session.confirmation,
+      ideExtension: {
+        required: true,
+        installed: true,
+        manualRequired: false,
+        installCommand: 'code --install-extension inspecto.inspecto',
+        marketplaceUrl: 'https://marketplace.visualstudio.com/items?itemName=inspecto.inspecto',
+        openVsxUrl: 'https://open-vsx.org/extension/inspecto/inspecto',
+      },
+      verification: session.verification,
+      diagnostics: {
+        warnings: [],
+        errors: [],
+        nextSteps: [
+          'Generate a guided patch plan for the Nuxt Inspecto Vite integration.',
+          'Complete the remaining Nuxt client plugin mount step in your assistant or editor.',
+        ],
+      },
+      framework: 'vue',
+      metaFramework: 'Nuxt',
+      autoApplied: ['dependencies', 'inspecto_settings'],
+      pendingSteps: [
+        'Review the generated Nuxt patch plan for nuxt.config.ts.',
+        'Complete the remaining Nuxt client plugin mount step in plugins/inspecto.client.ts.',
+      ],
+      assistantPrompt: 'Complete the remaining Inspecto onboarding for this Nuxt project.',
+      patches: [
+        {
+          path: 'nuxt.config.ts',
+          status: 'planned',
+          reason: 'nuxt_config_object_export',
+          confidence: 'high',
+          snippet: '...',
+        },
+        {
+          path: 'plugins/inspecto.client.ts',
+          status: 'manual_patch_required',
+          reason: 'nuxt_client_plugin_mount',
+          confidence: 'medium',
+          snippet: '...',
+        },
+      ],
+    }
+
+    vi.mocked(resolveOnboardingSession).mockResolvedValue(session)
+    vi.mocked(applyResolvedOnboardingSession).mockResolvedValue(applied)
+
+    const result = await onboard({ json: true })
+
+    expect(result.handoff?.metaFramework).toBe('Nuxt')
+    expect(result.handoff?.framework).toBe('vue')
+    expect(result.handoff?.patches).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: 'nuxt.config.ts', reason: 'nuxt_config_object_export' }),
+        expect.objectContaining({
+          path: 'plugins/inspecto.client.ts',
+          reason: 'nuxt_client_plugin_mount',
+        }),
+      ]),
+    )
   })
 
   it('prints manual extension guidance only when the IDE extension still needs manual completion', async () => {

@@ -2,7 +2,9 @@ import { log } from './utils/logger.js'
 
 export function printNuxtManualInstructions() {
   log.blank()
-  log.hint('Nuxt requires manual setup in the current version.')
+  log.hint(
+    'Nuxt supports guided setup in the current version. Inspecto can prepare the config patch, but the client plugin mount step still needs review.',
+  )
   log.hint('1. Update `nuxt.config.ts` to register the Inspecto Vite plugin:')
   log.copyableCodeBlock([
     "import { vitePlugin as inspecto } from '@inspecto-dev/plugin'",
@@ -13,7 +15,7 @@ export function printNuxtManualInstructions() {
     '  },',
     '})',
   ])
-  log.hint('2. Create `plugins/inspecto.client.ts` to mount `@inspecto-dev/core` in development:')
+  log.hint('2. Complete the remaining client plugin mount step in `plugins/inspecto.client.ts`:')
   log.copyableCodeBlock([
     'export default defineNuxtPlugin(() => {',
     '  if (import.meta.dev) {',
@@ -23,12 +25,14 @@ export function printNuxtManualInstructions() {
     '  }',
     '})',
   ])
-  log.hint('3. Restart your Nuxt dev server after updating the config.')
+  log.hint('3. Restart your Nuxt dev server after applying the guided patches.')
 }
 
 export function printNextJsManualInstructions() {
   log.blank()
-  log.hint('Next.js requires manual setup in the current version.')
+  log.hint(
+    'Next.js supports guided setup in the current version. Inspecto can prepare the config patch, but the client-side mount step still needs review.',
+  )
   log.hint('1. Update `next.config.mjs` to register the Inspecto webpack plugin:')
   log.copyableCodeBlock([
     "import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'",
@@ -36,7 +40,7 @@ export function printNextJsManualInstructions() {
     "/** @type {import('next').NextConfig} */",
     'const nextConfig = {',
     '  webpack: (config, { dev, isServer }) => {',
-    '    if (dev && !isServer) {',
+    '    if (dev) {',
     '      config.plugins.push(inspecto())',
     '    }',
     '    return config',
@@ -46,7 +50,10 @@ export function printNextJsManualInstructions() {
     'export default nextConfig',
   ])
   log.hint(
-    '2. Initialize `@inspecto-dev/core` from a client component such as `app/layout.tsx` or `pages/_app.tsx`:',
+    'Keep the plugin enabled for both server and client development compilers so App Router server components also receive Inspecto transforms.',
+  )
+  log.hint(
+    '2. Complete the remaining client-side mount step in `app/layout.tsx` or `pages/_app.tsx`:',
   )
   log.copyableCodeBlock([
     "'use client'",
@@ -65,5 +72,5 @@ export function printNextJsManualInstructions() {
     '  return <html><body>{children}</body></html>',
     '}',
   ])
-  log.hint('3. Restart your Next.js dev server after updating the config.')
+  log.hint('3. Restart your Next.js dev server after applying the guided patches.')
 }

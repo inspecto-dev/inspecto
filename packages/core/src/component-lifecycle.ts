@@ -67,6 +67,11 @@ export function connect(
   createAnnotateOverlay: (root: ShadowRoot) => LifecycleContext['annotateOverlay'],
 ): void {
   const state = asLifecycleContext(ctx)
+  const host = state as unknown as HTMLElement
+  host.style.position = 'fixed'
+  host.style.inset = '0'
+  host.style.pointerEvents = 'none'
+  host.style.zIndex = '2147483646'
   state.shadowRootEl = state.attachShadow({ mode: 'open' })
 
   const style = document.createElement('style')

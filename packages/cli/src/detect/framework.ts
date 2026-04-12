@@ -44,9 +44,12 @@ const SUPPORTED_FRAMEWORKS: { framework: Framework; deps: string[] }[] = [
 const UNSUPPORTED_FRAMEWORKS: { name: string; dep: string }[] = [
   { name: 'Solid', dep: 'solid-js' },
   { name: 'Svelte', dep: 'svelte' },
+  { name: 'SvelteKit', dep: '@sveltejs/kit' },
   { name: 'Angular', dep: '@angular/core' },
   { name: 'Preact', dep: 'preact' },
   { name: 'Lit', dep: 'lit' },
+  { name: 'Qwik', dep: 'qwik' },
+  { name: 'Alpine', dep: 'lit-html' },
 ]
 
 /**

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 import { apply } from './commands/apply.js'
 import { detect } from './commands/detect.js'
+import { devLink, devStatus, devUnlink } from './commands/dev-config.js'
 import { init } from './commands/init.js'
 import { doctor } from './commands/doctor.js'
 import { onboard } from './commands/onboard.js'
@@ -69,6 +70,11 @@ interface IntegrationCommandOptions extends JsonCommandOptions {
   force?: boolean
 }
 
+interface DevCommandOptions extends JsonCommandOptions {
+  cliBin?: string
+  repo?: string
+}
+
 const integrationScopes = ['project', 'user'] as const
 const integrationModes = ['skills', 'instructions', 'agents', 'rules'] as const
 
@@ -82,6 +88,45 @@ function exitWithError(error: unknown, options: JsonCommandOptions = {}): never 
 
 export function createCli(_argv: readonly string[] = process.argv): CAC {
   const cli: CAC = cac('inspecto')
+
+  cli
+    .command('dev <subcommand>', 'Manage project-local Inspecto development overrides')
+    .option('--cli-bin <path>', 'Point this project at a local CLI dist/bin.js')
+    .option('--repo <path>', 'Point this project at a local Inspecto repository root')
+    .option('--json', 'Print machine-readable JSON output', { default: false })
+    .option('--debug', 'Enable debug mode to show full error traces', { default: false })
+    .action(async (subcommand: string, options: DevCommandOptions) => {
+      try {
+        if (subcommand === 'link') {
+          if (!options.cliBin && !options.repo) {
+            throw new Error('The `dev link` subcommand requires --cli-bin <path> or --repo <path>.')
+          }
+
+          await devLink({
+            ...(options.cliBin ? { cliBin: options.cliBin } : {}),
+            ...(options.repo ? { devRepo: options.repo } : {}),
+            json: options.json ?? false,
+          })
+          return
+        }
+
+        if (subcommand === 'status') {
+          await devStatus(options.json ?? false)
+          return
+        }
+
+        if (subcommand === 'unlink') {
+          await devUnlink(options.json ?? false)
+          return
+        }
+
+        throw new Error(
+          'Usage:\n  inspecto dev link [--cli-bin <path>] [--repo <path>]\n  inspecto dev status [--json]\n  inspecto dev unlink [--json]',
+        )
+      } catch (error) {
+        exitWithError(error, options)
+      }
+    })
 
   cli
     .command('init', 'Set up Inspecto in your project')

@@ -18,7 +18,7 @@ Always prefer the single-entry onboarding command over the legacy detect/plan/ap
 ## Workflow
 
 1. Run `~/.codex/skills/inspecto-onboarding-codex/scripts/run-inspecto.sh onboard --json`.
-2. If the result returns `status: "needs_target_selection"`, show the target `candidates`, ask the user which app/package to use, then rerun with `--target <packagePath>`.
+2. If the result returns `status: "needs_target_selection"`, explain that this step chooses which local development build target should receive the Inspecto plugin and settings. Show the target `candidates`, ask the user which exact candidate to use, then rerun with `--target <candidateId>`, preferring the explicit `candidateId` field. The CLI also accepts a returned `configPath` as a compatibility fallback. Do not collapse the user's choice back to a package path when the same package has multiple build configs.
 3. If the result returns `status: "needs_confirmation"`, summarize `summary.headline`, `summary.changes`, `summary.risks`, and `summary.manualFollowUp`, then ask for approval before rerunning with `--yes`.
 4. If the user explicitly asked to see the plan before any changes, stop after the `needs_confirmation` summary and wait for approval.
 5. If the result returns `status: "partial_success"` and `diagnostics.nextSteps` includes IDE extension installation, treat that as a blocking onboarding follow-up. Do not move on to dev-server validation until the extension is installed automatically or the user confirms they completed the manual install.
@@ -30,6 +30,8 @@ Always prefer the single-entry onboarding command over the legacy detect/plan/ap
 8. Only after the IDE extension step is complete, read the onboarding result's `verification` field.
 9. If `verification.available` is `true` and `verification.devCommand` is present, offer to start that exact command immediately for validation.
 10. Otherwise, use `verification.message` and tell the user to start their normal dev server command manually.
+11. If the result includes `handoff.patches`, treat them as the primary source of truth for the remaining work. Apply those patches directly before exploring framework docs or unrelated project files.
+12. Only do broader documentation or repo exploration when a returned patch is clearly insufficient or conflicts with the local project structure.
 
 ## Fast Path
 
@@ -55,6 +57,7 @@ After this fast path succeeds, the next default action should be:
 - Do not create a project-local `scripts/run-inspecto.sh`. Use the installed skill launcher or a directly available `inspecto` executable.
 - Use the CLI's `verification` payload as the source of truth for dev-server validation. Do not guess custom start commands.
 - Do not suggest restarting or validating the local dev server until the IDE extension step is complete.
+- Prefer `handoff.patches`, `handoff.pendingSteps`, and `handoff.assistantPrompt` over ad-hoc investigation. Do not start with Next.js or Nuxt documentation searches when the CLI already returned concrete patch targets.
 
 ## Local Debugging
 

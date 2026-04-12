@@ -5,7 +5,7 @@ import {
 } from '../onboarding/session.js'
 import { log } from '../utils/logger.js'
 import { writeCommandOutput } from '../utils/output.js'
-import type { OnboardCommandResult } from '../types.js'
+import type { OnboardCommandResult, OnboardingAssistantHandoff } from '../types.js'
 
 export interface OnboardCommandOptions {
   json?: boolean
@@ -34,47 +34,98 @@ function printManualExtensionGuidance(result: OnboardCommandResult): void {
   }
 }
 
-function printOnboardResult(result: OnboardCommandResult): void {
-  log.header('Inspecto Onboard')
-  log.info(`Status: ${result.status}`)
-  log.info(result.summary.headline)
+function buildAssistantHandoff(
+  result: OnboardCommandResult,
+): OnboardingAssistantHandoff | undefined {
+  if (
+    !result.framework &&
+    !result.metaFramework &&
+    !result.routerMode &&
+    !result.autoApplied &&
+    !result.pendingSteps &&
+    !result.assistantPrompt &&
+    !result.patches
+  ) {
+    return result.handoff
+  }
 
-  if (result.status === 'needs_target_selection') {
-    if (result.target.selectionPurpose) {
-      log.warn(result.target.selectionPurpose)
+  return {
+    ...(result.framework ? { framework: result.framework } : {}),
+    ...(result.metaFramework ? { metaFramework: result.metaFramework } : {}),
+    ...(result.routerMode ? { routerMode: result.routerMode } : {}),
+    ...(result.autoApplied ? { autoApplied: result.autoApplied } : {}),
+    ...(result.pendingSteps ? { pendingSteps: result.pendingSteps } : {}),
+    ...(result.assistantPrompt ? { assistantPrompt: result.assistantPrompt } : {}),
+    ...(result.patches ? { patches: result.patches } : {}),
+  }
+}
+
+function normalizeOnboardResult(result: OnboardCommandResult): OnboardCommandResult {
+  const handoff = buildAssistantHandoff(result)
+  if (!handoff) {
+    return result
+  }
+
+  return {
+    ...result,
+    handoff,
+  }
+}
+
+function collectDisplayNextSteps(result: OnboardCommandResult): string[] {
+  return Array.from(
+    new Set([...(result.diagnostics?.nextSteps ?? []), ...(result.handoff?.pendingSteps ?? [])]),
+  )
+}
+
+function printOnboardResult(result: OnboardCommandResult): void {
+  const normalized = normalizeOnboardResult(result)
+  log.header('Inspecto Onboard')
+  log.info(`Status: ${normalized.status}`)
+  log.info(normalized.summary.headline)
+
+  if (normalized.status === 'needs_target_selection') {
+    if (normalized.target.selectionPurpose) {
+      log.warn(normalized.target.selectionPurpose)
     }
-    for (const candidate of result.target.candidates) {
+    for (const candidate of normalized.target.candidates) {
       const identifier = candidate.candidateId ?? candidate.id ?? candidate.configPath
       const label = candidate.label ?? candidate.configPath
       log.hint(`${identifier}: ${label}`)
     }
-    if (result.target.selectionInstructions) {
-      log.hint(result.target.selectionInstructions)
+    if (normalized.target.selectionInstructions) {
+      log.hint(normalized.target.selectionInstructions)
     }
   }
 
-  for (const change of result.summary.changes) {
+  for (const change of normalized.summary.changes) {
     log.hint(change)
   }
-  for (const step of result.diagnostics?.nextSteps ?? []) {
+  for (const step of collectDisplayNextSteps(normalized)) {
     log.warn(step)
   }
-  if (result.confirmation.required && result.confirmation.question) {
-    log.warn(result.confirmation.question)
+  for (const patch of normalized.handoff?.patches ?? []) {
+    log.hint(`Patch target: ${patch.path} (${patch.reason})`)
+  }
+  if (normalized.handoff?.assistantPrompt) {
+    log.hint(normalized.handoff.assistantPrompt)
+  }
+  if (normalized.confirmation.required && normalized.confirmation.question) {
+    log.warn(normalized.confirmation.question)
   }
 
-  printManualExtensionGuidance(result)
+  printManualExtensionGuidance(normalized)
 
   const extensionReady =
-    !result.ideExtension?.required ||
-    (result.ideExtension.installed && !result.ideExtension.manualRequired)
+    !normalized.ideExtension?.required ||
+    (normalized.ideExtension.installed && !normalized.ideExtension.manualRequired)
 
   if (
     extensionReady &&
-    (result.status === 'success' || result.status === 'partial_success') &&
-    result.verification?.message
+    (normalized.status === 'success' || normalized.status === 'partial_success') &&
+    normalized.verification?.message
   ) {
-    log.info(result.verification.message)
+    log.info(normalized.verification.message)
   }
 }
 
@@ -88,12 +139,12 @@ export async function onboard(options: OnboardCommandOptions = {}): Promise<Onbo
     session.status === 'needs_confirmation'
   ) {
     return writeCommandOutput(
-      buildDeferredOnboardResult(session),
+      normalizeOnboardResult(buildDeferredOnboardResult(session)),
       options.json ?? false,
       printOnboardResult,
     )
   }
 
-  const result = await applyResolvedOnboardingSession(session, options)
+  const result = normalizeOnboardResult(await applyResolvedOnboardingSession(session, options))
   return writeCommandOutput(result, options.json ?? false, printOnboardResult)
 }

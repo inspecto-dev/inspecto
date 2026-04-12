@@ -6,10 +6,20 @@ import { readFile, writeFile } from '../utils/fs.js'
 import { log } from '../utils/logger.js'
 
 /** Rules for default mode: fine-grained rules only */
-const DEFAULT_RULES = ['.inspecto/install.lock', '.inspecto/cache.json', '.inspecto/*.local.json']
+const DEFAULT_RULES = [
+  '.inspecto/install.lock',
+  '.inspecto/cache.json',
+  '.inspecto/*.local.json',
+  '.inspecto/dev.json',
+]
 
 /** Rules for shared mode: same as default in current design to allow settings.json */
-const SHARED_RULES = ['.inspecto/install.lock', '.inspecto/cache.json', '.inspecto/*.local.json']
+const SHARED_RULES = [
+  '.inspecto/install.lock',
+  '.inspecto/cache.json',
+  '.inspecto/*.local.json',
+  '.inspecto/dev.json',
+]
 
 /**
  * Update .gitignore based on the init mode.
@@ -77,6 +87,7 @@ export async function cleanGitignore(root: string): Promise<void> {
     .replace(/^\.inspecto\/install\.lock\s*$/gm, '')
     .replace(/^\.inspecto\/cache\.json\s*$/gm, '')
     .replace(/^\.inspecto\/\*\.local\.json\s*$/gm, '')
+    .replace(/^\.inspecto\/dev\.json\s*$/gm, '')
     .replace(/\n{3,}/g, '\n\n') // Collapse excess blank lines
 
   await writeFile(gitignorePath, cleaned)

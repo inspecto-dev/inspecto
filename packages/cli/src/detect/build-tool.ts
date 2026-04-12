@@ -471,6 +471,8 @@ async function detectPattern({
     }
   } else if (pattern.tool === 'rsbuild') {
     hasDep = !!allDeps['@rsbuild/core'] || isPackageResolvable('@rsbuild/core', targetRoot)
+  } else if (pattern.tool === 'vite') {
+    hasDep = !!allDeps['vite'] || isPackageResolvable('vite', targetRoot)
   } else {
     hasDep = !!allDeps[pattern.tool] || isPackageResolvable(pattern.tool, targetRoot)
   }
@@ -576,7 +578,7 @@ async function detectPattern({
         tool: pattern.tool,
         configPath: 'package.json (dependency)',
         label: `${pattern.label} (detected via dependency)`,
-        packagePath: packagePath || undefined,
+        ...(packagePath ? { packagePath } : {}),
       }
     }
     return null
@@ -604,9 +606,9 @@ async function detectPattern({
     label: `${pattern.label} (${relativeConfig})${isLegacyRspack ? ' [Legacy]' : ''}${
       isLegacyWebpack ? ' [Webpack 4]' : ''
     }${inferredFromScripts ? ' [Scripts Detected]' : ''}`,
-    isLegacyRspack,
-    isLegacyWebpack,
-    packagePath: packagePath || undefined,
+    ...(isLegacyRspack ? { isLegacyRspack: true } : {}),
+    ...(isLegacyWebpack ? { isLegacyWebpack: true } : {}),
+    ...(packagePath ? { packagePath } : {}),
   }
 }
 

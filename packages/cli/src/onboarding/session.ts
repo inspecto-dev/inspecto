@@ -2,6 +2,11 @@ import path from 'node:path'
 import { detectFrameworks } from '../detect/framework.js'
 import { detectIDE } from '../detect/ide.js'
 import { detectProviders } from '../detect/provider.js'
+import {
+  getHostIdeBinaryName,
+  isSupportedHostIde,
+  type SupportedHostIde,
+} from '../integrations/capabilities.js'
 import { applyOnboardingPlan, type ApplyOnboardingResult } from './apply.js'
 import { buildOnboardingContext } from './context.js'
 import { createPlanResult, planManualFollowUp } from './planner.js'
@@ -61,12 +66,22 @@ async function buildVerification(
   projectRoot: string,
   packageManager: OnboardingContext['packageManager'],
 ): Promise<OnboardingVerification> {
-  const packageJson = await readJSON<{ scripts?: Record<string, string> }>(
-    path.join(projectRoot, 'package.json'),
-  )
+  const packageJson = await readJSON<{
+    scripts?: Record<string, string>
+    dependencies?: Record<string, string>
+  }>(path.join(projectRoot, 'package.json'))
 
   if (packageJson?.scripts?.dev) {
     const devCommand = getVerificationCommand(packageManager)
+    return {
+      available: true,
+      devCommand,
+      message: `Start the local dev server with \`${devCommand}\` to verify Inspecto in the browser.`,
+    }
+  }
+
+  if (packageJson?.scripts?.start && packageJson?.dependencies?.next) {
+    const devCommand = packageManager === 'bun' ? 'bunx next dev' : 'npx next dev'
     return {
       available: true,
       devCommand,
@@ -80,7 +95,19 @@ async function buildVerification(
   }
 }
 
+function buildExtensionInstallCommand(ide?: string): string {
+  if (ide && isSupportedHostIde(ide)) {
+    const binaryName = getHostIdeBinaryName(ide as SupportedHostIde)
+    if (binaryName) {
+      return `${binaryName} --install-extension inspecto.inspecto`
+    }
+  }
+
+  return 'code --install-extension inspecto.inspecto'
+}
+
 function buildIdeExtensionStatus(input: {
+  ide?: string
   required: boolean
   installed: boolean
   manualRequired: boolean
@@ -97,8 +124,12 @@ function buildIdeExtensionStatus(input: {
     required: true,
     installed: input.installed,
     manualRequired: input.manualRequired,
-    installCommand: 'code --install-extension inspecto.inspecto',
-    marketplaceUrl: 'https://marketplace.visualstudio.com/items?itemName=inspecto.inspecto',
+    installCommand: buildExtensionInstallCommand(input.ide),
+    ...(input.ide === 'vscode'
+      ? {
+          marketplaceUrl: 'https://marketplace.visualstudio.com/items?itemName=inspecto.inspecto',
+        }
+      : {}),
     openVsxUrl: 'https://open-vsx.org/extension/inspecto/inspecto',
   }
 }
@@ -165,7 +196,12 @@ async function buildTargetedContext(
 
 function buildOnboardingSummary(plan: PlanResult, projectRoot: string): OnboardingSummary {
   const changes = plan.actions
-    .filter(action => action.type !== 'manual_step')
+    .filter(
+      action =>
+        !['manual_step', 'generate_patch_plan', 'generate_file', 'manual_confirmation'].includes(
+          action.type,
+        ),
+    )
     .map(action => action.description)
   const risks = [...plan.warnings.map(item => item.message)]
   const manualFollowUp = planManualFollowUp(plan)
@@ -235,18 +271,28 @@ function buildPreApplyResult(
         }
       : undefined
 
+  const ideExtension = buildIdeExtensionStatus({
+    ...(session.selectedIDE?.ide ? { ide: session.selectedIDE.ide } : {}),
+    required: session.plan.defaults.extension,
+    installed: false,
+    manualRequired: session.plan.defaults.extension,
+  })
+
   return {
     status,
     target: session.target,
     summary: session.summary,
     confirmation: session.confirmation,
-    ideExtension: buildIdeExtensionStatus({
-      required: session.plan.defaults.extension,
-      installed: false,
-      manualRequired: session.plan.defaults.extension,
-    }),
+    ideExtension,
     verification: session.verification,
-    diagnostics,
+    ...(session.framework ? { framework: session.framework } : {}),
+    ...(session.metaFramework ? { metaFramework: session.metaFramework } : {}),
+    ...(session.routerMode ? { routerMode: session.routerMode } : {}),
+    ...(session.autoApplied ? { autoApplied: session.autoApplied } : {}),
+    ...(session.pendingSteps ? { pendingSteps: session.pendingSteps } : {}),
+    ...(session.assistantPrompt ? { assistantPrompt: session.assistantPrompt } : {}),
+    ...(session.patches ? { patches: session.patches } : {}),
+    ...(diagnostics ? { diagnostics } : {}),
   }
 }
 
@@ -263,8 +309,8 @@ function buildExecutionResult(
     installedDependencies: applyResult.mutations
       .map(item => item.name)
       .filter((value): value is string => !!value),
-    selectedProviderDefault: session.providerDefault,
-    selectedIDE: session.selectedIDE?.ide,
+    ...(session.providerDefault ? { selectedProviderDefault: session.providerDefault } : {}),
+    ...(session.selectedIDE?.ide ? { selectedIDE: session.selectedIDE.ide } : {}),
     mutations: applyResult.mutations,
   }
 }
@@ -312,20 +358,36 @@ export async function resolveOnboardingSession(
     repoRoot: root,
     buildTools: rootContext.buildTools.supported,
     frameworkSupportByPackage,
-    selectedPackagePath: options.target,
+    ...(options.target ? { selectedPackagePath: options.target } : {}),
   })
 
   if (target.candidates.length === 0) {
     const plan = createPlanResult(rootContext)
+    const guidedStatus = plan.strategy === 'guided' ? 'partial_success' : 'error'
+    const resolvedTarget =
+      plan.strategy === 'guided'
+        ? {
+            status: 'guided' as const,
+            candidates: [],
+            reason: `Guided onboarding is available for ${plan.metaFramework ?? 'this project'}.`,
+          }
+        : target
     return {
-      status: 'error',
-      target,
+      status: guidedStatus,
+      target: resolvedTarget,
       summary: buildOnboardingSummary(plan, root),
       confirmation: { required: false },
       verification: rootVerification,
       context: rootContext,
       plan,
       projectRoot: root,
+      ...(plan.framework ? { framework: plan.framework } : {}),
+      ...(plan.metaFramework ? { metaFramework: plan.metaFramework } : {}),
+      ...(plan.routerMode ? { routerMode: plan.routerMode } : {}),
+      ...(plan.autoApplied ? { autoApplied: plan.autoApplied } : {}),
+      ...(plan.pendingSteps ? { pendingSteps: plan.pendingSteps } : {}),
+      ...(plan.assistantPrompt ? { assistantPrompt: plan.assistantPrompt } : {}),
+      ...(plan.patches ? { patches: plan.patches } : {}),
     }
   }
 
@@ -380,6 +442,11 @@ export async function resolveOnboardingSession(
     status = 'partial_success'
   }
 
+  const providerDefault = getProviderDefault(
+    plan.defaults.provider,
+    selectedProvider?.preferredMode,
+  )
+
   return {
     status,
     target,
@@ -390,7 +457,14 @@ export async function resolveOnboardingSession(
     plan,
     projectRoot: context.root,
     selectedIDE,
-    providerDefault: getProviderDefault(plan.defaults.provider, selectedProvider?.preferredMode),
+    ...(providerDefault ? { providerDefault } : {}),
+    ...(plan.framework ? { framework: plan.framework } : {}),
+    ...(plan.metaFramework ? { metaFramework: plan.metaFramework } : {}),
+    ...(plan.routerMode ? { routerMode: plan.routerMode } : {}),
+    ...(plan.autoApplied ? { autoApplied: plan.autoApplied } : {}),
+    ...(plan.pendingSteps ? { pendingSteps: plan.pendingSteps } : {}),
+    ...(plan.assistantPrompt ? { assistantPrompt: plan.assistantPrompt } : {}),
+    ...(plan.patches ? { patches: plan.patches } : {}),
   }
 }
 
@@ -414,7 +488,9 @@ export async function applyResolvedOnboardingSession(
     selectedIDE: session.selectedIDE,
     providerDefault: session.providerDefault,
     plan: session.plan,
-    allowManualPlanApply: session.plan.strategy === 'manual' && session.plan.blockers.length === 0,
+    allowManualPlanApply:
+      (session.plan.strategy === 'manual' || session.plan.strategy === 'guided') &&
+      session.plan.blockers.length === 0,
   })
 
   const diagnostics = buildExecutionDiagnostics(session, applyResult)
@@ -425,20 +501,30 @@ export async function applyResolvedOnboardingSession(
         ? 'partial_success'
         : 'success'
 
+  const ideExtension = buildIdeExtensionStatus({
+    ...(session.selectedIDE?.ide ? { ide: session.selectedIDE.ide } : {}),
+    required: session.plan.defaults.extension,
+    installed:
+      session.plan.defaults.extension && !applyResult.postInstall.manualExtensionInstallNeeded,
+    manualRequired: applyResult.postInstall.manualExtensionInstallNeeded,
+  })
+
   return {
     status,
     target: session.target,
     summary: session.summary,
     confirmation: session.confirmation,
-    ideExtension: buildIdeExtensionStatus({
-      required: session.plan.defaults.extension,
-      installed:
-        session.plan.defaults.extension && !applyResult.postInstall.manualExtensionInstallNeeded,
-      manualRequired: applyResult.postInstall.manualExtensionInstallNeeded,
-    }),
+    ideExtension,
     verification,
     result: buildExecutionResult(session, applyResult),
-    diagnostics,
+    ...(session.framework ? { framework: session.framework } : {}),
+    ...(session.metaFramework ? { metaFramework: session.metaFramework } : {}),
+    ...(session.routerMode ? { routerMode: session.routerMode } : {}),
+    ...(session.autoApplied ? { autoApplied: session.autoApplied } : {}),
+    ...(session.pendingSteps ? { pendingSteps: session.pendingSteps } : {}),
+    ...(session.assistantPrompt ? { assistantPrompt: session.assistantPrompt } : {}),
+    ...(session.patches ? { patches: session.patches } : {}),
+    ...(diagnostics ? { diagnostics } : {}),
   }
 }
 

@@ -262,4 +262,93 @@ describe('doctor command', () => {
     expect(output).not.toContain('"status"')
     expect(output).not.toContain('"summary"')
   })
+
+  it('reports Next.js as guided onboarding instead of unsupported', async () => {
+    vi.mocked(fsUtils.exists).mockImplementation(async (filePath: string) => {
+      const existingPaths = new Set([
+        '/repo/package.json',
+        '/repo/node_modules/@inspecto-dev/plugin',
+        '/repo/next.config.ts',
+        '/repo/.inspecto/settings.local.json',
+        '/repo/.gitignore',
+      ])
+      return existingPaths.has(filePath)
+    })
+    vi.mocked(fsUtils.readJSON).mockImplementation(async (filePath: string) => {
+      if (filePath === '/repo/package.json') {
+        return { scripts: { dev: 'next dev --webpack' } }
+      }
+      if (filePath === '/repo/node_modules/@inspecto-dev/plugin/package.json') {
+        return { version: '1.2.3' }
+      }
+      if (filePath === '/repo/.inspecto/settings.local.json') {
+        return { ide: 'trae', 'provider.default': 'coco.cli' }
+      }
+      return null
+    })
+    vi.mocked(fsUtils.readFile).mockImplementation(async filePath => {
+      if (filePath === '/repo/next.config.ts') {
+        return "import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'\nexport default {}"
+      }
+      if (filePath === '/repo/.gitignore') {
+        return '.inspecto/install.lock\n.inspecto/dev.json\n'
+      }
+      return null
+    })
+    vi.mocked(packageManager.detectPackageManager).mockResolvedValue('pnpm')
+    vi.mocked(packageManager.getInstallCommand).mockReturnValue('pnpm add -D @inspecto-dev/plugin')
+    vi.mocked(ide.detectIDE).mockResolvedValue({
+      detected: [{ ide: 'trae', supported: true }],
+    })
+    vi.mocked(framework.detectFrameworks).mockResolvedValue({
+      supported: ['react'],
+      unsupported: [],
+    })
+    vi.mocked(provider.detectProviders).mockResolvedValue({
+      detected: [{ label: 'Trae CLI (Coco)', providerModes: ['cli'] }],
+    })
+    vi.mocked(buildTool.detectBuildTools).mockResolvedValue({
+      supported: [],
+      unsupported: ['Next.js'],
+    })
+    vi.mocked(extension.isExtensionInstalled).mockResolvedValue(true)
+
+    const result = await collectDoctorResult('/repo')
+
+    expect(result.status).toBe('warning')
+    expect(result.errors).toEqual([])
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'build-tool-guided',
+          message: 'Build tool: Next.js (guided onboarding available)',
+          hints: expect.arrayContaining([
+            'Run `inspecto onboard --json` to generate the remaining patch plan and assistant handoff.',
+            expect.stringContaining('Review the generated Next.js patch plan'),
+          ]),
+          details: expect.objectContaining({
+            metaFrameworks: ['Next.js'],
+            patchCount: expect.any(Number),
+            pendingSteps: expect.arrayContaining([
+              expect.stringContaining('Review the generated Next.js patch plan'),
+            ]),
+            assistantPrompt: expect.stringContaining(
+              'Complete the remaining Inspecto onboarding for this Next.js project.',
+            ),
+          }),
+        }),
+      ]),
+    )
+    expect(result.warnings).toEqual(
+      expect.not.arrayContaining([expect.objectContaining({ code: 'build-tool-unsupported' })]),
+    )
+    expect(result.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'guided-config-patch-pending',
+          message: 'Guided config patch still needs review in next.config.js',
+        }),
+      ]),
+    )
+  })
 })

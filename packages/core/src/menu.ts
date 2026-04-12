@@ -74,6 +74,7 @@ export function showIntentMenu(
   menu.style.width = '304px'
   menu.style.maxWidth = 'calc(100vw - 16px)'
   menu.style.boxSizing = 'border-box'
+  menu.style.pointerEvents = 'auto'
 
   const {
     header,

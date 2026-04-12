@@ -76,7 +76,7 @@ export interface OnboardingTargetCandidate {
 }
 
 export interface OnboardingTargetResolution {
-  status: 'resolved' | 'needs_selection'
+  status: 'resolved' | 'needs_selection' | 'guided'
   selected?: OnboardingTargetCandidate
   candidates: OnboardingTargetCandidate[]
   reason: string
@@ -89,6 +89,14 @@ export interface OnboardingSummary {
   changes: string[]
   risks: string[]
   manualFollowUp: string[]
+}
+
+export interface OnboardingPatchPlan {
+  path: string
+  status: 'planned' | 'manual_patch_required'
+  reason: string
+  snippet: string
+  confidence: 'high' | 'medium' | 'low'
 }
 
 export interface OnboardingConfirmation {
@@ -126,6 +134,16 @@ export interface OnboardingVerification {
   message: string
 }
 
+export interface OnboardingAssistantHandoff {
+  framework?: string
+  metaFramework?: string
+  routerMode?: 'app' | 'pages' | 'mixed' | 'unknown'
+  autoApplied?: string[]
+  pendingSteps?: string[]
+  assistantPrompt?: string
+  patches?: OnboardingPatchPlan[]
+}
+
 export interface ResolvedOnboardingSession {
   status: OnboardStatus
   target: OnboardingTargetResolution
@@ -137,6 +155,14 @@ export interface ResolvedOnboardingSession {
   projectRoot: string
   selectedIDE?: { ide: string; supported: boolean } | null
   providerDefault?: string
+  framework?: string
+  metaFramework?: string
+  routerMode?: 'app' | 'pages' | 'mixed' | 'unknown'
+  autoApplied?: string[]
+  pendingSteps?: string[]
+  assistantPrompt?: string
+  patches?: OnboardingPatchPlan[]
+  handoff?: OnboardingAssistantHandoff
 }
 
 export interface OnboardCommandResult {
@@ -148,6 +174,14 @@ export interface OnboardCommandResult {
   verification?: OnboardingVerification
   result?: OnboardingExecutionResult
   diagnostics?: OnboardingDiagnostics
+  framework?: string
+  metaFramework?: string
+  routerMode?: 'app' | 'pages' | 'mixed' | 'unknown'
+  autoApplied?: string[]
+  pendingSteps?: string[]
+  assistantPrompt?: string
+  patches?: OnboardingPatchPlan[]
+  handoff?: OnboardingAssistantHandoff
 }
 
 /** Machine-readable detection output for skill-first onboarding */
@@ -174,9 +208,16 @@ export interface PlanResult {
   status: CommandStatus
   warnings: CommandMessage[]
   blockers: CommandMessage[]
-  strategy: 'supported' | 'manual' | 'unsupported'
+  strategy: 'supported' | 'guided' | 'manual' | 'unsupported'
   actions: Array<{
-    type: 'install_dependency' | 'modify_file' | 'install_extension' | 'manual_step'
+    type:
+      | 'install_dependency'
+      | 'modify_file'
+      | 'install_extension'
+      | 'manual_step'
+      | 'generate_patch_plan'
+      | 'generate_file'
+      | 'manual_confirmation'
     target: string
     description: string
   }>
@@ -186,6 +227,13 @@ export interface PlanResult {
     shared: boolean
     extension: boolean
   }
+  framework?: string
+  metaFramework?: string
+  routerMode?: 'app' | 'pages' | 'mixed' | 'unknown'
+  autoApplied?: string[]
+  pendingSteps?: string[]
+  assistantPrompt?: string
+  patches?: OnboardingPatchPlan[]
 }
 
 /** A single doctor diagnostic check/result */

@@ -10,8 +10,15 @@ import { detectFrameworks } from '../detect/framework.js'
 import { detectIDE } from '../detect/ide.js'
 import { detectProviders } from '../detect/provider.js'
 import { isExtensionInstalled } from '../inject/extension.js'
+import { createPlanResult } from '../onboarding/planner.js'
 import { writeCommandOutput } from '../utils/output.js'
-import type { CommandStatus, DoctorDiagnostic, DoctorResult } from '../types.js'
+import type {
+  CommandStatus,
+  DoctorDiagnostic,
+  DoctorResult,
+  OnboardingContext,
+  PlanResult,
+} from '../types.js'
 
 export interface DoctorCommandOptions {
   json?: boolean
@@ -37,6 +44,113 @@ function doctorStatus(errors: number, warnings: number): CommandStatus {
   if (errors > 0) return 'blocked'
   if (warnings > 0) return 'warning'
   return 'ok'
+}
+
+function isGuidedMetaFramework(buildTool: string): boolean {
+  return buildTool === 'Next.js' || buildTool === 'Nuxt'
+}
+
+function buildDoctorOnboardingContext(input: {
+  root: string
+  packageManager: NonNullable<DoctorResult['project']['packageManager']>
+  buildTools: Awaited<ReturnType<typeof detectBuildTools>>
+  frameworks: Awaited<ReturnType<typeof detectFrameworks>>
+  ides: Awaited<ReturnType<typeof detectIDE>>
+  providers: Awaited<ReturnType<typeof detectProviders>>
+}): OnboardingContext {
+  return {
+    root: input.root,
+    packageManager: input.packageManager,
+    buildTools: input.buildTools,
+    frameworks: {
+      supported: input.frameworks.supported,
+      unsupported: input.frameworks.unsupported.map(item => item.name),
+    },
+    ides: input.ides.detected.map(({ ide, supported }) => ({ ide, supported })),
+    providers: input.providers.detected.map(({ id, label, supported, preferredMode }) => ({
+      id,
+      label,
+      supported,
+      preferredMode,
+    })),
+  }
+}
+
+function isConfigPatchReason(reason: string): boolean {
+  return reason.startsWith('next_config_') || reason.startsWith('nuxt_config_')
+}
+
+function isNextWebpackDevPatchReason(reason: string): boolean {
+  return reason === 'next_dev_script_requires_webpack'
+}
+
+async function collectGuidedPatchDiagnostics(
+  root: string,
+  plan: PlanResult,
+): Promise<DoctorDiagnostic[]> {
+  if (plan.strategy !== 'guided' || !plan.patches?.length) {
+    return []
+  }
+
+  const diagnostics: DoctorDiagnostic[] = []
+
+  for (const patch of plan.patches) {
+    if (isConfigPatchReason(patch.reason)) {
+      const content = await readFile(path.join(root, patch.path))
+      if (content?.includes('@inspecto-dev/plugin')) {
+        diagnostics.push(
+          createDiagnostic(
+            'guided-config-patch-detected',
+            'ok',
+            `Guided config patch appears to be applied in ${patch.path}`,
+            [],
+            { path: patch.path, reason: patch.reason },
+          ),
+        )
+      } else {
+        diagnostics.push(
+          createDiagnostic(
+            'guided-config-patch-pending',
+            'warning',
+            `Guided config patch still needs review in ${patch.path}`,
+            ['Run `inspecto onboard --json` to review the generated patch details.'],
+            { path: patch.path, reason: patch.reason },
+          ),
+        )
+      }
+      continue
+    }
+
+    if (isNextWebpackDevPatchReason(patch.reason)) {
+      const packageJson = await readJSON<{ scripts?: Record<string, string> }>(
+        path.join(root, 'package.json'),
+      )
+      const devScript = packageJson?.scripts?.dev ?? ''
+      if (/next\s+dev\b/.test(devScript) && /--webpack\b/.test(devScript)) {
+        diagnostics.push(
+          createDiagnostic(
+            'guided-dev-script-configured',
+            'ok',
+            'Next.js dev script is configured for webpack mode',
+            [],
+            { script: devScript },
+          ),
+        )
+      } else {
+        diagnostics.push(
+          createDiagnostic(
+            'guided-dev-script-pending',
+            'warning',
+            'Next.js dev script still needs webpack mode for Inspecto validation',
+            ['Update the `dev` script to `next dev --webpack` before browser validation.'],
+            { script: devScript },
+          ),
+        )
+      }
+    }
+  }
+
+  return diagnostics
 }
 
 function printDoctorResult(result: DoctorResult): void {
@@ -99,6 +213,15 @@ export async function collectDoctorResult(root = process.cwd()): Promise<DoctorR
       detectBuildTools(root),
       isExtensionInstalled(),
     ])
+  const onboardingContext = buildDoctorOnboardingContext({
+    root,
+    packageManager: pm,
+    buildTools: buildResult,
+    frameworks: frameworkResult,
+    ides: ideProbe,
+    providers: providerProbe,
+  })
+  const onboardingPlan = createPlanResult(onboardingContext)
 
   // Check 2: IDE
   if (ideProbe.detected.length === 0) {
@@ -229,15 +352,45 @@ export async function collectDoctorResult(root = process.cwd()): Promise<DoctorR
       )
     }
   } else if (buildResult.unsupported.length > 0) {
-    const names = buildResult.unsupported.join(', ')
-    checks.push(
-      createDiagnostic(
-        `build-tool-unsupported`,
-        'warning',
-        `Build tool: ${names} (not supported in v1)`,
-        ['current version supports: Vite, Webpack, Rspack, esbuild, Rollup'],
-      ),
+    const guidedBuildTools = buildResult.unsupported.filter(isGuidedMetaFramework)
+    const trulyUnsupportedBuildTools = buildResult.unsupported.filter(
+      buildTool => !isGuidedMetaFramework(buildTool),
     )
+
+    if (guidedBuildTools.length > 0) {
+      checks.push(
+        createDiagnostic(
+          'build-tool-guided',
+          'warning',
+          `Build tool: ${guidedBuildTools.join(', ')} (guided onboarding available)`,
+          [
+            'Run `inspecto onboard --json` to generate the remaining patch plan and assistant handoff.',
+            ...(onboardingPlan.pendingSteps ?? []),
+          ],
+          {
+            metaFrameworks: guidedBuildTools,
+            ...(onboardingPlan.pendingSteps ? { pendingSteps: onboardingPlan.pendingSteps } : {}),
+            ...(onboardingPlan.assistantPrompt
+              ? { assistantPrompt: onboardingPlan.assistantPrompt }
+              : {}),
+            ...(onboardingPlan.patches ? { patchCount: onboardingPlan.patches.length } : {}),
+          },
+        ),
+      )
+    }
+
+    checks.push(...(await collectGuidedPatchDiagnostics(root, onboardingPlan)))
+
+    if (trulyUnsupportedBuildTools.length > 0) {
+      checks.push(
+        createDiagnostic(
+          'build-tool-unsupported',
+          'warning',
+          `Build tool: ${trulyUnsupportedBuildTools.join(', ')} (not supported in v1)`,
+          ['current version supports: Vite, Webpack, Rspack, esbuild, Rollup'],
+        ),
+      )
+    }
   } else {
     checks.push(
       createDiagnostic('build-tool-missing', 'warning', 'No recognized build config found'),

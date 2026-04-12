@@ -5,7 +5,7 @@ import { injectPlugin } from '../inject/ast-injector.js'
 import { installExtension } from '../inject/extension.js'
 import { updateGitignore } from '../inject/gitignore.js'
 import { shell } from '../utils/exec.js'
-import { exists, readJSON, writeJSON } from '../utils/fs.js'
+import { exists, readFile, readJSON, writeFile, writeJSON } from '../utils/fs.js'
 import { log } from '../utils/logger.js'
 import type {
   BuildToolDetection,
@@ -133,7 +133,11 @@ function resultStatus(nextSteps: string[]): CommandStatus {
 
 function manualPlanSteps(plan: PlanResult, includeBlockers = true): string[] {
   const steps = plan.actions
-    .filter(action => action.type === 'manual_step')
+    .filter(action =>
+      ['manual_step', 'generate_patch_plan', 'generate_file', 'manual_confirmation'].includes(
+        action.type,
+      ),
+    )
     .map(action => action.description)
 
   if (!includeBlockers) {
@@ -141,6 +145,127 @@ function manualPlanSteps(plan: PlanResult, includeBlockers = true): string[] {
   }
 
   return [...plan.blockers.map(blocker => blocker.message), ...steps]
+}
+
+function applyGuidedPatchContent(source: string, snippet: string): string {
+  if (source.includes("import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'")) {
+    return source
+  }
+  if (source.includes("import { vitePlugin as inspecto } from '@inspecto-dev/plugin'")) {
+    return source
+  }
+
+  const trimmedSource = source.trimEnd()
+  if (/export\s+default\s*\{/m.test(source)) {
+    const nextSource = trimmedSource.replace(
+      /export\s+default\s*\{/m,
+      "import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'\n\nexport default {\n  webpack(config, { dev, isServer }) {\n    if (dev) {\n      config.plugins.push(inspecto())\n    }\n    return config\n  },",
+    )
+    return `${nextSource}\n`
+  }
+
+  if (/module\.exports\s*=\s*\{/m.test(source)) {
+    const nextSource = trimmedSource.replace(
+      /module\.exports\s*=\s*\{/m,
+      "const { webpackPlugin: inspecto } = require('@inspecto-dev/plugin')\n\nmodule.exports = {\n  webpack(config, { dev, isServer }) {\n    if (dev) {\n      config.plugins.push(inspecto())\n    }\n    return config\n  },",
+    )
+    return `${nextSource}\n`
+  }
+
+  const objectExportVariableMatch = source.match(
+    /(const\s+([A-Za-z0-9_$]+)\s*(?::[^=]+)?=\s*\{[\s\S]*?\}\s*;?\s*)export\s+default\s+\2\s*;?/m,
+  )
+  const variableDeclaration = objectExportVariableMatch?.[1]
+  const variableName = objectExportVariableMatch?.[2]
+  if (variableDeclaration && variableName) {
+    const nextDeclaration = variableDeclaration.replace(
+      /=\s*\{/m,
+      '= {\n  webpack(config, { dev, isServer }) {\n    if (dev) {\n      config.plugins.push(inspecto())\n    }\n    return config\n  },',
+    )
+    const nextSource = source.replace(
+      objectExportVariableMatch[0],
+      `import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'\n\n${nextDeclaration}export default ${variableName}`,
+    )
+    return `${nextSource.trimEnd()}\n`
+  }
+
+  if (/defineNuxtConfig\s*\(\s*\{/m.test(source)) {
+    const trimmedSource = source.trimEnd()
+    const nextSource = trimmedSource.replace(
+      /defineNuxtConfig\s*\(\s*\{/m,
+      'defineNuxtConfig({\n  vite: {\n    plugins: [inspecto()],\n  },',
+    )
+    return `import { vitePlugin as inspecto } from '@inspecto-dev/plugin'\n\n${nextSource}\n`
+  }
+
+  const jsdocMatch = source.match(
+    /\/\*\*[\s\S]*?@type\s*\{import\('next'\)\.NextConfig\}[\s\S]*?\*\/[\s\S]*?(export\s+default|module\.exports)\s*=?\s*\{/m,
+  )
+  if (jsdocMatch) {
+    const isEsm = jsdocMatch[1] === 'export default'
+    const importStatement = isEsm
+      ? "import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'\n\n"
+      : "const { webpackPlugin: inspecto } = require('@inspecto-dev/plugin')\n\n"
+
+    const replacementPattern = isEsm ? /export\s+default\s*\{/m : /module\.exports\s*=\s*\{/m
+
+    const injectConfig = isEsm
+      ? 'export default {\n  webpack(config, { dev, isServer }) {\n    if (dev) {\n      config.plugins.push(inspecto())\n    }\n    return config\n  },'
+      : 'module.exports = {\n  webpack(config, { dev, isServer }) {\n    if (dev) {\n      config.plugins.push(inspecto())\n    }\n    return config\n  },'
+
+    const nextSource = source.replace(replacementPattern, injectConfig)
+    return `${importStatement}${nextSource.trimEnd()}\n`
+  }
+
+  return `${trimmedSource}\n\n${snippet}\n`
+}
+
+async function applyGuidedPlanPatches(
+  input: ApplyOnboardingInput,
+  mutations: Mutation[],
+  reporter: ApplyReporter,
+): Promise<string[]> {
+  const nextSteps: string[] = []
+
+  if (!input.plan || input.plan.strategy !== 'guided' || !input.plan.patches?.length) {
+    return nextSteps
+  }
+
+  for (const patch of input.plan.patches) {
+    if (
+      patch.status !== 'planned' ||
+      (!patch.reason.startsWith('next_config_') && !patch.reason.startsWith('nuxt_config_'))
+    ) {
+      continue
+    }
+
+    const patchPath = path.join(input.projectRoot, patch.path)
+    const existingContent = await readFile(patchPath)
+    if (existingContent === null) {
+      nextSteps.push(`Could not auto-apply the guided patch for ${patch.path}.`)
+      continue
+    }
+
+    const nextContent = applyGuidedPatchContent(existingContent, patch.snippet)
+    if (nextContent === existingContent) {
+      continue
+    }
+
+    if (input.options.dryRun) {
+      reporter.dryRun(`Would apply guided patch to ${patch.path}`)
+      continue
+    }
+
+    await writeFile(patchPath, nextContent)
+    mutations.push({
+      type: 'file_modified',
+      path: patch.path,
+      description: 'Automatically configured Inspecto guided Next.js patch',
+    })
+    reporter.success(`Applied guided patch to ${patch.path}`)
+  }
+
+  return nextSteps
 }
 
 export async function applyOnboardingPlan(
@@ -207,7 +332,7 @@ async function applyOnboardingPlanInternal(
 ): Promise<ApplyOnboardingResult> {
   const reporter = createReporter(input.options.quiet)
   const additiveManualPlan =
-    input.plan?.strategy === 'manual' &&
+    (input.plan?.strategy === 'manual' || input.plan?.strategy === 'guided') &&
     input.allowManualPlanApply &&
     input.plan.blockers.length === 0
 
@@ -261,6 +386,11 @@ async function applyOnboardingPlanInternal(
       spinner.fail('Dependency installation failed')
       installFailed = true
       reporter.error(`Failed to install dependency: ${error?.message || 'Unknown error'}`)
+      if (error?.stderr) {
+        reporter.error(`Details: ${error.stderr}`)
+      } else if (error?.stdout) {
+        reporter.error(`Details: ${error.stdout}`)
+      }
       reporter.hint(`Run manually in ${input.projectRoot}: ${installCmd}`)
       reporter.hint(
         'Setup will continue without dependencies, but Inspecto may not run until installation succeeds.',
@@ -283,6 +413,10 @@ async function applyOnboardingPlanInternal(
         injectionFailed = true
       }
     }
+  }
+
+  if (additiveManualPlan) {
+    nextSteps.push(...(await applyGuidedPlanPatches(input, mutations, reporter)))
   }
 
   if (await exists(settingsPath)) {

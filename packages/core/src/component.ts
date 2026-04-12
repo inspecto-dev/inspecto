@@ -478,7 +478,7 @@ class InspectoElement extends BaseElement {
   }
 }
 
-if (typeof customElements !== 'undefined') {
+if (typeof customElements !== 'undefined' && !customElements.get('inspecto-overlay')) {
   customElements.define('inspecto-overlay', InspectoElement)
 }
 
