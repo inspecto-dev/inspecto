@@ -159,7 +159,98 @@ export function createBadge(ctx: unknown): HTMLDivElement {
   content.append(indicator, titleBlock)
   btn.append(content, eyes, panel)
 
+  let isDragging = false
+  let dragStartX = 0
+  let dragStartY = 0
+  let initialBadgeX = 0
+  let initialBadgeY = 0
+
+  const handleDragStart = (e: MouseEvent | TouchEvent) => {
+    const target = e.target as Element
+    if (
+      target.closest(`.${badgeClass}-panel`) ||
+      target.closest(`[data-inspecto-launcher-action]`)
+    ) {
+      return
+    }
+
+    if (e.type === 'mousedown' && (e as MouseEvent).button !== 0) return
+
+    const clientX =
+      e.type === 'touchstart' ? (e as TouchEvent).touches[0]!.clientX : (e as MouseEvent).clientX
+    const clientY =
+      e.type === 'touchstart' ? (e as TouchEvent).touches[0]!.clientY : (e as MouseEvent).clientY
+
+    dragStartX = clientX
+    dragStartY = clientY
+
+    const rect = btn.getBoundingClientRect()
+    initialBadgeX = rect.left
+    initialBadgeY = rect.top
+
+    isDragging = false
+
+    document.addEventListener('mousemove', handleDragMove, { passive: false })
+    document.addEventListener('mouseup', handleDragEnd)
+    document.addEventListener('touchmove', handleDragMove, { passive: false })
+    document.addEventListener('touchend', handleDragEnd)
+  }
+
+  const handleDragMove = (e: MouseEvent | TouchEvent) => {
+    const clientX =
+      e.type === 'touchmove' ? (e as TouchEvent).touches[0]!.clientX : (e as MouseEvent).clientX
+    const clientY =
+      e.type === 'touchmove' ? (e as TouchEvent).touches[0]!.clientY : (e as MouseEvent).clientY
+
+    const dx = clientX - dragStartX
+    const dy = clientY - dragStartY
+
+    if (!isDragging && Math.hypot(dx, dy) > 5) {
+      isDragging = true
+      btn.style.transition = 'none'
+    }
+
+    if (isDragging) {
+      e.preventDefault()
+      const maxX = window.innerWidth - btn.offsetWidth
+      const maxY = window.innerHeight - btn.offsetHeight
+
+      let newX = initialBadgeX + dx
+      let newY = initialBadgeY + dy
+
+      newX = Math.max(0, Math.min(newX, maxX))
+      newY = Math.max(0, Math.min(newY, maxY))
+
+      btn.style.bottom = 'auto'
+      btn.style.right = 'auto'
+      btn.style.left = `${newX}px`
+      btn.style.top = `${newY}px`
+    }
+  }
+
+  const handleDragEnd = () => {
+    document.removeEventListener('mousemove', handleDragMove)
+    document.removeEventListener('mouseup', handleDragEnd)
+    document.removeEventListener('touchmove', handleDragMove)
+    document.removeEventListener('touchend', handleDragEnd)
+
+    if (isDragging) {
+      btn.style.transition = ''
+      setTimeout(() => {
+        isDragging = false
+      }, 0)
+    }
+  }
+
+  btn.addEventListener('mousedown', handleDragStart)
+  btn.addEventListener('touchstart', handleDragStart, { passive: false })
+
   btn.addEventListener('click', event => {
+    if (isDragging) {
+      event.preventDefault()
+      event.stopPropagation()
+      return
+    }
     if ((event.target as Element).closest?.(`[data-inspecto-launcher-action]`)) return
     state.launcherPanelOpen = !state.launcherPanelOpen
     state.updateBadgeContent()
