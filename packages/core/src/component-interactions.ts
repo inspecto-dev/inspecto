@@ -55,6 +55,17 @@ export function handleMouseMove(ctx: unknown, event: MouseEvent): void {
   state.updateLauncherEye()
 
   if (state.cleanupMenu !== null) {
+    // Determine if the click target is within a dialog or modal
+    const eventTarget = event.target as HTMLElement | null
+    if (eventTarget) {
+      if (
+        eventTarget.closest(
+          '[role="dialog"], [role="menu"], [role="tooltip"], [role="presentation"], [role="listbox"], [data-radix-popper-content-wrapper], [data-radix-focus-guard]',
+        )
+      ) {
+        return
+      }
+    }
     state.overlay.hide()
     return
   }
@@ -86,7 +97,20 @@ export function handleMouseMove(ctx: unknown, event: MouseEvent): void {
 
 export function handleTrigger(ctx: unknown, event: MouseEvent): void {
   const state = asInteractionContext(ctx)
-  if (state.cleanupMenu !== null) return
+  if (state.cleanupMenu !== null) {
+    // Determine if the click target is within a dialog or modal
+    const eventTarget = event.target as HTMLElement | null
+    if (eventTarget) {
+      if (
+        eventTarget.closest(
+          '[role="dialog"], [role="menu"], [role="tooltip"], [role="presentation"], [role="listbox"], [data-radix-popper-content-wrapper], [data-radix-focus-guard]',
+        )
+      ) {
+        return
+      }
+    }
+    return
+  }
   if (!state.isInspectorActive(event)) return
 
   const target = findInspectable(event.target as Element)
