@@ -1,5 +1,13 @@
 # @inspecto-dev/core
 
+## 0.3.6
+
+### Patch Changes
+
+- 6861da8: feat(core): add drag-and-drop support for launcher badge
+- da6b6b3: fix: prevent menu close on dialog interaction and fix badge FOUC
+  - @inspecto-dev/types@0.3.6
+
 ## 0.3.5
 
 ### Patch Changes
