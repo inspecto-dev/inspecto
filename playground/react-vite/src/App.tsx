@@ -49,6 +49,7 @@ function CaseCard({
 export default function App() {
   const [count, setCount] = useState(2)
   const [status, setStatus] = useState<'Draft' | 'Ready for review' | 'Needs follow-up'>('Draft')
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   return (
     <main className="demo-shell">
@@ -205,8 +206,60 @@ export default function App() {
             title="AST mapping anchor"
             description="Use this card when you want a simple, stable target to verify the exact file, line, and column mapping in App.tsx."
           />
+
+          <CaseCard
+            label="Modal interaction"
+            title="Dialog component"
+            description="Use this button to open a modal and test Inspecto inside a pop-up."
+          >
+            <button className="primary-button" onClick={() => setIsModalOpen(true)}>
+              Open dialog
+            </button>
+          </CaseCard>
         </div>
       </section>
+
+      {isModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            role="dialog"
+            style={{
+              backgroundColor: 'var(--bg-color, white)',
+              padding: '24px',
+              borderRadius: '8px',
+              maxWidth: '400px',
+              width: '100%',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3>Modal Dialog</h3>
+            <p style={{ margin: '16px 0' }}>
+              This dialog has <code>role="dialog"</code>. When you click inside here, the Inspecto
+              launcher should not close.
+            </p>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button className="primary-button" onClick={() => alert('Clicked primary')}>
+                Action
+              </button>
+              <button className="ghost-button" onClick={() => setIsModalOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

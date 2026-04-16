@@ -25,6 +25,7 @@ export function createOverlay(shadowRoot: ShadowRoot): {
 
   const tooltip = document.createElement('div')
   tooltip.className = tooltipClass
+  tooltip.style.display = 'none'
 
   const tagSpan = document.createElement('span')
   tagSpan.className = tagClass

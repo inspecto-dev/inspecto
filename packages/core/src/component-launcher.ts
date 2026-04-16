@@ -55,7 +55,9 @@ export function createBadge(ctx: unknown): HTMLDivElement {
   const state = asLauncherContext(ctx)
   const btn = document.createElement('div')
   btn.className = badgeClass
-  btn.style.display = 'flex'
+  // Start with visibility hidden to prevent FOUC (flash of unstyled content)
+  // before the shadow DOM styles are fully parsed by the browser.
+  btn.style.visibility = 'hidden'
 
   const indicator = document.createElement('span')
   indicator.className = `${badgeClass}-indicator`
@@ -258,6 +260,14 @@ export function createBadge(ctx: unknown): HTMLDivElement {
 
   state.shadowRootEl.appendChild(btn)
   updateLauncherEye(state)
+
+  // Wait for two frames to ensure styles are applied before making it visible
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      btn.style.visibility = ''
+    })
+  })
+
   return btn
 }
 

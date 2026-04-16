@@ -211,6 +211,20 @@ export function showIntentMenu(
   setTimeout(() => input.focus(), 0)
 
   const onDocClick = (e: MouseEvent): void => {
+    // Determine if the click target is within a dialog or modal
+    const eventTarget = e.target as HTMLElement | null
+    if (eventTarget) {
+      // Allow clicks on DOM elements that look like modals or popups to not close the menu
+      // E.g., clicking on elements with roles like dialog, menu, tooltip, or inside a portaled floating element
+      if (
+        eventTarget.closest(
+          '[role="dialog"], [role="menu"], [role="tooltip"], [role="presentation"], [role="listbox"], [data-radix-popper-content-wrapper], [data-radix-focus-guard]',
+        )
+      ) {
+        return
+      }
+    }
+
     // Because the menu is inside a Shadow DOM, e.target from the document's perspective
     // is just the <inspecto-overlay> custom element.
     const path = e.composedPath()
