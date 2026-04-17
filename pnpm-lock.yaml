@@ -46,8 +46,8 @@ importers:
         specifier: ^9.0.0
         version: 9.39.4(jiti@2.6.1)
       happy-dom:
-        specifier: ^20.8.4
-        version: 20.8.8
+        specifier: ^20.9.0
+        version: 20.9.0
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -83,7 +83,7 @@ importers:
         version: 5.28.4
       vitest:
         specifier: ^1.4.0
-        version: 1.6.1(@types/node@20.19.39)(happy-dom@20.8.8)(jsdom@29.0.2(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.46.1)
+        version: 1.6.1(@types/node@20.19.39)(happy-dom@20.9.0)(jsdom@29.0.2(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.46.1)
 
   packages/cli:
     dependencies:
@@ -120,7 +120,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@20.19.39)(happy-dom@20.8.8)(jsdom@29.0.2(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.46.1)
+        version: 1.6.1(@types/node@20.19.39)(happy-dom@20.9.0)(jsdom@29.0.2(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.46.1)
 
   packages/core:
     dependencies:
@@ -163,7 +163,7 @@ importers:
         version: 2.24.0
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@20.19.39)(happy-dom@20.8.8)(jsdom@29.0.2(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.46.1)
+        version: 1.6.1(@types/node@20.19.39)(happy-dom@20.9.0)(jsdom@29.0.2(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.46.1)
 
   packages/plugin:
     dependencies:
@@ -6345,8 +6345,8 @@ packages:
   handle-thing@2.0.1:
     resolution: {integrity: sha512-9Qn4yBxelxoh2Ow62nP+Ka/kMnOXRi8BXnRaUwezLNhqelnN49xKz4F/dPP8OYLxLxq6JDtZb2i9XznUQbNPTg==}
 
-  happy-dom@20.8.8:
-    resolution: {integrity: sha512-5/F8wxkNxYtsN0bXfMwIyNLZ9WYsoOYPbmoluqVJqv8KBUbcyKZawJ7uYK4WTX8IHBLYv+VXIwfeNDPy1oKMwQ==}
+  happy-dom@20.9.0:
+    resolution: {integrity: sha512-GZZ9mKe8r646NUAf/zemnGbjYh4Bt8/MqASJY+pSm5ZDtc3YQox+4gsLI7yi1hba6o+eCsGxpHn5+iEVn31/FQ==}
     engines: {node: '>=20.0.0'}
 
   has-bigints@1.1.0:
@@ -17303,7 +17303,7 @@ snapshots:
 
   handle-thing@2.0.1: {}
 
-  happy-dom@20.8.8:
+  happy-dom@20.9.0:
     dependencies:
       '@types/node': 20.19.39
       '@types/whatwg-mimetype': 3.0.2
@@ -21755,7 +21755,7 @@ snapshots:
       - typescript
       - universal-cookie
 
-  vitest@1.6.1(@types/node@20.19.39)(happy-dom@20.8.8)(jsdom@29.0.2(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.46.1):
+  vitest@1.6.1(@types/node@20.19.39)(happy-dom@20.9.0)(jsdom@29.0.2(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.46.1):
     dependencies:
       '@vitest/expect': 1.6.1
       '@vitest/runner': 1.6.1
@@ -21779,7 +21779,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 20.19.39
-      happy-dom: 20.8.8
+      happy-dom: 20.9.0
       jsdom: 29.0.2(@noble/hashes@1.4.0)
     transitivePeerDependencies:
       - less
