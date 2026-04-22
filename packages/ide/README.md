@@ -30,7 +30,7 @@ You can use this to customize the target AI provider, enable auto-send features,
 
 ## Requirements
 
-- VS Code `^1.85.0`, Cursor, Trae, or Trae CN.
+- VS Code `^1.116.0`, Cursor, Trae, or Trae CN.
 - A front-end project with the `@inspecto-dev/plugin` installed.
 
 ## Issue Tracking

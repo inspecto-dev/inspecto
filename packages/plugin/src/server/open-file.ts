@@ -18,8 +18,13 @@ const VSCODE_FAMILY_SCHEMES = [
   'vscodium',
   'codebuddy',
   'codebuddy-cn',
+  'codebuddycn',
   'antigravity',
 ]
+
+function normalizeIdeToken(value: string | undefined): string {
+  return (value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
+}
 
 export function handleOpenFileRequest(
   body: OpenFileRequest,
@@ -34,9 +39,20 @@ export function handleOpenFileRequest(
   const activeIde = serverState.ideInfo?.ide
   const activeIdeScheme = serverState.ideInfo?.scheme
 
-  const rawEditorHint = configuredIde || activeIde || activeIdeScheme || 'code'
+  const configuredIdeMatchesActiveScheme =
+    Boolean(configuredIde) &&
+    Boolean(activeIdeScheme) &&
+    normalizeIdeToken(configuredIde) === normalizeIdeToken(activeIdeScheme)
 
-  if (configuredIde && activeIdeScheme && !activeIdeScheme.includes(configuredIde)) {
+  const rawEditorHint = configuredIdeMatchesActiveScheme
+    ? activeIdeScheme!
+    : configuredIde || activeIde || activeIdeScheme || 'code'
+
+  if (
+    configuredIde &&
+    activeIdeScheme &&
+    normalizeIdeToken(activeIdeScheme).includes(normalizeIdeToken(configuredIde)) === false
+  ) {
     serverLogger.warn(
       `Active IDE is ${activeIdeScheme}, but config forces ${configuredIde}. Using configured IDE.`,
     )

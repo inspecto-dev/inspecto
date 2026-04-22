@@ -7,12 +7,13 @@ import { getDualModeProviderCapability, type IdeInfo } from '@inspecto-dev/types
 import { INSPECTO_API_PATHS } from '@inspecto-dev/types'
 import { InspectoUriHandler } from './uri-handler'
 import { detectIde, resolveAvailableTargets, isExtensionInstalled } from './ide-detector'
+import { getInspectoOutputChannel } from './output-channel'
 
 const MAX_RETRIES = 5
 const RETRY_BASE_MS = 1000
 
 export function activate(context: vscode.ExtensionContext): void {
-  const outputChannel = vscode.window.createOutputChannel('Inspecto')
+  const outputChannel = getInspectoOutputChannel()
   context.subscriptions.push(outputChannel)
   outputChannel.appendLine('Inspecto extension activated')
   outputChannel.appendLine(`IDE: ${vscode.env.uriScheme} / ${vscode.env.appName}`)
@@ -71,6 +72,7 @@ export function activate(context: vscode.ExtensionContext): void {
         coco: { mode: 'cli', installed: targets.includes('coco') },
         trae: { mode: 'builtin', installed: targets.includes('trae') },
         cursor: { mode: 'builtin', installed: targets.includes('cursor') },
+        codebuddy: { mode: 'builtin', installed: targets.includes('codebuddy') },
       },
     }
 

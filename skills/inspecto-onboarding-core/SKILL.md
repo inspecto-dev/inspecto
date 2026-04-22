@@ -18,9 +18,11 @@ Use this workflow when an assistant skill needs to set up Inspecto in the curren
 3. If the result returns `status: "needs_confirmation"`, summarize `summary` and ask for approval before rerunning with `--yes`.
 4. If the result returns `status: "partial_success"` and the remaining step is IDE extension installation, treat that as a required onboarding follow-up.
 5. If IDE extension installation must be done manually, guide the user with the documented install path before moving on:
-   - `code --install-extension inspecto.inspecto`
-   - `https://marketplace.visualstudio.com/items?itemName=inspecto.inspecto`
-   - `https://open-vsx.org/extension/inspecto/inspecto`
+   - Prefer the built-in marketplace search for `Inspecto` in the target IDE.
+   - Use launcher commands only when that IDE's CLI is actually available in the current shell, for example `code --install-extension inspecto.inspecto`, `cursor --install-extension inspecto.inspecto`, or another documented host-IDE launcher.
+   - If the launcher is unavailable, fall back to the documented marketplace links:
+     - `https://marketplace.visualstudio.com/items?itemName=inspecto.inspecto`
+     - `https://open-vsx.org/extension/inspecto/inspecto`
 6. If the result returns `status: "error"`, summarize `diagnostics` and run `doctor --json` only when explicit recovery diagnostics are still needed.
 7. Only after the IDE extension step is complete, use the onboarding result's `verification` payload. If `verification.available` is `true` and `verification.devCommand` is present, offer to start that exact command for validation. Otherwise, tell the user to run their usual dev command manually using `verification.message`.
 8. If the result includes `handoff.patches`, treat them as the primary source of truth for any remaining manual work. Apply the generated patches directly before exploring framework docs or unrelated project files.

@@ -256,6 +256,36 @@ export async function installExtension(
     }
   }
 
+  if (ide === 'codebuddy' && process.platform === 'darwin') {
+    const codebuddyPath = await findIdeBinary('codebuddy')
+    if (codebuddyPath) {
+      const result = await installAlternativeIdeExtension(
+        codebuddyPath,
+        getHostIdeLabel('codebuddy'),
+        extensionRef,
+        quiet,
+      )
+      if (result) {
+        return result
+      }
+    }
+  }
+
+  if (ide === 'codebuddy-cn' && process.platform === 'darwin') {
+    const codebuddyCnPath = await findIdeBinary('codebuddy-cn')
+    if (codebuddyCnPath) {
+      const result = await installAlternativeIdeExtension(
+        codebuddyCnPath,
+        getHostIdeLabel('codebuddy-cn'),
+        extensionRef,
+        quiet,
+      )
+      if (result) {
+        return result
+      }
+    }
+  }
+
   // Other IDEs: Prompt to install via VSIX
   if (!quiet) {
     log.warn(`Could not auto-install extension for ${ide}`)

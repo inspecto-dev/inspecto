@@ -6,9 +6,24 @@ import type {
   RuntimeContextEnvelope,
 } from './runtime.js'
 
-export type IdeType = 'vscode' | 'trae' | 'trae-cn' | 'cursor' | 'unknown'
+export type IdeType =
+  | 'vscode'
+  | 'trae'
+  | 'trae-cn'
+  | 'cursor'
+  | 'codebuddy'
+  | 'codebuddy-cn'
+  | 'unknown'
 
-export type Provider = 'copilot' | 'claude-code' | 'gemini' | 'codex' | 'coco' | 'trae' | 'cursor'
+export type Provider =
+  | 'copilot'
+  | 'claude-code'
+  | 'gemini'
+  | 'codex'
+  | 'coco'
+  | 'trae'
+  | 'cursor'
+  | 'codebuddy'
 
 export type ProviderMode = 'extension' | 'cli' | 'clipboard' | 'builtin'
 
@@ -22,7 +37,14 @@ export interface InspectoSettings {
   'prompt.annotationResponseMode'?: 'unified' | 'per-annotation'
 }
 
-export const HOST_IDE_IDS = ['vscode', 'cursor', 'trae', 'trae-cn'] as const
+export const HOST_IDE_IDS = [
+  'vscode',
+  'cursor',
+  'trae',
+  'trae-cn',
+  'codebuddy',
+  'codebuddy-cn',
+] as const
 
 export type SupportedHostIde = (typeof HOST_IDE_IDS)[number]
 
@@ -31,6 +53,8 @@ export const HOST_IDE_LABELS: Record<SupportedHostIde, string> = {
   cursor: 'Cursor',
   trae: 'Trae',
   'trae-cn': 'Trae CN',
+  codebuddy: 'CodeBuddy',
+  'codebuddy-cn': 'CodeBuddy CN',
 }
 
 export const DUAL_MODE_PROVIDER_CAPABILITIES = {
@@ -73,6 +97,7 @@ export const VALID_MODES: Record<Provider, ProviderMode[]> = {
   coco: ['cli'],
   trae: ['builtin'],
   cursor: ['builtin'],
+  codebuddy: ['builtin'],
 }
 
 export const DEFAULT_PROVIDER_MODE: Record<Provider, ProviderMode> = {
@@ -83,6 +108,7 @@ export const DEFAULT_PROVIDER_MODE: Record<Provider, ProviderMode> = {
   coco: 'cli',
   trae: 'builtin',
   cursor: 'builtin',
+  codebuddy: 'builtin',
 }
 
 export interface ToolOverrides {

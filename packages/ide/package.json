@@ -3,7 +3,7 @@
   "private": true,
   "displayName": "Inspecto - AI DOM Inspector",
   "description": "Click any UI component in browser to instantly send its source code to your AI assistant.",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "license": "MIT",
   "icon": "icon.png",
   "publisher": "inspecto",
@@ -17,7 +17,7 @@
     "url": "https://github.com/inspecto-dev/inspecto/issues"
   },
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.70.0"
   },
   "categories": [
     "Other",
@@ -75,7 +75,7 @@
     "@inspecto-dev/types": "workspace:*"
   },
   "devDependencies": {
-    "@types/vscode": "^1.116.0",
+    "@types/vscode": "^1.70.0",
     "@vscode/vsce": "2.24.0",
     "vitest": "^1.6.0"
   }

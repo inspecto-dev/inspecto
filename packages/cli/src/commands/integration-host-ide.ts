@@ -121,6 +121,12 @@ function detectEnvHostIdes(): SupportedHostIde[] {
   }
 
   if (
+    process.env.__CFBundleIdentifier === 'com.byteocean.trae.cn' ||
+    process.env.COCO_IDE_PLUGIN_TYPE === 'TraeCN' ||
+    (process.env.npm_config_user_agent && process.env.npm_config_user_agent.includes('trae-cn'))
+  ) {
+    detected.add('trae-cn')
+  } else if (
     process.env.TRAE_APP_DIR ||
     process.env.__CFBundleIdentifier === 'com.byteocean.trae' ||
     process.env.COCO_IDE_PLUGIN_TYPE === 'Trae' ||
@@ -130,11 +136,18 @@ function detectEnvHostIdes(): SupportedHostIde[] {
   }
 
   if (
-    process.env.__CFBundleIdentifier === 'com.byteocean.trae.cn' ||
-    process.env.COCO_IDE_PLUGIN_TYPE === 'TraeCN' ||
-    (process.env.npm_config_user_agent && process.env.npm_config_user_agent.includes('trae-cn'))
+    process.env.__CFBundleIdentifier === 'ai.codebuddy.mac.cn' ||
+    process.env.COCO_IDE_PLUGIN_TYPE === 'CodeBuddyCN' ||
+    (process.env.npm_config_user_agent &&
+      process.env.npm_config_user_agent.includes('codebuddy-cn'))
   ) {
-    detected.add('trae-cn')
+    detected.add('codebuddy-cn')
+  } else if (
+    process.env.__CFBundleIdentifier === 'ai.codebuddy.mac' ||
+    process.env.COCO_IDE_PLUGIN_TYPE === 'CodeBuddy' ||
+    (process.env.npm_config_user_agent && process.env.npm_config_user_agent.includes('codebuddy'))
+  ) {
+    detected.add('codebuddy')
   }
 
   if (detected.size === 0 && process.env.TERM_PROGRAM === 'vscode') {
@@ -145,7 +158,14 @@ function detectEnvHostIdes(): SupportedHostIde[] {
 }
 
 async function detectArtifactHostIdes(cwd: string): Promise<SupportedHostIde[]> {
-  const artifactOrder: SupportedHostIde[] = ['cursor', 'trae', 'trae-cn', 'vscode']
+  const artifactOrder: SupportedHostIde[] = [
+    'cursor',
+    'trae',
+    'trae-cn',
+    'codebuddy',
+    'codebuddy-cn',
+    'vscode',
+  ]
   const candidates = artifactOrder.map(ide => ({
     ide,
     target: getHostIdeArtifactPath(ide, cwd),

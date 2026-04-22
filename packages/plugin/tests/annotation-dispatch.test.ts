@@ -539,6 +539,49 @@ describe('annotation batch dispatch', () => {
     })
   })
 
+  it('uses the active CodeBuddy CN scheme for AI dispatch when config uses codebuddy-cn', async () => {
+    const originalPlatform = process.platform
+    Object.defineProperty(process, 'platform', { value: 'darwin' })
+
+    try {
+      const { handleRequest, serverState } = await import('../src/server/index.js')
+      const { execFileSync } = await import('node:child_process')
+      const { loadUserConfigSync } = await import('../src/config.js')
+
+      serverState.projectRoot = process.cwd()
+      serverState.cwd = process.cwd()
+      serverState.ideInfo = { ide: 'codebuddy-cn', scheme: 'codebuddycn' } as any
+      vi.mocked(loadUserConfigSync).mockReturnValue({
+        ide: 'codebuddy-cn',
+        'provider.default': 'codebuddy.builtin',
+        'prompt.autoSend': false,
+      })
+
+      const file = `${process.cwd()}/packages/plugin/src/index.ts`
+      const req: SendToAiRequest = {
+        location: { file, line: 15, column: 7 },
+        snippet: 'export {}',
+        prompt: 'Review this with CodeBuddy.',
+      }
+
+      const request = createJsonRequest('POST', JSON.stringify(req))
+      const response = createMockResponse()
+      const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_DISPATCH}`)
+
+      const pending = handleRequest(url, request as any, response as any)
+      request.start()
+      await pending
+
+      expect(response.statusCode).toBe(200)
+      expect(response.jsonBody.success).toBe(true)
+
+      const uri = vi.mocked(execFileSync).mock.calls[0]?.[1]?.[0] as string
+      expect(uri.startsWith('codebuddycn://inspecto.inspecto/send?')).toBe(true)
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform })
+    }
+  })
+
   it('returns a 403 batch route response for forbidden annotation paths', async () => {
     const { handleRequest, serverState } = await import('../src/server/index.js')
     serverState.projectRoot = process.cwd()
@@ -659,6 +702,42 @@ describe('annotation batch dispatch', () => {
       expect(response.statusCode).toBe(200)
       expect(vi.mocked(execFileSync)).toHaveBeenCalledWith('open', [
         `cursor://file${encodeURI(file)}:12:3`,
+      ])
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform })
+    }
+  })
+
+  it('prefers the active CodeBuddy CN scheme when config uses the codebuddy-cn ide id', async () => {
+    const originalPlatform = process.platform
+    Object.defineProperty(process, 'platform', { value: 'darwin' })
+
+    try {
+      const { handleRequest, serverState } = await import('../src/server/index.js')
+      const { execFileSync } = await import('node:child_process')
+      const { loadUserConfigSync } = await import('../src/config.js')
+
+      serverState.projectRoot = process.cwd()
+      serverState.cwd = process.cwd()
+      serverState.ideInfo = { ide: 'codebuddy-cn', scheme: 'codebuddycn' } as any
+      vi.mocked(loadUserConfigSync).mockReturnValue({
+        ide: 'codebuddy-cn',
+        'provider.default': 'codebuddy.builtin',
+        'prompt.autoSend': false,
+      })
+
+      const file = `${process.cwd()}/packages/plugin/src/index.ts`
+      const request = createJsonRequest('POST', JSON.stringify({ file, line: 15, column: 7 }))
+      const response = createMockResponse()
+      const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.IDE_OPEN}`)
+
+      const pending = handleRequest(url, request as any, response as any)
+      request.start()
+      await pending
+
+      expect(response.statusCode).toBe(200)
+      expect(vi.mocked(execFileSync)).toHaveBeenCalledWith('open', [
+        `codebuddycn://file${encodeURI(file)}:15:7`,
       ])
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform })

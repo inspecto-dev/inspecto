@@ -17,11 +17,12 @@ npx @inspecto-dev/cli integrations install cursor --host-ide cursor
 npx @inspecto-dev/cli integrations install gemini --host-ide vscode
 npx @inspecto-dev/cli integrations install trae --host-ide trae-cn
 npx @inspecto-dev/cli integrations install coco --host-ide trae-cn
+npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 ```
 
-Supported assistants currently include `codex`, `claude-code`, `copilot`, `cursor`, `gemini`, `trae`, and `coco`.
+Supported assistants currently include `codex`, `claude-code`, `copilot`, `cursor`, `gemini`, `trae`, `coco`, and `codebuddy`.
 
-`--host-ide` values: `vscode`, `cursor`, `trae`, `trae-cn`.
+`--host-ide` values: `vscode`, `cursor`, `trae`, `trae-cn`, `codebuddy`, `codebuddy-cn`.
 
 Inspect available integration targets with:
 
@@ -104,6 +105,7 @@ inspecto integrations install codex --host-ide vscode
 inspecto integrations path codex
 inspecto integrations install claude-code --scope project --host-ide vscode
 inspecto integrations install cursor --host-ide cursor
+inspecto integrations install codebuddy --host-ide codebuddy-cn
 ```
 
 #### `inspecto integrations doctor`

@@ -15,12 +15,16 @@ export function detectIde(): IdeType {
   if (scheme === 'trae-cn' || scheme === 'trae cn') return 'trae-cn'
   if (scheme === 'trae') return 'trae'
   if (scheme === 'cursor') return 'cursor'
+  if (scheme === 'codebuddy-cn' || scheme === 'codebuddy cn') return 'codebuddy-cn'
+  if (scheme === 'codebuddy') return 'codebuddy'
 
   // App name is usually a stronger indicator for VS Code forks
   // because forks sometimes forget to change the uriScheme or leave it as 'vscode'.
   if (name.includes('trae cn') || name.includes('trae-cn')) return 'trae-cn'
   if (name.includes('trae')) return 'trae'
   if (name.includes('cursor')) return 'cursor'
+  if (name.includes('codebuddy cn') || name.includes('codebuddy-cn')) return 'codebuddy-cn'
+  if (name.includes('codebuddy')) return 'codebuddy'
 
   if (name.includes('vscode') || name.includes('visual studio code')) return 'vscode'
   if (scheme === 'vscode') return 'vscode'
@@ -37,6 +41,10 @@ export function resolveAvailableTargets(ide: IdeType): Provider[] {
 
   if (ide === 'cursor') {
     targets.add('cursor')
+  }
+
+  if (ide === 'codebuddy-cn' || ide === 'codebuddy') {
+    targets.add('codebuddy')
   }
 
   if (isExtensionInstalled('github.copilot-chat')) targets.add('copilot')

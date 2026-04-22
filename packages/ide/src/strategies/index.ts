@@ -7,6 +7,7 @@ import { codexStrategy } from './codex'
 import { cocoStrategy } from './coco'
 import { traeStrategy } from './trae'
 import { cursorStrategy } from './cursor'
+import { codebuddyStrategy } from './codebuddy'
 
 const STRATEGY_MAP: Record<Provider, IAiStrategy> = {
   copilot: copilotStrategy,
@@ -16,6 +17,7 @@ const STRATEGY_MAP: Record<Provider, IAiStrategy> = {
   coco: cocoStrategy,
   trae: traeStrategy,
   cursor: cursorStrategy,
+  codebuddy: codebuddyStrategy,
 }
 
 export function getStrategy(tool: Provider): IAiStrategy {

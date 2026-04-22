@@ -11,6 +11,8 @@ describe('shared capabilities', () => {
     expect(getHostIdeLabel('cursor')).toBe('Cursor')
     expect(getHostIdeLabel('trae')).toBe('Trae')
     expect(getHostIdeLabel('trae-cn')).toBe('Trae CN')
+    expect(getHostIdeLabel('codebuddy')).toBe('CodeBuddy')
+    expect(getHostIdeLabel('codebuddy-cn')).toBe('CodeBuddy CN')
   })
 
   it('exposes supported host IDE guards', () => {
@@ -18,6 +20,8 @@ describe('shared capabilities', () => {
     expect(isSupportedHostIde('cursor')).toBe(true)
     expect(isSupportedHostIde('trae')).toBe(true)
     expect(isSupportedHostIde('trae-cn')).toBe(true)
+    expect(isSupportedHostIde('codebuddy')).toBe(true)
+    expect(isSupportedHostIde('codebuddy-cn')).toBe(true)
     expect(isSupportedHostIde('unknown')).toBe(false)
   })
 
