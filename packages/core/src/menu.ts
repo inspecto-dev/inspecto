@@ -39,6 +39,7 @@ const DISPLAY_NAMES: Record<Provider, string> = {
   coco: 'Coco CLI',
   trae: 'Trae AI',
   cursor: 'Cursor',
+  codebuddy: 'CodeBuddy',
 }
 
 type MenuRuntimeContextDeps = {
