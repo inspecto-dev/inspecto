@@ -7,8 +7,8 @@
   "properties": {
     "ide": {
       "type": "string",
-      "description": "IDE environment. Auto-detected via the VS Code extension; only override if needed. Currently supported: 'vscode', 'trae', 'trae-cn', 'cursor'.",
-      "enum": ["vscode", "trae", "trae-cn", "cursor"],
+      "description": "IDE environment. Auto-detected via the IDE extension; only override if needed. Currently supported: 'vscode', 'trae', 'trae-cn', 'cursor', 'codebuddy', 'codebuddy-cn'.",
+      "enum": ["vscode", "trae", "trae-cn", "cursor", "codebuddy", "codebuddy-cn"],
       "default": "vscode"
     },
     "inspector.hotKey": {
@@ -98,7 +98,8 @@
         "codex.cli",
         "coco.cli",
         "trae.builtin",
-        "cursor.builtin"
+        "cursor.builtin",
+        "codebuddy.builtin"
       ]
     },
     "provider.claude-code.cli.bin": {

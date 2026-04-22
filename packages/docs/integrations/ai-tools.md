@@ -49,6 +49,7 @@ The AI tool is natively integrated into a fork of the IDE. No extensions are req
 
 - Cursor (`cursor.builtin`)
 - Trae (`trae.builtin`)
+- CodeBuddy (`codebuddy.builtin`)
 
 ### 3. CLI Mode
 

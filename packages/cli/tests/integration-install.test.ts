@@ -139,7 +139,7 @@ describe('integration install', () => {
       'Installed Codex integration assets. User-level installs only write integration assets and do not launch onboarding automatically.',
     )
     expect(logMock.hint).toHaveBeenCalledWith(
-      'Run the install command again from your target project root with --host-ide <vscode|cursor|trae|trae-cn> when you want to launch onboarding automatically.',
+      'Run the install command again from your target project root with --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn> when you want to launch onboarding automatically.',
     )
   })
 
@@ -285,7 +285,7 @@ describe('integration install', () => {
       message:
         'Automatic setup stopped: Inspecto could not determine which IDE should receive onboarding.',
       nextStep:
-        'Re-run with --host-ide <vscode|cursor|trae|trae-cn> or run the command from the target IDE terminal to continue automatic setup.',
+        'Re-run with --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn> or run the command from the target IDE terminal to continue automatic setup.',
     })
     resolveIntegrationHostIdeMock.mockResolvedValue({
       ide: null,
@@ -309,7 +309,7 @@ describe('integration install', () => {
       'Automatic setup stopped: Inspecto could not determine which IDE should receive onboarding.',
     )
     expect(logMock.hint).toHaveBeenCalledWith(
-      'Re-run with --host-ide <vscode|cursor|trae|trae-cn> or run the command from the target IDE terminal to continue automatic setup.',
+      'Re-run with --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn> or run the command from the target IDE terminal to continue automatic setup.',
     )
   })
 
@@ -527,7 +527,7 @@ describe('integration install', () => {
         '/Users/tester/.claude/skills/inspecto-onboarding-claude-code/scripts/run-inspecto.sh',
       ],
       preferredInstall:
-        'npx @inspecto-dev/cli integrations install claude-code --scope project --host-ide <vscode|cursor|trae|trae-cn>',
+        'npx @inspecto-dev/cli integrations install claude-code --scope project --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
     })
   })
 
@@ -542,7 +542,7 @@ describe('integration install', () => {
         '/Users/tester/.agents/skills/inspecto-onboarding-codex/scripts/run-inspecto.sh',
       ],
       preferredInstall:
-        'npx @inspecto-dev/cli integrations install codex --host-ide <vscode|cursor|trae|trae-cn>',
+        'npx @inspecto-dev/cli integrations install codex --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
     })
   })
 
@@ -556,7 +556,7 @@ describe('integration install', () => {
         '.trae/skills/inspecto-onboarding/scripts/run-inspecto.sh',
       ],
       preferredInstall:
-        'npx @inspecto-dev/cli integrations install coco --host-ide <vscode|cursor|trae|trae-cn>',
+        'npx @inspecto-dev/cli integrations install coco --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
     })
   })
 
@@ -569,7 +569,7 @@ describe('integration install', () => {
       '/Users/tester/.claude/skills/inspecto-onboarding-claude-code/SKILL.md',
     )
     expect(logMock.hint).toHaveBeenCalledWith(
-      'Preferred install: npx @inspecto-dev/cli integrations install claude-code --scope project --host-ide <vscode|cursor|trae|trae-cn>',
+      'Preferred install: npx @inspecto-dev/cli integrations install claude-code --scope project --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
     )
     expect(logMock.hint).not.toHaveBeenCalledWith('Restart Claude Code to load the new skill.')
   })

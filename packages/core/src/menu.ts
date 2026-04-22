@@ -207,8 +207,80 @@ export function showIntentMenu(
   updatePosition()
   menu.style.visibility = 'visible'
 
-  // Focus input automatically
-  setTimeout(() => input.focus(), 0)
+  // When the menu input steals focus from a page-controlled input, some apps immediately
+  // steal it back in their `onBlur` handlers (often implemented via document-level
+  // focusin/focusout delegation). We suppress those delegated focus events while focus
+  // is moving into the menu so the page doesn't re-focus itself.
+  const teardownDocFocusGuards = (): void => {
+    document.removeEventListener('focusin', onDocFocusIn, true)
+    document.removeEventListener('focusout', onDocFocusOut, true)
+  }
+
+  const onDocFocusIn = (e: FocusEvent): void => {
+    if (!menu.isConnected) {
+      teardownDocFocusGuards()
+      return
+    }
+    const path = e.composedPath?.() ?? []
+    if (path.includes(menu)) {
+      e.stopImmediatePropagation()
+    }
+  }
+
+  const onDocFocusOut = (e: FocusEvent): void => {
+    if (!menu.isConnected) {
+      teardownDocFocusGuards()
+      return
+    }
+    const related = (e as FocusEvent).relatedTarget as Node | null
+    if (!related) return
+    // In Shadow DOM, relatedTarget can be retargeted to the shadow host.
+    if (related === shadowRoot.host) {
+      e.stopImmediatePropagation()
+      return
+    }
+
+    if (related instanceof Node && menu.contains(related)) {
+      e.stopImmediatePropagation()
+    }
+  }
+
+  document.addEventListener('focusin', onDocFocusIn, true)
+  document.addEventListener('focusout', onDocFocusOut, true)
+
+  // Focus input automatically.
+  // NOTE: Do this synchronously to keep it inside the user gesture that opened the menu.
+  // Some apps aggressively restore focus to their own inputs on the next tick; the
+  // synchronous focus + a couple of follow-up attempts makes the menu reliably typeable.
+  const focusAskInput = (): void => {
+    try {
+      input.focus({ preventScroll: true })
+    } catch {
+      // Older DOM implementations may not support preventScroll.
+      input.focus()
+    }
+  }
+
+  const isAskInputFocused = (): boolean => {
+    // In Shadow DOM, document.activeElement is usually the host element.
+    // ShadowRoot.activeElement is the reliable check in browsers, but some test DOM
+    // implementations may throw when the host is torn down.
+    try {
+      return shadowRoot.activeElement === input
+    } catch {
+      return false
+    }
+  }
+
+  focusAskInput()
+  const rafId = requestAnimationFrame(() => {
+    if (!menu.isConnected) return
+    if (!isAskInputFocused()) focusAskInput()
+  })
+  const focusTimeoutId = setTimeout(() => {
+    if (!menu.isConnected) return
+    if (!isAskInputFocused()) focusAskInput()
+  }, 50)
 
   const onDocClick = (e: MouseEvent): void => {
     // Determine if the click target is within a dialog or modal
@@ -236,6 +308,9 @@ export function showIntentMenu(
 
   function cleanup(): void {
     document.removeEventListener('click', onDocClick, { capture: true })
+    teardownDocFocusGuards()
+    cancelAnimationFrame(rafId)
+    clearTimeout(focusTimeoutId)
     menu.remove()
     onClose()
   }

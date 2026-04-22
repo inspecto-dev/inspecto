@@ -31,14 +31,36 @@ export async function detectIDE(root: string): Promise<IDEProbeResult> {
     detected.set('Cursor', { ide: 'cursor', supported: true })
   }
 
-  // Trae
+  // Trae CN
   if (
+    process.env.__CFBundleIdentifier === 'com.byteocean.trae.cn' ||
+    process.env.COCO_IDE_PLUGIN_TYPE === 'TraeCN' ||
+    (process.env.npm_config_user_agent && process.env.npm_config_user_agent.includes('trae-cn'))
+  ) {
+    detected.set('Trae CN', { ide: 'trae-cn', supported: true })
+  } else if (
     process.env.TRAE_APP_DIR ||
     process.env.__CFBundleIdentifier === 'com.byteocean.trae' ||
     process.env.COCO_IDE_PLUGIN_TYPE === 'Trae' ||
     (process.env.npm_config_user_agent && process.env.npm_config_user_agent.includes('trae'))
   ) {
     detected.set('Trae', { ide: 'trae', supported: true })
+  }
+
+  // CodeBuddy CN
+  if (
+    process.env.__CFBundleIdentifier === 'ai.codebuddy.mac.cn' ||
+    process.env.COCO_IDE_PLUGIN_TYPE === 'CodeBuddyCN' ||
+    (process.env.npm_config_user_agent &&
+      process.env.npm_config_user_agent.includes('codebuddy-cn'))
+  ) {
+    detected.set('CodeBuddy CN', { ide: 'codebuddy-cn', supported: true })
+  } else if (
+    process.env.__CFBundleIdentifier === 'ai.codebuddy.mac' ||
+    process.env.COCO_IDE_PLUGIN_TYPE === 'CodeBuddy' ||
+    (process.env.npm_config_user_agent && process.env.npm_config_user_agent.includes('codebuddy'))
+  ) {
+    detected.set('CodeBuddy', { ide: 'codebuddy', supported: true })
   }
 
   // Zed
@@ -62,17 +84,30 @@ export async function detectIDE(root: string): Promise<IDEProbeResult> {
   // if (process.env.TERM_PROGRAM === 'vscode') { ... }
 
   // 2. Check Directory Artifacts (Indicates project has been opened in these IDEs)
-  const [hasTrae, hasCursor, hasVscode, hasIdea] = await Promise.all([
-    exists(path.join(root, '.trae')),
-    exists(path.join(root, '.cursor')),
-    exists(path.join(root, '.vscode')),
-    exists(path.join(root, '.idea')),
-  ])
+  const [hasTrae, hasTraeCn, hasCursor, hasVscode, hasIdea, hasCodeBuddy, hasCodeBuddyCn] =
+    await Promise.all([
+      exists(path.join(root, '.trae')),
+      exists(path.join(root, '.trae-cn')),
+      exists(path.join(root, '.cursor')),
+      exists(path.join(root, '.vscode')),
+      exists(path.join(root, '.idea')),
+      exists(path.join(root, '.codebuddy')),
+      exists(path.join(root, '.codebuddy-cn')),
+    ])
 
   // If a directory artifact exists, add it to the detection list.
   // This allows us to surface multiple options (e.g. if you are in Cursor but also have a .vscode folder).
   if (hasTrae && !detected.has('Trae')) {
     detected.set('Trae', { ide: 'trae', supported: true })
+  }
+  if (hasTraeCn && !detected.has('Trae CN')) {
+    detected.set('Trae CN', { ide: 'trae-cn', supported: true })
+  }
+  if (hasCodeBuddy && !detected.has('CodeBuddy')) {
+    detected.set('CodeBuddy', { ide: 'codebuddy', supported: true })
+  }
+  if (hasCodeBuddyCn && !detected.has('CodeBuddy CN')) {
+    detected.set('CodeBuddy CN', { ide: 'codebuddy-cn', supported: true })
   }
   if (hasCursor && !detected.has('Cursor')) {
     detected.set('Cursor', { ide: 'cursor', supported: true })

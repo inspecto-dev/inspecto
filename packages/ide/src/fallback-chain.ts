@@ -1,4 +1,5 @@
 import type { ChannelDef, AiPayload, ProviderMode } from '@inspecto-dev/types'
+import { logInspecto } from './output-channel'
 
 export class AllChannelsFailedError extends Error {
   constructor(public readonly attempts: { type: string; error: unknown }[]) {
@@ -29,14 +30,19 @@ export async function executeWithFallback(
   payload: AiPayload,
 ): Promise<void> {
   const attempts: { type: string; error: unknown }[] = []
+  logInspecto(
+    'dispatch',
+    `Executing channels for target=${payload.target}, targetType=${payload.targetType}, channels=${channels.map(ch => ch.type).join(', ')}`,
+  )
 
   for (const ch of channels) {
     try {
+      logInspecto('dispatch', `Trying channel: ${ch.type}`)
       await ch.execute(payload)
-      console.log(`[inspecto] Dispatched via ${ch.type}`)
+      logInspecto('dispatch', `Dispatched via ${ch.type}`)
       return
     } catch (err) {
-      console.warn(`[inspecto] Channel ${ch.type} failed: ${err}`)
+      logInspecto('dispatch', `Channel failed: ${ch.type} -> ${String(err)}`)
       attempts.push({ type: ch.type, error: err })
 
       if (!(err instanceof RecoverableChannelError)) {

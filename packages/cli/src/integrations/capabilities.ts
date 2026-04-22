@@ -94,6 +94,44 @@ export const HOST_IDE_CAPABILITIES: Record<SupportedHostIde, HostIdeCapability> 
       ],
     },
   },
+  codebuddy: {
+    label: 'CodeBuddy',
+    artifactDir: '.codebuddy',
+    extensionDir: '.codebuddy/extensions',
+    binaryName: 'codebuddy',
+    binaryPaths: {
+      darwin: [
+        '/Applications/CodeBuddy.app/Contents/Resources/app/bin/codebuddy',
+        '/Applications/CodeBuddy.app/Contents/Resources/app/bin/code',
+        `${process.env.HOME}/Applications/CodeBuddy.app/Contents/Resources/app/bin/codebuddy`,
+        `${process.env.HOME}/Applications/CodeBuddy.app/Contents/Resources/app/bin/code`,
+      ],
+      linux: ['/usr/bin/codebuddy', '/opt/CodeBuddy/resources/app/bin/codebuddy'],
+      win32: [
+        `${process.env.LOCALAPPDATA}\\Programs\\CodeBuddy\\resources\\app\\bin\\codebuddy.cmd`,
+        `${process.env.PROGRAMFILES}\\CodeBuddy\\resources\\app\\bin\\codebuddy.cmd`,
+      ],
+    },
+  },
+  'codebuddy-cn': {
+    label: 'CodeBuddy CN',
+    artifactDir: '.codebuddy-cn',
+    extensionDir: '.codebuddy-cn/extensions',
+    binaryName: 'codebuddy-cn',
+    binaryPaths: {
+      darwin: [
+        '/Applications/CodeBuddy CN.app/Contents/Resources/app/bin/codebuddy-cn',
+        '/Applications/CodeBuddy CN.app/Contents/Resources/app/bin/code',
+        `${process.env.HOME}/Applications/CodeBuddy CN.app/Contents/Resources/app/bin/codebuddy-cn`,
+        `${process.env.HOME}/Applications/CodeBuddy CN.app/Contents/Resources/app/bin/code`,
+      ],
+      linux: ['/usr/bin/codebuddy-cn', '/opt/CodeBuddy CN/resources/app/bin/codebuddy-cn'],
+      win32: [
+        `${process.env.LOCALAPPDATA}\\Programs\\CodeBuddy CN\\resources\\app\\bin\\codebuddy-cn.cmd`,
+        `${process.env.PROGRAMFILES}\\CodeBuddy CN\\resources\\app\\bin\\codebuddy-cn.cmd`,
+      ],
+    },
+  },
 }
 
 export { HOST_IDE_IDS, getHostIdeLabel, isSupportedHostIde }

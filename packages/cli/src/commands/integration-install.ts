@@ -19,7 +19,15 @@ import {
 const REPO_RAW_BASE = 'https://raw.githubusercontent.com/inspecto-dev/inspecto/main'
 const TOTAL_STEPS = 6
 
-type AssistantId = 'codex' | 'claude-code' | 'copilot' | 'cursor' | 'gemini' | 'trae' | 'coco'
+type AssistantId =
+  | 'codex'
+  | 'claude-code'
+  | 'copilot'
+  | 'cursor'
+  | 'gemini'
+  | 'trae'
+  | 'coco'
+  | 'codebuddy'
 type ClaudeScope = 'project' | 'user'
 type CopilotMode = 'skills' | 'instructions' | 'agents'
 type CursorMode = 'skills' | 'rules' | 'agents'
@@ -86,7 +94,7 @@ const INTEGRATION_MANIFESTS: IntegrationManifest[] = [
     type: 'native-skill',
     installTarget: '.agents/skills/',
     preferredInstall:
-      'npx @inspecto-dev/cli integrations install codex --host-ide <vscode|cursor|trae|trae-cn>',
+      'npx @inspecto-dev/cli integrations install codex --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
     cliSupported: true,
   },
   {
@@ -94,7 +102,7 @@ const INTEGRATION_MANIFESTS: IntegrationManifest[] = [
     type: 'native-skill',
     installTarget: '.claude/skills/ or ~/.claude/skills/',
     preferredInstall:
-      'npx @inspecto-dev/cli integrations install claude-code --scope project --host-ide <vscode|cursor|trae|trae-cn>',
+      'npx @inspecto-dev/cli integrations install claude-code --scope project --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
     cliSupported: true,
   },
   {
@@ -102,7 +110,7 @@ const INTEGRATION_MANIFESTS: IntegrationManifest[] = [
     type: 'native-skill',
     installTarget: '.github/skills/inspecto-onboarding/',
     preferredInstall:
-      'npx @inspecto-dev/cli integrations install copilot --host-ide <vscode|cursor|trae|trae-cn>',
+      'npx @inspecto-dev/cli integrations install copilot --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
     cliSupported: true,
   },
   {
@@ -110,7 +118,7 @@ const INTEGRATION_MANIFESTS: IntegrationManifest[] = [
     type: 'native-skill',
     installTarget: '.cursor/skills/inspecto-onboarding/',
     preferredInstall:
-      'npx @inspecto-dev/cli integrations install cursor --host-ide <vscode|cursor|trae|trae-cn>',
+      'npx @inspecto-dev/cli integrations install cursor --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
     cliSupported: true,
   },
   {
@@ -118,7 +126,7 @@ const INTEGRATION_MANIFESTS: IntegrationManifest[] = [
     type: 'native-skill',
     installTarget: '.gemini/skills/inspecto-onboarding/',
     preferredInstall:
-      'npx @inspecto-dev/cli integrations install gemini --host-ide <vscode|cursor|trae|trae-cn>',
+      'npx @inspecto-dev/cli integrations install gemini --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
     cliSupported: true,
   },
   {
@@ -126,7 +134,7 @@ const INTEGRATION_MANIFESTS: IntegrationManifest[] = [
     type: 'native-skill',
     installTarget: '.trae/skills/inspecto-onboarding/',
     preferredInstall:
-      'npx @inspecto-dev/cli integrations install trae --host-ide <vscode|cursor|trae|trae-cn>',
+      'npx @inspecto-dev/cli integrations install trae --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
     cliSupported: true,
   },
   {
@@ -134,7 +142,15 @@ const INTEGRATION_MANIFESTS: IntegrationManifest[] = [
     type: 'native-skill',
     installTarget: '.trae/skills/inspecto-onboarding/',
     preferredInstall:
-      'npx @inspecto-dev/cli integrations install coco --host-ide <vscode|cursor|trae|trae-cn>',
+      'npx @inspecto-dev/cli integrations install coco --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
+    cliSupported: true,
+  },
+  {
+    assistant: 'codebuddy',
+    type: 'native-skill',
+    installTarget: '.codebuddy/skills/inspecto-onboarding/',
+    preferredInstall:
+      'npx @inspecto-dev/cli integrations install codebuddy --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
     cliSupported: true,
   },
 ]
@@ -235,7 +251,7 @@ export async function installIntegration(
     const message = `Installed ${getAssistantLabel(assistant)} integration assets. User-level installs only write integration assets and do not launch onboarding automatically.`
     const nextStep = options.ide
       ? `Run the install command again from your target project root with --host-ide ${options.ide} when you want to launch onboarding automatically.`
-      : 'Run the install command again from your target project root with --host-ide <vscode|cursor|trae|trae-cn> when you want to launch onboarding automatically.'
+      : 'Run the install command again from your target project root with --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn> when you want to launch onboarding automatically.'
     const result: IntegrationInstallResult = {
       status: 'partial',
       assistant,
@@ -486,6 +502,26 @@ function resolveInstallPlan(assistant: string, options: InstallIntegrationOption
         successMessage: 'Installed Coco skill to .trae/skills/inspecto-onboarding/SKILL.md',
         nextStep: 'Start a new Coco session.',
       }
+    case 'codebuddy':
+      return {
+        assets: [
+          {
+            source: `${REPO_RAW_BASE}/skills/inspecto-onboarding-codebuddy/SKILL.md`,
+            target: '.codebuddy/skills/inspecto-onboarding/SKILL.md',
+            localSource: 'skills/inspecto-onboarding-codebuddy/SKILL.md',
+          },
+          {
+            source: `${REPO_RAW_BASE}/skills/inspecto-onboarding-codebuddy/scripts/run-inspecto.sh`,
+            target: '.codebuddy/skills/inspecto-onboarding/scripts/run-inspecto.sh',
+            localSource: 'skills/inspecto-onboarding-codebuddy/scripts/run-inspecto.sh',
+            executable: true,
+          },
+        ],
+        successMessage:
+          'Installed CodeBuddy skill to .codebuddy/skills/inspecto-onboarding/SKILL.md',
+        nextStep:
+          'Open a new CodeBuddy chat and verify the inspecto-onboarding skill is available.',
+      }
     default:
       throw new Error(`Unknown assistant: ${assistant}`)
   }
@@ -515,6 +551,7 @@ function getAssistantLabel(assistant: string): string {
   if (assistant === 'gemini') return 'Gemini'
   if (assistant === 'trae') return 'Trae'
   if (assistant === 'coco') return 'Coco'
+  if (assistant === 'codebuddy') return 'CodeBuddy'
   return assistant
 }
 
@@ -523,6 +560,8 @@ function formatHostIdeLabel(ide: string): string {
   if (ide === 'cursor') return 'Cursor'
   if (ide === 'trae') return 'Trae'
   if (ide === 'trae-cn') return 'Trae CN'
+  if (ide === 'codebuddy') return 'CodeBuddy'
+  if (ide === 'codebuddy-cn') return 'CodeBuddy CN'
   return ide
 }
 

@@ -49,6 +49,7 @@ AI 工具原生集成在修改版的 IDE 中。不需要安装任何插件。Ins
 
 - Cursor (`cursor.builtin`)
 - Trae (`trae.builtin`)
+- CodeBuddy (`codebuddy.builtin`)
 
 ### 3. CLI 模式 (CLI Mode)
 

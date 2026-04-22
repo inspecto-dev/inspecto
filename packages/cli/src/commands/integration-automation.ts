@@ -19,6 +19,11 @@ const ONBOARDING_PROMPT = 'Set up Inspecto in this project'
 const TOTAL_STEPS = 6
 const EXTENSION_ID = 'inspecto.inspecto'
 
+// Maps CLI IDE identifiers to their actual URI scheme
+const IDE_TO_URI_SCHEME: Record<string, string> = {
+  'codebuddy-cn': 'codebuddycn',
+}
+
 interface IntegrationAutomationOptions {
   ide?: string
   inspectoVsix?: string
@@ -122,14 +127,14 @@ export async function runIntegrationAutomation(
     }
     if (!silent) {
       log.hint(
-        'Re-run with --host-ide <vscode|cursor|trae|trae-cn> or run the command from the target IDE terminal to continue automatic setup.',
+        'Re-run with --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn> or run the command from the target IDE terminal to continue automatic setup.',
       )
     }
     return {
       status: 'blocked',
       message: getHostIdeBlockedMessage(),
       nextStep:
-        'Re-run with --host-ide <vscode|cursor|trae|trae-cn> or run the command from the target IDE terminal to continue automatic setup.',
+        'Re-run with --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn> or run the command from the target IDE terminal to continue automatic setup.',
       details,
     }
   }
@@ -151,7 +156,10 @@ export async function runIntegrationAutomation(
     previewParams.set('overrides', JSON.stringify({ type: dispatchMode.mode }))
   }
 
-  const launchUri = `${resolvedHostIde.ide}://inspecto.inspecto/send?${previewParams.toString()}`
+  const uriScheme = resolvedHostIde.ide
+    ? (IDE_TO_URI_SCHEME[resolvedHostIde.ide] ?? resolvedHostIde.ide)
+    : 'vscode'
+  const launchUri = `${uriScheme}://inspecto.inspecto/send?${previewParams.toString()}`
   details.inspectoExtension = {
     source: options.inspectoVsix ? 'local_vsix' : 'marketplace',
     reference: options.inspectoVsix ?? EXTENSION_ID,

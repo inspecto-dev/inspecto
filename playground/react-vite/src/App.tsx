@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 function ModeCard({
   title,
@@ -50,6 +50,33 @@ export default function App() {
   const [count, setCount] = useState(2)
   const [status, setStatus] = useState<'Draft' | 'Ready for review' | 'Needs follow-up'>('Draft')
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const focusTestInputRef = useRef<HTMLInputElement | null>(null)
+  const [focusGuardEnabled, setFocusGuardEnabled] = useState(false)
+  const [focusGuardStrategy, setFocusGuardStrategy] = useState<'timeout' | 'raf' | 'both'>(
+    'timeout',
+  )
+  const focusGuardLabel = useMemo(() => {
+    if (!focusGuardEnabled) return 'Off'
+    if (focusGuardStrategy === 'timeout') return 'On (setTimeout(0))'
+    if (focusGuardStrategy === 'raf') return 'On (requestAnimationFrame)'
+    return 'On (both)'
+  }, [focusGuardEnabled, focusGuardStrategy])
+
+  const [activeElementTag, setActiveElementTag] = useState<string>('')
+  useEffect(() => {
+    const update = () => {
+      const el = document.activeElement as HTMLElement | null
+      setActiveElementTag(el?.tagName ? el.tagName.toLowerCase() : '')
+    }
+    update()
+    document.addEventListener('focusin', update)
+    document.addEventListener('focusout', update)
+    return () => {
+      document.removeEventListener('focusin', update)
+      document.removeEventListener('focusout', update)
+    }
+  }, [])
 
   return (
     <main className="demo-shell">
@@ -215,6 +242,81 @@ export default function App() {
             <button className="primary-button" onClick={() => setIsModalOpen(true)}>
               Open dialog
             </button>
+          </CaseCard>
+
+          <CaseCard
+            label="Focus contention"
+            title="Inspect input focus vs. page focus guard"
+            description="复现/验证：当页面自身 input/textarea 有焦点，且页面会在 blur 后立刻抢回焦点时，Inspect 菜单里的自定义指令输入框仍应可输入。"
+          >
+            <div style={{ display: 'grid', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={focusGuardEnabled}
+                    onChange={e => setFocusGuardEnabled(e.target.checked)}
+                  />
+                  Enable focus guard
+                </label>
+
+                <label style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  Strategy
+                  <select
+                    value={focusGuardStrategy}
+                    onChange={e => {
+                      const next = e.target.value as 'timeout' | 'raf' | 'both'
+                      setFocusGuardStrategy(next)
+                    }}
+                    disabled={!focusGuardEnabled}
+                  >
+                    <option value="timeout">setTimeout(0)</option>
+                    <option value="raf">requestAnimationFrame</option>
+                    <option value="both">both</option>
+                  </select>
+                </label>
+
+                <span className="style-pill">Focus guard: {focusGuardLabel}</span>
+                <span className="style-pill">
+                  document.activeElement: {activeElementTag || 'none'}
+                </span>
+              </div>
+
+              <input
+                ref={focusTestInputRef}
+                placeholder="Focus me, then open Inspect menu and type in Inspecto input"
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255,255,255,0.16)',
+                  background: 'rgba(10, 10, 10, 0.35)',
+                  color: 'inherit',
+                  outline: 'none',
+                }}
+                onBlur={() => {
+                  if (!focusGuardEnabled) return
+                  const el = focusTestInputRef.current
+                  if (!el) return
+
+                  if (focusGuardStrategy === 'timeout' || focusGuardStrategy === 'both') {
+                    setTimeout(() => el.focus(), 0)
+                  }
+
+                  if (focusGuardStrategy === 'raf' || focusGuardStrategy === 'both') {
+                    requestAnimationFrame(() => el.focus())
+                  }
+                }}
+              />
+
+              <ol
+                style={{ margin: 0, paddingLeft: '18px', color: 'var(--inspecto-text-secondary)' }}
+              >
+                <li>点击上面输入框，确保它有焦点（可以随便输入几个字符）。</li>
+                <li>打开 Inspect 模式，点击任意卡片打开 Inspect 菜单。</li>
+                <li>直接在 Inspect 菜单的自定义指令 input 里输入，应该能正常落字。</li>
+              </ol>
+            </div>
           </CaseCard>
         </div>
       </section>

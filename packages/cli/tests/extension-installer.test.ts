@@ -177,6 +177,36 @@ describe('installExtension', () => {
     expect(logMock.success).toHaveBeenCalledWith('Trae CN extension already installed')
     expect(logMock.warn).not.toHaveBeenCalledWith('Could not auto-install extension for trae-cn')
   })
+
+  it('installs the CodeBuddy CN extension via the app bundle code launcher on macOS when available', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    whichMock.mockResolvedValue(false)
+    existsMock.mockImplementation(async filePath => {
+      return filePath === '/Applications/CodeBuddy CN.app/Contents/Resources/app/bin/code'
+    })
+    runMock.mockImplementation(async (_command, args: string[]) => {
+      if (args[0] === '--list-extensions') {
+        return { stdout: '', stderr: '' }
+      }
+      if (args[0] === '--install-extension') {
+        return { stdout: '', stderr: '' }
+      }
+      throw new Error(`unexpected args: ${args.join(' ')}`)
+    })
+
+    const { installExtension } = await import('../src/inject/extension.js')
+
+    await expect(installExtension(false, 'codebuddy-cn')).resolves.toMatchObject({
+      type: 'extension_installed',
+      id: 'inspecto.inspecto',
+    })
+
+    expect(runMock).toHaveBeenCalledWith(
+      '/Applications/CodeBuddy CN.app/Contents/Resources/app/bin/code',
+      ['--install-extension', 'inspecto.inspecto', '--force'],
+    )
+    expect(logMock.success).toHaveBeenCalledWith('CodeBuddy CN extension installed via CLI')
+  })
 })
 
 describe('openIdeWorkspace', () => {
@@ -199,6 +229,24 @@ describe('openIdeWorkspace', () => {
 
     expect(runMock).toHaveBeenCalledWith(
       '/Applications/Trae CN.app/Contents/Resources/app/bin/trae-cn',
+      ['--new-window', '/repo/app'],
+    )
+  })
+
+  it('opens CodeBuddy in a new window via the app bundle code launcher when available', async () => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('darwin')
+    whichMock.mockResolvedValue(false)
+    existsMock.mockImplementation(async filePath => {
+      return filePath === '/Applications/CodeBuddy.app/Contents/Resources/app/bin/code'
+    })
+    runMock.mockResolvedValue({ stdout: '', stderr: '' })
+
+    const { openIdeWorkspace } = await import('../src/inject/extension.js')
+
+    await expect(openIdeWorkspace('codebuddy', '/repo/app')).resolves.toBe(true)
+
+    expect(runMock).toHaveBeenCalledWith(
+      '/Applications/CodeBuddy.app/Contents/Resources/app/bin/code',
       ['--new-window', '/repo/app'],
     )
   })

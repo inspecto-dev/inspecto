@@ -1,5 +1,13 @@
 # @inspecto-dev/core
 
+## 0.3.7
+
+### Patch Changes
+
+- release 0.3.7
+- Updated dependencies
+  - @inspecto-dev/types@0.3.7
+
 ## 0.3.6
 
 ### Patch Changes

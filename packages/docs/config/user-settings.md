@@ -51,21 +51,21 @@ Inspecto looks for configuration files in your project directory in the followin
 
 ### `ide`
 
-- **Type:** `"vscode" | "cursor" | "trae" | "trae-cn"`
+- **Type:** `"vscode" | "cursor" | "trae" | "trae-cn" | "codebuddy" | "codebuddy-cn"`
 - **Default:** Auto-detected
 - **Description:** Force a specific IDE context. If omitted, Inspecto resolves the IDE from the current environment and project context.
 
 ### `provider.default`
 
 - **Type:** `string`
-- **Example:** `"copilot.extension"`, `"claude-code.cli"`, `"trae.builtin"`
+- **Example:** `"copilot.extension"`, `"claude-code.cli"`, `"trae.builtin"`, `"codebuddy.builtin"`
 - **Description:** The default AI tool and mode to dispatch the code context to. Assistant-first onboarding can often resolve this automatically, so most users do not need to set it before first use.
 
 ### `prompt.includeSnippet`
 
 - **Type:** `boolean`
 - **Default:** `false`
-- **Description:** Whether to inject the raw code snippet into the prompt. Setting this to `false` saves tokens when using IDE-native AI tools (like Copilot, Cursor, Trae), as they can read the local file directly.
+- **Description:** Whether to inject the raw code snippet into the prompt. Setting this to `false` saves tokens when using IDE-native AI tools (like Copilot, Cursor, Trae, or CodeBuddy), as they can read the local file directly.
 
 ### `prompt.autoSend`
 

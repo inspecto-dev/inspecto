@@ -121,6 +121,69 @@ describe('Intent Menu DOM Interaction', () => {
     expect(loader).not.toBeNull()
   })
 
+  it('focuses the custom ask input even when the page already has a focused input', () => {
+    // Keep ide info pending so we only test initial synchronous DOM behavior.
+    vi.mocked(http.fetchIdeInfo).mockReturnValue(new Promise(() => {}))
+
+    const pageInput = document.createElement('input')
+    document.body.appendChild(pageInput)
+    pageInput.focus()
+    expect(document.activeElement).toBe(pageInput)
+
+    showIntentMenu(
+      shadowRoot,
+      { file: '/src/App.tsx', line: 10, column: 5 },
+      100,
+      100,
+      {},
+      onCloseMock,
+    )
+
+    const menuInput = shadowRoot.querySelector(`.${menuInputClass}`) as HTMLInputElement
+    expect(menuInput).not.toBeNull()
+    expect(shadowRoot.activeElement).toBe(menuInput)
+  })
+
+  it('prevents document-delegated blur handlers from stealing focus back from the menu input', () => {
+    vi.useFakeTimers()
+
+    // Keep ide info pending so we only test initial menu wiring.
+    vi.mocked(http.fetchIdeInfo).mockReturnValue(new Promise(() => {}))
+
+    const pageInput = document.createElement('input')
+    document.body.appendChild(pageInput)
+    pageInput.focus()
+    expect(document.activeElement).toBe(pageInput)
+
+    // Simulate a common focus-guard pattern (e.g., React onBlur via document-level delegation).
+    const focusGuard = (event: FocusEvent) => {
+      if (event.target === pageInput) {
+        setTimeout(() => pageInput.focus(), 0)
+      }
+    }
+    document.addEventListener('focusout', focusGuard)
+
+    showIntentMenu(
+      shadowRoot,
+      { file: '/src/App.tsx', line: 10, column: 5 },
+      100,
+      100,
+      {},
+      onCloseMock,
+    )
+
+    const menuInput = shadowRoot.querySelector(`.${menuInputClass}`) as HTMLInputElement
+    expect(menuInput).not.toBeNull()
+    expect(shadowRoot.activeElement).toBe(menuInput)
+
+    // If focusout bubbles to the document, the guard would re-focus the page input on the next tick.
+    vi.runOnlyPendingTimers()
+    expect(shadowRoot.activeElement).toBe(menuInput)
+
+    document.removeEventListener('focusout', focusGuard)
+    vi.useRealTimers()
+  })
+
   it('should render intents when ide info is fetched', async () => {
     showIntentMenu(
       shadowRoot,

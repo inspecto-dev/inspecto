@@ -7,7 +7,7 @@ Use this guide as a fallback, not as the default first step. In the common case,
 Before following this page, first try:
 
 ```bash
-npx @inspecto-dev/cli integrations install <assistant> --host-ide <vscode|cursor|trae|trae-cn>
+npx @inspecto-dev/cli integrations install <assistant> --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>
 ```
 
 Use manual installation only when that path does not fit your environment.
@@ -105,7 +105,7 @@ export default {
 
 Unlike assistant-first onboarding or `inspecto init`, manual installation does not manage the IDE plugin for you. **You must install the Inspecto companion extension for your editor yourself.** Without this extension, the browser will not be able to send code to your IDE.
 
-Please refer to the [IDE Extensions Guide](../integrations/ide.md) for instructions on installing the plugin in VS Code, Cursor, or Trae.
+Please refer to the [IDE Extensions Guide](../integrations/ide.md) for instructions on installing the plugin in VS Code, Cursor, Trae, or CodeBuddy.
 
 ## 4. Configure Project Settings
 

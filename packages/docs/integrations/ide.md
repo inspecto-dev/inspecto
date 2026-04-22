@@ -8,6 +8,8 @@ To achieve the magical "Click in browser -> Open AI in IDE" workflow, Inspecto r
 - **Cursor**: Fully supported. (`ide: "cursor"`)
 - **Trae**: Fully supported. (`ide: "trae"`)
 - **Trae CN**: Fully supported. (`ide: "trae-cn"`)
+- **CodeBuddy**: Fully supported. (`ide: "codebuddy"`)
+- **CodeBuddy CN**: Fully supported. (`ide: "codebuddy-cn"`)
 
 _Note: JetBrains IDEs and other editors are not currently supported for direct AI payload injection._
 
@@ -38,9 +40,11 @@ code --install-extension inspecto.inspecto
 cursor --install-extension inspecto.inspecto
 ```
 
-### Trae & Trae CN
+### Trae, Trae CN, CodeBuddy, and CodeBuddy CN
 
-For Trae and Trae CN, you can search for "Inspecto" in the plugin marketplace and install it directly. Alternatively, you can use the command line:
+For these IDEs, the most reliable manual path is to search for "Inspecto" in the built-in plugin marketplace and install it directly.
+
+If a launcher is available in your shell, you can also install from the command line:
 
 ```bash
 # For Trae
@@ -48,13 +52,21 @@ trae --install-extension inspecto.inspecto
 
 # For Trae CN
 trae-cn --install-extension inspecto.inspecto
+
+# For CodeBuddy
+codebuddy --install-extension inspecto.inspecto
+
+# For CodeBuddy CN, when the dedicated launcher exists
+codebuddy-cn --install-extension inspecto.inspecto
 ```
+
+On macOS, some CodeBuddy app bundles expose `.../Contents/Resources/app/bin/code` instead of `codebuddy` or `codebuddy-cn`. If the launcher command is not on `PATH`, prefer the built-in marketplace or use the app-bundle binary directly.
 
 ## How it works
 
 The IDE Extension is extremely lightweight. Its sole purpose is to:
 
-1. Register a protocol handler (e.g., `vscode://inspecto.inspecto/send` or `cursor://inspecto.inspecto/send`).
+1. Register a protocol handler (e.g., `vscode://inspecto.inspecto/send`, `cursor://inspecto.inspecto/send`, or `codebuddycn://inspecto.inspecto/send`).
 2. Receive the payload containing the file path, code snippet, and selected AI tool.
 3. Automatically execute the correct internal IDE commands to open the file and trigger the corresponding AI extension (or spawn the CLI in the terminal).
 

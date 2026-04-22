@@ -57,6 +57,21 @@ describe('resolveIntegrationHostIde', () => {
     })
   })
 
+  it('accepts codebuddy as an explicit ide argument', async () => {
+    const { resolveIntegrationHostIde } = await import('../src/commands/integration-host-ide.js')
+
+    await expect(
+      resolveIntegrationHostIde({
+        explicitIde: 'codebuddy',
+        cwd: '/repo',
+      }),
+    ).resolves.toMatchObject({
+      ide: 'codebuddy',
+      confidence: 'high',
+      source: 'explicit',
+    })
+  })
+
   it('uses .inspecto settings ide when present', async () => {
     vi.mocked(fsUtils.readJSON).mockImplementation(async filePath => {
       if (filePath === '/repo/.inspecto/settings.local.json') {
@@ -94,6 +109,27 @@ describe('resolveIntegrationHostIde', () => {
       }),
     ).resolves.toMatchObject({
       ide: 'trae-cn',
+      confidence: 'high',
+      source: 'config',
+    })
+  })
+
+  it('uses codebuddy-cn from .inspecto settings when present', async () => {
+    vi.mocked(fsUtils.readJSON).mockImplementation(async filePath => {
+      if (filePath === '/repo/.inspecto/settings.local.json') {
+        return { ide: 'codebuddy-cn' }
+      }
+      return null
+    })
+
+    const { resolveIntegrationHostIde } = await import('../src/commands/integration-host-ide.js')
+
+    await expect(
+      resolveIntegrationHostIde({
+        cwd: '/repo',
+      }),
+    ).resolves.toMatchObject({
+      ide: 'codebuddy-cn',
       confidence: 'high',
       source: 'config',
     })
@@ -146,6 +182,24 @@ describe('resolveIntegrationHostIde', () => {
       }),
     ).resolves.toMatchObject({
       ide: 'trae-cn',
+      confidence: 'medium',
+      source: 'artifact',
+    })
+  })
+
+  it('treats a .codebuddy-cn project artifact as medium confidence', async () => {
+    vi.mocked(fsUtils.exists).mockImplementation(async filePath => {
+      return filePath === '/repo/.codebuddy-cn'
+    })
+
+    const { resolveIntegrationHostIde } = await import('../src/commands/integration-host-ide.js')
+
+    await expect(
+      resolveIntegrationHostIde({
+        cwd: '/repo',
+      }),
+    ).resolves.toMatchObject({
+      ide: 'codebuddy-cn',
       confidence: 'medium',
       source: 'artifact',
     })

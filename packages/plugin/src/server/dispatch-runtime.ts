@@ -39,6 +39,10 @@ export interface PromptDispatchResult {
   }
 }
 
+function normalizeIdeToken(value: string | undefined): string {
+  return (value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
 export function resolvePromptDispatchRuntime(
   state: Pick<ServerState, 'projectRoot' | 'cwd' | 'ideInfo'>,
 ): PromptDispatchRuntime {
@@ -98,7 +102,20 @@ function resolveFinalIde(
   activeIde: string | undefined,
   activeIdeScheme: string | undefined,
 ): string {
-  if (configuredIde && activeIdeScheme && !activeIdeScheme.includes(configuredIde)) {
+  const configuredIdeMatchesActiveScheme =
+    Boolean(configuredIde) &&
+    Boolean(activeIdeScheme) &&
+    normalizeIdeToken(configuredIde) === normalizeIdeToken(activeIdeScheme)
+
+  if (configuredIdeMatchesActiveScheme) {
+    return activeIdeScheme!
+  }
+
+  if (
+    configuredIde &&
+    activeIdeScheme &&
+    normalizeIdeToken(activeIdeScheme).includes(normalizeIdeToken(configuredIde)) === false
+  ) {
     return configuredIde
   }
 

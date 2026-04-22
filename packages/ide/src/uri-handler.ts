@@ -5,17 +5,23 @@ import { DEFAULT_PROVIDER_MODE, INSPECTO_API_PATHS } from '@inspecto-dev/types'
 import { getStrategy } from './strategies/index'
 import { executeWithFallback, AllChannelsFailedError, filterChannels } from './fallback-chain'
 import { resolveServerPorts } from './extension'
+import { logInspecto } from './output-channel'
 
 export class InspectoUriHandler implements vscode.UriHandler {
   constructor(private readonly ide: IdeType) {}
 
   async handleUri(uri: vscode.Uri): Promise<void> {
-    console.log(`[InspectoUriHandler] Received URI: ${uri.toString()}`)
     const params = new URLSearchParams(uri.query)
     const target = params.get('target') as Provider | null
     const ticketId = params.get('ticket')
+    const workspace = params.get('workspace')
+    logInspecto(
+      'uri',
+      `Received URI: target=${target ?? 'missing'}, ticket=${ticketId ? 'present' : 'absent'}, workspace=${workspace ? 'present' : 'absent'}`,
+    )
 
     if (!target) {
+      logInspecto('uri', 'Rejected URI: missing target')
       vscode.window.showErrorMessage('inspecto: missing target')
       return
     }
@@ -46,6 +52,10 @@ export class InspectoUriHandler implements vscode.UriHandler {
       }
 
       if (!payload) {
+        logInspecto(
+          'uri',
+          `Failed to resolve ticket payload: serverReached=${serverReached}, ticketExpired=${ticketExpired}`,
+        )
         if (!serverReached) {
           vscode.window.showErrorMessage(
             'inspecto: failed to connect to local server. Is your dev server running?',
@@ -69,9 +79,9 @@ export class InspectoUriHandler implements vscode.UriHandler {
         return
       }
 
-      const targetWorkspace = params.get('workspace')
+      const targetWorkspace = workspace
       if (targetWorkspace && !this.matchesCurrentWorkspace(targetWorkspace)) {
-        console.log(`[InspectoUriHandler] Ignored URI for unrelated workspace: ${targetWorkspace}`)
+        logInspecto('uri', `Ignored URI for unrelated workspace: ${targetWorkspace}`)
         return
       }
 
@@ -80,6 +90,7 @@ export class InspectoUriHandler implements vscode.UriHandler {
         try {
           overrides = JSON.parse(params.get('overrides')!)
         } catch (e) {
+          logInspecto('uri', `Failed to parse overrides from URI: ${String(e)}`)
           console.warn('Failed to parse overrides from URI', e)
         }
       }
@@ -121,10 +132,15 @@ export class InspectoUriHandler implements vscode.UriHandler {
       strategy.channels,
       payload.overrides?.type || payload.targetType,
     )
+    logInspecto(
+      'uri',
+      `Dispatching target=${target}, payloadType=${payload.targetType}, filteredChannels=${channels.map(ch => ch.type).join(', ')}`,
+    )
 
     try {
       await executeWithFallback(channels, finalPayload)
     } catch (err) {
+      logInspecto('uri', `Dispatch failed for target=${target}: ${String(err)}`)
       if (err instanceof AllChannelsFailedError) {
         vscode.window.showErrorMessage(
           `inspecto: all channels failed for ${target}. ${err.attempts.length} attempts.`,

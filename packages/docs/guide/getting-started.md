@@ -9,7 +9,7 @@ For most users:
 1. **Navigate to your project root**.
 2. **Copy and run the matching install command**:
 
-`--host-ide` values: `vscode`, `cursor`, `trae`, `trae-cn`.
+`--host-ide` values: `vscode`, `cursor`, `trae`, `trae-cn`, `codebuddy`, `codebuddy-cn`.
 
 ::: code-group
 
@@ -43,6 +43,10 @@ npx @inspecto-dev/cli integrations install trae --host-ide trae-cn
 
 ```bash [Coco]
 npx @inspecto-dev/cli integrations install coco --host-ide trae-cn
+```
+
+```bash [CodeBuddy]
+npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 ```
 
 :::
@@ -148,7 +152,7 @@ Inspecto bridges the gap between your browser and your AI assistant. During setu
 
 - **Plugin Mode (IDE Extensions)**: GitHub Copilot, Claude Code Extension, Gemini Plugin, CodeX.
 - **CLI Mode (Terminal)**: Claude CLI (`claude`), Coco CLI (`coco`), CodeX CLI, Gemini CLI.
-- **Built-in Mode (Native IDE)**: Trae, Cursor (Native AI integration without extensions).
+- **Built-in Mode (Native IDE)**: Trae, Cursor, CodeBuddy (Native AI integration without extensions).
 
 ## Need Help?
 

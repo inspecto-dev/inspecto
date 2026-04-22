@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import crypto from 'node:crypto'
 import {
+  getMockOutputChannel,
   vscodeMock,
   resetVscodeMocks,
   setMockWorkspaceFolders,
@@ -42,10 +43,12 @@ vi.mock('node:os', () => ({ tmpdir: () => '/tmp' }))
 
 import { resolveServerPorts, __testingGetPreferredWorkspaceRoot } from '../src/extension.ts'
 import { InspectoUriHandler } from '../src/uri-handler.ts'
+import { __resetInspectoOutputChannelForTests } from '../src/output-channel.ts'
 
 describe('resolveServerPorts', () => {
   beforeEach(() => {
     resetVscodeMocks()
+    __resetInspectoOutputChannelForTests()
     mockFs.readFileSync.mockReset()
     mockFs.existsSync.mockReset()
     mockFs.watch.mockReset()
@@ -144,6 +147,14 @@ describe('resolveServerPorts', () => {
         prompt: 'Set up Inspecto in this project',
         target: 'codex',
       }),
+    )
+    expect(getMockOutputChannel().appendLine).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '[inspecto][uri] Received URI: target=codex, ticket=absent, workspace=present',
+      ),
+    )
+    expect(getMockOutputChannel().appendLine).toHaveBeenCalledWith(
+      expect.stringContaining('[inspecto][uri] Dispatching target=codex'),
     )
   })
 

@@ -9,7 +9,7 @@ The fastest path is:
 1. **Navigate to your project root** (most integrations are project-level).
 2. **Copy and run the matching install command**:
 
-`--host-ide` values: `vscode`, `cursor`, `trae`, `trae-cn`.
+`--host-ide` values: `vscode`, `cursor`, `trae`, `trae-cn`, `codebuddy`, `codebuddy-cn`.
 
 ::: code-group
 
@@ -39,6 +39,10 @@ npx @inspecto-dev/cli integrations install trae --host-ide trae-cn
 
 ```bash [Coco]
 npx @inspecto-dev/cli integrations install coco --host-ide trae-cn
+```
+
+```bash [CodeBuddy]
+npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 ```
 
 :::
@@ -75,6 +79,7 @@ Here is a full list of supported assistants and where their integrations are ins
 | Gemini      | Native skill | `.gemini/skills/inspecto-onboarding/`    | Project-level. Run from the target project root. |
 | Trae        | Native skill | `.trae/skills/inspecto-onboarding/`      | Project-level. Run from the target project root. |
 | Coco        | Native skill | `.trae/skills/inspecto-onboarding/`      | Project-level. Run from the target project root. |
+| CodeBuddy   | Native skill | `.codebuddy/skills/inspecto-onboarding/` | Project-level. Run from the target project root. |
 
 All onboarding integrations will by default write configuration into local-only files (`.inspecto/settings.local.json` and `.inspecto/prompts.local.json`), keeping your repository clean.
 
@@ -112,6 +117,10 @@ npx @inspecto-dev/cli integrations install trae --host-ide trae-cn
 
 ```bash [Coco]
 npx @inspecto-dev/cli integrations install coco --host-ide trae-cn
+```
+
+```bash [CodeBuddy]
+npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 ```
 
 :::

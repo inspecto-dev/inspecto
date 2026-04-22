@@ -8,6 +8,8 @@
 - **Cursor**: 完全支持。(`ide: "cursor"`)
 - **Trae**: 完全支持。(`ide: "trae"`)
 - **Trae CN**: 完全支持。(`ide: "trae-cn"`)
+- **CodeBuddy**: 完全支持。(`ide: "codebuddy"`)
+- **CodeBuddy CN**: 完全支持。(`ide: "codebuddy-cn"`)
 
 _注意：目前暂不支持将 AI payload 直接注入到 JetBrains IDE 以及其他编辑器中。_
 
@@ -38,9 +40,11 @@ code --install-extension inspecto.inspecto
 cursor --install-extension inspecto.inspecto
 ```
 
-### Trae & Trae CN
+### Trae、Trae CN、CodeBuddy 与 CodeBuddy CN
 
-对于 Trae 和 Trae CN，你可以在内置的插件市场搜索 "Inspecto" 并直接安装。你也可以通过命令行安装：
+对于这些 IDE，最稳妥的手动安装方式是在内置插件市场里搜索 "Inspecto" 并直接安装。
+
+如果当前 shell 里已经有对应 launcher，也可以通过命令行安装：
 
 ```bash
 # 适用于 Trae
@@ -48,13 +52,21 @@ trae --install-extension inspecto.inspecto
 
 # 适用于 Trae CN
 trae-cn --install-extension inspecto.inspecto
+
+# 适用于 CodeBuddy
+codebuddy --install-extension inspecto.inspecto
+
+# 适用于 CodeBuddy CN（仅当 launcher 可用时）
+codebuddy-cn --install-extension inspecto.inspecto
 ```
+
+在 macOS 上，部分 CodeBuddy 安装包只会暴露 `.../Contents/Resources/app/bin/code`，而不会把 `codebuddy` 或 `codebuddy-cn` 放进 `PATH`。如果命令不可用，请优先使用内置插件市场，或直接使用 app bundle 里的二进制。
 
 ## 它的底层工作原理
 
 该 IDE 插件非常轻量。它唯一的职责是：
 
-1. 注册一个协议处理器（例如 `vscode://inspecto.inspecto/send` 或 `cursor://inspecto.inspecto/send`）。
+1. 注册一个协议处理器（例如 `vscode://inspecto.inspecto/send`、`cursor://inspecto.inspecto/send` 或 `codebuddycn://inspecto.inspecto/send`）。
 2. 接收包含文件路径、代码片段和目标 AI 工具的 payload。
 3. 自动执行正确的内部 IDE 命令来打开文件，并触发对应的 AI 扩展（或在终端中启动 CLI）。
 

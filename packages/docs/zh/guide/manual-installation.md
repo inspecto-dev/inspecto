@@ -7,7 +7,7 @@
 在阅读这页之前，请先尝试：
 
 ```bash
-npx @inspecto-dev/cli integrations install <assistant> --host-ide <vscode|cursor|trae|trae-cn>
+npx @inspecto-dev/cli integrations install <assistant> --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>
 ```
 
 只有当这条路径不适合你的环境时，再使用手动安装。
@@ -105,7 +105,7 @@ export default {
 
 与 assistant-first onboarding 或 `inspecto init` 不同，手动安装时**你必须自己为你的编辑器安装 Inspecto 配套扩展**。没有这个扩展，浏览器将无法把代码发送到你的 IDE 中。
 
-请参考 [IDE 扩展集成指南](../integrations/ide.md) 完成 VS Code、Cursor 或 Trae 中插件的安装。
+请参考 [IDE 扩展集成指南](../integrations/ide.md) 完成 VS Code、Cursor、Trae 或 CodeBuddy 中插件的安装。
 
 ## 4. 配置项目参数
 

@@ -335,7 +335,7 @@ describe('runIntegrationAutomation', () => {
       'Step 2/6: Could not confidently resolve the host IDE',
     )
     expect(logMock.hint).toHaveBeenCalledWith(
-      'Re-run with --host-ide <vscode|cursor|trae|trae-cn> or run the command from the target IDE terminal to continue automatic setup.',
+      'Re-run with --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn> or run the command from the target IDE terminal to continue automatic setup.',
     )
   })
 
