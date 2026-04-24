@@ -23,7 +23,7 @@
     "@inspecto-dev/types": "workspace:*",
     "cac": "^6.7.14",
     "magicast": "^0.5.2",
-    "ora": "^9.3.0",
+    "ora": "^9.4.0",
     "picocolors": "^1.0.0",
     "prompts": "^2.4.2"
   },
