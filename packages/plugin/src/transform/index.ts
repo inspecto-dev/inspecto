@@ -2,6 +2,8 @@ import path from 'node:path'
 import type { UnpluginOptions } from '@inspecto-dev/types'
 import { transformJsx } from './transform-jsx.js'
 import { transformVue } from './transform-vue.js'
+import { transformSvelte } from './transform-svelte.js'
+import { transformAstro } from './transform-astro.js'
 import { JSX_EXTENSIONS, type TransformResult } from './utils.js'
 
 export interface RouterOptions {
@@ -42,7 +44,30 @@ export function transformRouter(options: RouterOptions): TransformResult | null 
     })
   }
 
+  // ── Svelte ───────────────────────────────────────────────────────────────
+  if (ext === '.svelte') {
+    return transformSvelte({
+      filePath,
+      source,
+      projectRoot,
+      escapeTags: pluginOptions.escapeTags,
+      pathType: pluginOptions.pathType,
+      attributeName: pluginOptions.attributeName,
+    })
+  }
+
+  // ── Astro ────────────────────────────────────────────────────────────────
+  if (ext === '.astro') {
+    return transformAstro({
+      filePath,
+      source,
+      escapeTags: pluginOptions.escapeTags,
+      pathType: pluginOptions.pathType,
+      attributeName: pluginOptions.attributeName,
+    })
+  }
+
   return null
 }
 // Export transforms for testing
-export { transformJsx, transformVue }
+export { transformJsx, transformVue, transformSvelte, transformAstro }

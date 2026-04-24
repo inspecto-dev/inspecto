@@ -14,6 +14,7 @@ Powered by `unplugin`, this package supports Vite, Webpack, Rspack, and Rollup. 
 | :-------- | :----------------- | :---------------------------------------------------------------- |
 | React     | >= 16.8.0          | Supported via JSX/TSX AST transformation.                         |
 | Vue       | >= 3.0.0           | Supported via Vue SFC compiler. Vue 2 is currently not supported. |
+| Svelte    | >= 4.0.0           | Supported via Svelte compiler (Svelte 4 & Svelte 5).              |
 
 ### Build Tools
 
@@ -27,7 +28,7 @@ Powered by `unplugin`, this package supports Vite, Webpack, Rspack, and Rollup. 
 
 ## Core Implementation
 
-- **AST Transformation**: Uses Babel (`@babel/parser`, `@babel/traverse`) for React and `@vue/compiler-sfc` for Vue to parse source files.
+- **AST Transformation**: Uses Babel (`@babel/parser`, `@babel/traverse`) for React, `@vue/compiler-sfc` for Vue, and `svelte/compiler` for Svelte to parse source files.
 - **Source Injection**: Utilizes `MagicString` to reliably inject `data-inspecto="filepath:line:column"` attributes onto HTML elements without breaking source maps.
 - **Local Server Lifecycle**: Starts the Inspecto local HTTP server during development from the plugin package itself. Cleanup is handled on process exit rather than in `buildEnd`, which keeps watch mode working across bundlers.
 - **Client Injection**: Automatically injects global variables (like `__AI_INSPECTOR_PORT__`) into the client bundle to allow the browser component to discover the local server port.

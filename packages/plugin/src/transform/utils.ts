@@ -103,7 +103,7 @@ export function extractTransformFilePath(requestId: string): NormalizedTransform
  * Determine if a file should be transformed.
  * Always skips node_modules and dist directories.
  */
-export function shouldTransform(filePath: string, options: Required<UnpluginOptions>): boolean {
+export function shouldTransform(filePath: string, _options: Required<UnpluginOptions>): boolean {
   const resolvedFilePath = extractTransformFilePath(filePath).filePath
 
   // Never transform in production
@@ -120,7 +120,7 @@ export function shouldTransform(filePath: string, options: Required<UnpluginOpti
 
   // Skip non-code files (like .html, .css)
   const ext = resolvedFilePath.split('.').pop()?.toLowerCase()
-  if (ext && !['js', 'jsx', 'ts', 'tsx', 'mjs', 'mts', 'vue'].includes(ext)) {
+  if (ext && !['js', 'jsx', 'ts', 'tsx', 'mjs', 'mts', 'vue', 'svelte', 'astro'].includes(ext)) {
     return false
   }
 

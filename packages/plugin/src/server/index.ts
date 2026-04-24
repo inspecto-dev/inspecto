@@ -101,7 +101,7 @@ export async function startServer(): Promise<number> {
     if (fs.existsSync(portFile)) {
       try {
         portData = JSON.parse(fs.readFileSync(portFile, 'utf-8'))
-      } catch (e) {
+      } catch (_e) {
         // Invalid JSON, start fresh
       }
     }
@@ -109,8 +109,8 @@ export async function startServer(): Promise<number> {
     const rootHash = crypto.createHash('md5').update(serverState.projectRoot).digest('hex')
     portData[rootHash] = port
     fs.writeFileSync(portFile, JSON.stringify(portData, null, 2), 'utf-8')
-  } catch (e) {
-    serverLogger.warn('Failed to write port file:', e)
+  } catch (_e) {
+    serverLogger.warn('Failed to write port file:', _e)
     /* non-fatal — extension will fall back to scanning */
   }
   // Clean up on process exit (Vite terminates the process, not stopServer)
@@ -229,7 +229,7 @@ export async function handleRequest(
     let body: OpenFileRequest
     try {
       body = JSON.parse(await readBody(req)) as OpenFileRequest
-    } catch (e) {
+    } catch (_e) {
       res.writeHead(400, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: 'Invalid JSON body' }))
       return

@@ -1,6 +1,6 @@
 import { showIntentMenu } from './menu.js'
 import { openFile } from './http.js'
-import { ATTR_NAME, findInspectable, parseAttrValue } from './component-utils.js'
+import { findInspectable, getInspectableLocation } from './component-utils.js'
 import { createRuntimeContextEnvelope, selectRuntimeEvidence } from './runtime-context.js'
 import { captureElementScreenshot } from './screenshot-context.js'
 import type { SourceLocation } from '@inspecto-dev/types'
@@ -25,6 +25,7 @@ type InteractionContext = {
     snapshot(): { records: unknown[] }
   }
   updateLauncherEye(): void
+  pause(): void
   isInspectorActive(e: MouseEvent): boolean
   markTargetInAnnotateSession(element: Element, location: SourceLocation): void
   addTargetToCurrentAnnotation(element: Element, location: SourceLocation): void
@@ -82,9 +83,8 @@ export function handleMouseMove(ctx: unknown, event: MouseEvent): void {
     return
   }
 
-  const attrValue = target.getAttribute(ATTR_NAME)!
-  const loc = parseAttrValue(attrValue)
-  const label = loc ? `${loc.file.split('/').pop() ?? ''}:${loc.line}` : attrValue
+  const loc = getInspectableLocation(target)
+  const label = loc ? `${loc.file.split('/').pop() ?? ''}:${loc.line}` : ''
 
   if (state.mode === 'annotate' && state.annotateCapturePaused) {
     state.overlay.hide()
@@ -121,8 +121,7 @@ export function handleTrigger(ctx: unknown, event: MouseEvent): void {
   event.preventDefault()
   event.stopPropagation()
 
-  const attrValue = target.getAttribute(ATTR_NAME)!
-  const loc = parseAttrValue(attrValue)
+  const loc = getInspectableLocation(target)
   if (!loc) return
 
   if (state.mode === 'annotate') {
@@ -148,7 +147,11 @@ export function handleTrigger(ctx: unknown, event: MouseEvent): void {
 export function handleKeyDown(ctx: unknown, event: KeyboardEvent): void {
   const state = asInteractionContext(ctx)
   if (event.key === 'Escape') {
-    state.cleanupMenu?.()
+    if (state.cleanupMenu !== null) {
+      state.cleanupMenu()
+    } else if (!state.disabled) {
+      state.pause()
+    }
     state.overlay.hide()
   }
   state.updateLauncherEye()

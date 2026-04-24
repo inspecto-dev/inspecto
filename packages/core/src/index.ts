@@ -14,16 +14,16 @@ export async function mountInspector(options: MountInspectorOptions = {}): Promi
   if (typeof document === 'undefined') return null
 
   // Lazy import the component so that module evaluation does not happen during SSR
-  const { InspectoElement } = await import('./component.js')
+  const { InspectoElement: _InspectoElement } = await import('./component.js')
 
   const existing = document.querySelector(TAG_NAME)
   if (existing) {
-    ;(existing as typeof InspectoElement.prototype).configure(options)
+    ;(existing as typeof _InspectoElement.prototype).configure(options)
     return existing
   }
 
   const el = document.createElement(TAG_NAME)
-  ;(el as typeof InspectoElement.prototype).configure(options)
+  ;(el as typeof _InspectoElement.prototype).configure(options)
   document.body.appendChild(el)
   return el
 }

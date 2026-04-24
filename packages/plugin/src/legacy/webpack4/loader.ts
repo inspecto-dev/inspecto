@@ -2,7 +2,7 @@ import { transformRouter } from '../../transform/index'
 import { shouldTransform } from '../../transform/utils'
 import type { UnpluginOptions } from '@inspecto-dev/types'
 
-const injectedClient = false
+const _injectedClient = false
 
 export default function legacyWebpack4Loader(this: any, source: string) {
   const id = this.resourcePath

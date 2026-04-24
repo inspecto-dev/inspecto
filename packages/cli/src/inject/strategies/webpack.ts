@@ -8,12 +8,12 @@ export class WebpackStrategy implements InjectStrategy {
     return tool === 'webpack'
   }
 
-  inject(options: InjectOptions): void {
+  inject(_options: InjectOptions): void {
     // AST manipulation for Webpack configs (often CommonJS or complex objects) is brittle in v1
     throw new Error('Webpack requires manual plugin configuration')
   }
 
-  getManualInstructions(detection: BuildToolDetection, reason: string): string[] {
+  getManualInstructions(detection: BuildToolDetection, _reason: string): string[] {
     const importPkg = detection.isLegacyWebpack
       ? '@inspecto-dev/plugin/legacy/webpack4'
       : '@inspecto-dev/plugin'

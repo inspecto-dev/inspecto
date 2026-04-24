@@ -1,5 +1,5 @@
 import type { SourceLocation } from './common.js'
-import type { AiIntent, AnnotationIntent } from './prompts.js'
+import type { AnnotationIntent } from './prompts.js'
 
 export type RuntimeEvidenceKind =
   | 'runtime-error'

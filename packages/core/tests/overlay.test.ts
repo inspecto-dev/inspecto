@@ -18,7 +18,7 @@ describe('Overlay DOM Interaction', () => {
   })
 
   it('should initialize overlay and tooltip hidden in shadow root', () => {
-    const { show, hide } = createOverlay(shadowRoot)
+    const { show: _show, hide: _hide } = createOverlay(shadowRoot)
 
     const overlay = shadowRoot.querySelector(`.${overlayClass}`) as HTMLElement
     const tooltip = shadowRoot.querySelector(`.${tooltipClass}`) as HTMLElement

@@ -26,7 +26,7 @@ async function executeTraeApi(payload: AiPayload): Promise<void> {
       await vscode.commands.executeCommand(COMMANDS.FOCUS)
       await new Promise(resolve => setTimeout(resolve, FOCUS_SETTLE_MS))
       await executeRobustPaste(payload.prompt)
-    } catch (e) {
+    } catch (_e) {
       // Fallback command if the primary one fails
       await vscode.commands.executeCommand('workbench.action.chat.open')
       await new Promise(resolve => setTimeout(resolve, FOCUS_SETTLE_MS))

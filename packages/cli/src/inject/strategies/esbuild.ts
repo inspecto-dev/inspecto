@@ -8,11 +8,11 @@ export class EsbuildStrategy implements InjectStrategy {
     return tool === 'esbuild'
   }
 
-  inject(options: InjectOptions): void {
+  inject(_options: InjectOptions): void {
     throw new Error('Esbuild requires manual plugin configuration')
   }
 
-  getManualInstructions(detection: BuildToolDetection, reason: string): string[] {
+  getManualInstructions(detection: BuildToolDetection, _reason: string): string[] {
     return [
       `1. Update your esbuild config (${detection.configPath}):`,
       `import { esbuildPlugin as inspecto } from '@inspecto-dev/plugin'`,

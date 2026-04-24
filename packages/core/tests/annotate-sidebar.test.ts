@@ -9,7 +9,7 @@ import {
   annotateSidebarInputClass,
   annotateSidebarQueueItemClass,
   annotateSidebarSectionClass,
-  annotateSidebarTextClass,
+  annotateSidebarTextClass as _annotateSidebarTextClass,
 } from '../src/styles.js'
 import type { FeedbackRecordSession } from '@inspecto-dev/types'
 

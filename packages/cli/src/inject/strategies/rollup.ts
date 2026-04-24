@@ -8,11 +8,11 @@ export class RollupStrategy implements InjectStrategy {
     return tool === 'rollup'
   }
 
-  inject(options: InjectOptions): void {
+  inject(_options: InjectOptions): void {
     throw new Error('Rollup requires manual plugin configuration')
   }
 
-  getManualInstructions(detection: BuildToolDetection, reason: string): string[] {
+  getManualInstructions(detection: BuildToolDetection, _reason: string): string[] {
     return [
       `1. Update your rollup config (${detection.configPath}):`,
       `import { rollupPlugin as inspecto } from '@inspecto-dev/plugin'`,

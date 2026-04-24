@@ -31,7 +31,7 @@ describe('detectFrameworks', () => {
     expect(result.unsupported).toHaveLength(0)
   })
 
-  it('detects Svelte as unsupported framework', async () => {
+  it('detects Svelte as supported framework', async () => {
     vi.mocked(fsUtils.readJSON).mockResolvedValue({
       devDependencies: {
         svelte: '^4.0.0',
@@ -39,8 +39,32 @@ describe('detectFrameworks', () => {
     })
 
     const result = await detectFrameworks('/mock/root')
-    expect(result.supported).toHaveLength(0)
-    expect(result.unsupported).toContainEqual({ name: 'Svelte', dep: 'svelte' })
+    expect(result.supported).toContain('svelte')
+    expect(result.unsupported).toHaveLength(0)
+  })
+
+  it('detects Solid as supported framework', async () => {
+    vi.mocked(fsUtils.readJSON).mockResolvedValue({
+      devDependencies: {
+        'solid-js': '^1.0.0',
+      },
+    })
+
+    const result = await detectFrameworks('/mock/root')
+    expect(result.supported).toContain('solid')
+    expect(result.unsupported).toHaveLength(0)
+  })
+
+  it('detects Astro as supported framework', async () => {
+    vi.mocked(fsUtils.readJSON).mockResolvedValue({
+      devDependencies: {
+        astro: '^4.0.0',
+      },
+    })
+
+    const result = await detectFrameworks('/mock/root')
+    expect(result.supported).toContain('astro')
+    expect(result.unsupported).toHaveLength(0)
   })
 
   it('returns empty if no framework is matched', async () => {

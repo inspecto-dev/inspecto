@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { exists, readJSON } from '../utils/fs.js'
 import {
-  HOST_IDE_IDS,
   getHostIdeArtifactPath,
   isSupportedHostIde,
   type SupportedHostIde,

@@ -1,14 +1,14 @@
 // ============================================================
 // src/detect/framework.ts — Frontend framework detection
 //
-// v1 supported: React / Vue
-// Recognized but unsupported: Solid, Svelte, Angular, Preact, Lit
+// v1 supported: React / Vue / Svelte / Solid / Astro
+// Recognized but unsupported: Angular, Preact, Lit
 // ============================================================
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { readJSON } from '../utils/fs.js'
 
-export type Framework = 'react' | 'vue'
+export type Framework = 'react' | 'vue' | 'svelte' | 'solid' | 'astro'
 
 export interface FrameworkDetection {
   supported: Framework[]
@@ -25,11 +25,14 @@ interface PackageJSON {
 const META_FRAMEWORK_MAP: Record<string, Framework> = {
   next: 'react',
   nuxt: 'vue',
+  '@sveltejs/kit': 'svelte',
   '@remix-run/react': 'react',
   '@remix-run/dev': 'react',
   '@vue/nuxt': 'vue',
   'vite-plugin-vue': 'vue',
   '@vitejs/plugin-vue': 'vue',
+  '@sveltejs/vite-plugin-svelte': 'svelte',
+  'vite-plugin-solid': 'solid',
   '@vitejs/plugin-react': 'react',
   '@vitejs/plugin-react-swc': 'react',
 }
@@ -38,13 +41,13 @@ const META_FRAMEWORK_MAP: Record<string, Framework> = {
 const SUPPORTED_FRAMEWORKS: { framework: Framework; deps: string[] }[] = [
   { framework: 'react', deps: ['react', 'react-dom'] },
   { framework: 'vue', deps: ['vue'] },
+  { framework: 'svelte', deps: ['svelte'] },
+  { framework: 'solid', deps: ['solid-js'] },
+  { framework: 'astro', deps: ['astro'] },
 ]
 
 /** Recognized but not supported in v1 — detect and warn */
 const UNSUPPORTED_FRAMEWORKS: { name: string; dep: string }[] = [
-  { name: 'Solid', dep: 'solid-js' },
-  { name: 'Svelte', dep: 'svelte' },
-  { name: 'SvelteKit', dep: '@sveltejs/kit' },
   { name: 'Angular', dep: '@angular/core' },
   { name: 'Preact', dep: 'preact' },
   { name: 'Lit', dep: 'lit' },

@@ -8,11 +8,11 @@ export class RsbuildStrategy implements InjectStrategy {
     return tool === 'rsbuild'
   }
 
-  inject(options: InjectOptions): void {
+  inject(_options: InjectOptions): void {
     throw new Error('Rsbuild requires manual plugin configuration due to nested structure')
   }
 
-  getManualInstructions(detection: BuildToolDetection, reason: string): string[] {
+  getManualInstructions(_detection: BuildToolDetection, _reason: string): string[] {
     return [
       `import { rspackPlugin as inspecto } from '@inspecto-dev/plugin'`,
       '',

@@ -3,6 +3,7 @@ import { defineConfig } from 'tsup'
 export default defineConfig({
   entry: {
     index: 'src/index.ts',
+    astro: 'src/astro.ts',
     vite: 'src/index.ts',
     webpack: 'src/index.ts',
     rspack: 'src/index.ts',

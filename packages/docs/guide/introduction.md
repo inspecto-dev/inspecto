@@ -51,11 +51,18 @@ Inspecto operates across three different layers of your development environment:
 
 ### 1. Compile Time (The Plugin)
 
-During development, the `@inspecto-dev/plugin` intercepts your framework's compilation process (via Vite, Webpack, or Rspack). It analyzes your React JSX or Vue SFC files and injects a hidden `data-inspecto="file:line:col"` attribute into every DOM element.
+During development, the `@inspecto-dev/plugin` intercepts your framework's compilation process
+(via Vite, Webpack, Rspack, or Astro's integration pipeline). It analyzes your React JSX, Vue SFC,
+Svelte, Solid, and Astro components and adds source-location metadata to rendered DOM elements.
+For most frameworks this is the hidden `data-inspecto="file:line:col"` attribute. For Astro,
+Inspecto also understands the framework's own source metadata emitted in development.
 
 ### 2. Runtime (The Core Client)
 
-The `@inspecto-dev/core` runs in your browser as a framework-agnostic Web Component overlay. It provides the launcher, `Inspect mode`, `Annotate mode`, and `Quick jump`. When you interact with a component, it reads the `data-inspecto` attribute, builds the prompt in the browser, and can optionally request snippet context.
+The `@inspecto-dev/core` runs in your browser as a framework-agnostic Web Component overlay. It
+provides the launcher, `Inspect mode`, `Annotate mode`, and `Quick jump`. When you interact with a
+component, it reads the available source-location metadata, builds the prompt in the browser, and
+can optionally request snippet context.
 
 ### 3. Dispatch (The Action)
 

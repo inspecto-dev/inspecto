@@ -51,11 +51,17 @@ Inspecto 在你开发环境的三个不同层面上协同工作：
 
 ### 1. 编译时注入 (The Plugin)
 
-在开发阶段，`@inspecto-dev/plugin` 会拦截框架的编译过程（通过 Vite、Webpack 或 Rspack 插件）。它会解析你的 React JSX 或 Vue SFC 文件，并将隐藏的 `data-inspecto="file:line:col"` 属性注入到每一个 DOM 元素中。
+在开发阶段，`@inspecto-dev/plugin` 会拦截框架的编译过程（通过 Vite、Webpack、Rspack
+或 Astro 的 integration 流程）。它会解析你的 React JSX、Vue SFC、Svelte、Solid 和
+Astro 组件，并为渲染后的 DOM 元素附加源码定位元数据。对于大多数框架，这些元数据表现为
+隐藏的 `data-inspecto="file:line:col"` 属性；对于 Astro，Inspecto 也会识别框架在开发
+阶段输出的源码定位属性。
 
 ### 2. 运行时捕获 (The Core Client)
 
-`@inspecto-dev/core` 作为一层框架无关的 Web Component 运行在你的浏览器中。它负责提供 launcher、`Inspect mode`、`Annotate mode` 和 `Quick jump`。你和组件交互后，它会读取 `data-inspecto` 属性，在浏览器端组装 prompt，并在需要时请求 snippet 上下文。
+`@inspecto-dev/core` 作为一层框架无关的 Web Component 运行在你的浏览器中。它负责提供
+launcher、`Inspect mode`、`Annotate mode` 和 `Quick jump`。你和组件交互后，它会读取
+当前可用的源码定位元数据，在浏览器端组装 prompt，并在需要时请求 snippet 上下文。
 
 ### 3. 动作分发 (The Dispatcher)
 

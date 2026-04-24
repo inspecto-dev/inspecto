@@ -7,7 +7,7 @@ import type { NodePath } from '@babel/traverse'
 import type { JSXOpeningElement } from '@babel/types'
 import MagicString from 'magic-string'
 import path from 'node:path'
-import type { UnpluginOptions, PathType } from '@inspecto-dev/types'
+import type { PathType } from '@inspecto-dev/types'
 import { buildEscapeTagsSet, formatAttrValue, type TransformResult } from './utils.js'
 
 export interface TransformJsxOptions {

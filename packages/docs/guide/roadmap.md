@@ -10,7 +10,7 @@ Now that the automated integration onboarding and core CLI architecture have sta
 - **Condition / Loop Rendering Context (P0)**: Provide context on conditionals and loops rendering the component, helping AI understand the structural code logic better.
 - **Import Chain Resolution (P1)**: Resolve the import chain to distinguish between internal project components and third-party library components.
 - **Expression Span (P1)**: Support precise code replacement utilizing location data.
-- **Multiple Element Selection**: Allow developers to hold a modifier key (e.g., `Shift`) to select multiple React/Vue components at once and send their combined context to the AI in a single prompt.
+- **Multiple Element Selection**: Allow developers to hold a modifier key (e.g., `Shift`) to select multiple React, Vue, Svelte, Solid, and Astro components at once and send their combined context to the AI in a single prompt.
 - **Runtime State & Computed Styles**: Beyond static source code, we plan to extract real-time component states (props/state) and final computed CSS styles from the browser, helping AI pinpoint logic and styling bugs more accurately.
 - **Auto Screenshot Capture**: Automatically take a screenshot of the selected component's rendered state in the browser and attach it to the AI prompt alongside the source code.
 

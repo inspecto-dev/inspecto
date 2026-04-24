@@ -1,10 +1,5 @@
 import type { HotKeys } from './common.js'
-import type {
-  RuntimeContextConfig,
-  ScreenshotContext,
-  ScreenshotContextConfig,
-  RuntimeContextEnvelope,
-} from './runtime.js'
+import type { RuntimeContextConfig, ScreenshotContext, ScreenshotContextConfig } from './runtime.js'
 
 export type IdeType =
   | 'vscode'

@@ -170,7 +170,7 @@ describe('annotate mode integration', () => {
         toJSON: () => {},
       }) as DOMRect
 
-    const inspector = (await mountInspector({
+    const _inspector = (await mountInspector({
       defaultActive: true,
       mode: 'annotate',
       runtimeContext: { enabled: true, preview: true },
@@ -234,7 +234,7 @@ describe('annotate mode integration', () => {
         toJSON: () => {},
       }) as DOMRect
 
-    const inspector = (await mountInspector({
+    const _inspector = (await mountInspector({
       defaultActive: true,
       mode: 'annotate',
       runtimeContext: { enabled: true, preview: true },
@@ -626,7 +626,7 @@ describe('annotate mode integration', () => {
       <button data-inspecto="/repo/App.tsx:20:2" id="second">Second</button>
     `
 
-    const inspector = (await mountInspector({
+    const _inspector = (await mountInspector({
       defaultActive: true,
       mode: 'annotate',
       runtimeContext: { enabled: true, preview: true },
@@ -948,7 +948,7 @@ describe('annotate mode integration', () => {
     document.body.innerHTML =
       '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
 
-    const inspector = await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const _inspector = await mountInspector({ defaultActive: true, mode: 'annotate' })
     document
       .getElementById('target')!
       .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))

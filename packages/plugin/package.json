@@ -1,6 +1,6 @@
 {
   "name": "@inspecto-dev/plugin",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Universal build tools plugin (Vite, Webpack, Rspack, Rollup, Esbuild) for Inspecto",
   "license": "MIT",
   "type": "module",
@@ -37,6 +37,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./astro": {
+      "types": "./dist/astro.d.ts",
+      "import": "./dist/astro.js",
+      "require": "./dist/astro.cjs"
     },
     "./vite": {
       "types": "./dist/vite.d.ts",
@@ -94,9 +99,11 @@
     "launch-ide": "^1.0.0",
     "magic-string": "^0.30.0",
     "portfinder": "^1.0.32",
+    "svelte": "5",
     "unplugin": "^1.10.0"
   },
   "devDependencies": {
+    "@astrojs/compiler": "^3.0.1",
     "@babel/core": "^7.24.7",
     "@babel/preset-env": "^7.24.7",
     "@babel/preset-react": "^7.24.7",

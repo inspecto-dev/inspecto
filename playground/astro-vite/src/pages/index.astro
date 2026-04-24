@@ -1,0 +1,108 @@
+---
+import '../index.css';
+import ModeCard from '../components/ModeCard.astro';
+import CaseCard from '../components/CaseCard.astro';
+
+const count = 2;
+---
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Astro + Vite playground</title>
+  </head>
+  <body>
+    <main class="demo-shell">
+      <section class="hero panel">
+        <div>
+          <span class="hero-kicker">Astro + Vite playground</span>
+          <h1 class="document_docNavBar__L2vQJ document_hasDoc__jpd6x documentWithTOC extremely_long_navigation_header_selector_that_should_wrap_properly">
+            Inspecto verification surface
+          </h1>
+          <p class="hero-copy">
+            Use this page to validate the real browser workflow: choose <strong>Inspect</strong> for
+            one component, <strong>Annotate</strong> for batch notes, and use{' '}
+            <strong>Alt + Click</strong> for quick jump to source.
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <h2>Mode checks</h2>
+        </div>
+        <div class="mode-grid">
+          <ModeCard
+            title="Inspect"
+            description="Confirm that one click opens the inspect menu and the built-in intents are visible."
+            steps={[
+              'Choose Inspect from the launcher.',
+              'Click any card below.',
+              'Check bug, CSS, and Open in Editor actions.',
+            ]}
+          />
+          <ModeCard
+            title="Annotate"
+            description="Confirm that you can capture several component notes."
+            steps={[
+              'Choose Annotate from the launcher.',
+              'Click several cards and save notes.',
+            ]}
+          />
+          <ModeCard
+            title="Quick jump"
+            description="Confirm that Alt + Click always jumps to the matching source location."
+            steps={[
+              'Hold Alt (or Option).',
+              'Click a target component.',
+            ]}
+          />
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-heading">
+          <h2>Verification cases</h2>
+        </div>
+        <div class="case-grid">
+          <CaseCard
+            label="Stateful inspect"
+            title="Interactive state snapshot"
+            description={`Current count: ${count}.`}
+          >
+            <button class="primary-button" id="counter">
+              Increment count
+            </button>
+          </CaseCard>
+
+          <CaseCard
+            label="CSS context"
+            title="Visual treatment reference"
+            description="Use the CSS icon on this card to verify style context."
+            tone="css"
+          >
+            <div class="style-specimen">
+              <span class="style-pill">Priority</span>
+              <div class="style-stack">
+                <strong>Billing escalation</strong>
+                <span>Response target: 2 business hours</span>
+              </div>
+              <button class="ghost-button">Review account</button>
+            </div>
+          </CaseCard>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      let count = 2;
+      const btn = document.getElementById('counter');
+      if (btn) {
+        btn.addEventListener('click', () => {
+          count++;
+          console.log('Count:', count);
+        });
+      }
+    </script>
+  </body>
+</html>
