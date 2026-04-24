@@ -1,0 +1,16 @@
+---
+export interface Props {
+  label: string;
+  title: string;
+  description: string;
+  tone?: 'default' | 'runtime' | 'css';
+}
+
+const { label, title, description, tone = 'default' } = Astro.props;
+---
+<article class={`panel case-card case-card--${tone}`}>
+  <span class="eyebrow">{label}</span>
+  <h3>{title}</h3>
+  <p>{description}</p>
+  <slot />
+</article>

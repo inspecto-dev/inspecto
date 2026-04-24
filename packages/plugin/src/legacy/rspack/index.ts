@@ -1,5 +1,5 @@
 import type { UnpluginOptions } from '@inspecto-dev/types'
-import { startServer, serverState } from '../../server/index.js'
+import { startServer } from '../../server/index.js'
 import { resolveClientModule } from '../../injectors/utils.js'
 import { getWebpackHtmlScript } from '../../injectors/webpack.js'
 import path from 'node:path'

@@ -40,18 +40,40 @@ yarn add -D @inspecto-dev/plugin
 
 ## 2. Configure Build Tool
 
-### Vite
+### Vite (React, Vue, Svelte, Solid)
 
 ```typescript
 // vite.config.ts
 import { defineConfig } from 'vite'
 import { vitePlugin as inspecto } from '@inspecto-dev/plugin'
-import react from '@vitejs/plugin-react'
-
+// import react from '@vitejs/plugin-react'
+// import { svelte } from '@sveltejs/vite-plugin-svelte'
+// import solid from 'vite-plugin-solid'
 export default defineConfig({
-  plugins: [react(), inspecto()],
+  plugins: [
+    // inspecto() should typically be placed before the framework plugin
+    // except for React where order generally matters less
+    inspecto(),
+    // frameworkPlugin(),
+  ],
 })
 ```
+
+### Astro
+
+```typescript
+// astro.config.mjs
+import { defineConfig } from 'astro/config'
+import { astroIntegration as inspecto } from '@inspecto-dev/plugin/astro'
+
+export default defineConfig({
+  integrations: [inspecto()],
+})
+```
+
+Astro uses a dedicated integration entry instead of the generic Vite-only setup. Inspecto will
+register its Vite transform internally and inject the browser runtime through Astro's page script
+pipeline during development.
 
 ### Webpack
 

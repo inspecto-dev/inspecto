@@ -4,7 +4,7 @@ import {
   saveCurrentRecord,
   setCurrentRecordTarget,
 } from './annotate-session.js'
-import { ATTR_NAME } from './component-utils.js'
+import { ATTR_NAME, getInspectableLocation } from './component-utils.js'
 import type { AnnotationTarget, FeedbackRecord, SourceLocation } from '@inspecto-dev/types'
 import { asAnnotateContext } from './component-annotate-shared.js'
 
@@ -219,8 +219,22 @@ export function findElementForLocation(
   const byLocation = Array.from(document.querySelectorAll(`[${ATTR_NAME}]`)).find(
     candidate => candidate.getAttribute(ATTR_NAME) === locationAttr,
   )
+  if (byLocation instanceof Element) {
+    return byLocation
+  }
 
-  return byLocation instanceof Element ? byLocation : null
+  const byAstroLocation = Array.from(
+    document.querySelectorAll('[data-astro-source-file][data-astro-source-loc]'),
+  ).find(candidate => {
+    const candidateLocation = getInspectableLocation(candidate)
+    return (
+      candidateLocation?.file === location.file &&
+      candidateLocation.line === location.line &&
+      candidateLocation.column === location.column
+    )
+  })
+
+  return byAstroLocation instanceof Element ? byAstroLocation : null
 }
 
 export function rebindCurrentAnnotationElements(ctx: unknown): void {

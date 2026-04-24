@@ -8,11 +8,11 @@ export class RspackStrategy implements InjectStrategy {
     return tool === 'rspack'
   }
 
-  inject(options: InjectOptions): void {
+  inject(_options: InjectOptions): void {
     throw new Error('Rspack requires manual plugin configuration')
   }
 
-  getManualInstructions(detection: BuildToolDetection, reason: string): string[] {
+  getManualInstructions(detection: BuildToolDetection, _reason: string): string[] {
     const importPkg = detection.isLegacyRspack
       ? '@inspecto-dev/plugin/legacy/rspack'
       : '@inspecto-dev/plugin'

@@ -6,7 +6,7 @@
 import path from 'node:path'
 import { exists, readJSON } from '../utils/fs.js'
 import { which } from '../utils/exec.js'
-import type { Provider, ProviderMode } from '@inspecto-dev/types'
+import type { Provider } from '@inspecto-dev/types'
 
 export interface ProviderDetection {
   id: Provider

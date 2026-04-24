@@ -1,9 +1,4 @@
-import type {
-  RuntimeEvidenceKind,
-  RuntimeEvidenceLevel,
-  RuntimeEvidenceRecord,
-  SourceLocation,
-} from '@inspecto-dev/types'
+import type { RuntimeEvidenceKind, RuntimeEvidenceRecord } from '@inspecto-dev/types'
 
 export type CollectorRecordInput = {
   kind: RuntimeEvidenceKind

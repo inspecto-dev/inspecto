@@ -230,6 +230,10 @@ class InspectoElement extends BaseElement {
     syncLauncherEye(this)
   }
 
+  private pause(): void {
+    this.setPaused(true)
+  }
+
   private readonly onKeyDown = (e: KeyboardEvent): void => {
     handleInspectorKeyDown(this, e)
   }

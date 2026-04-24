@@ -60,7 +60,7 @@ describe('E2E Build Integration - Webpack', () => {
       const fs = createFsFromVolume(new Volume())
       compiler.outputFileSystem = fs as any
 
-      const stats = await new Promise<webpack.Stats>((resolve, reject) => {
+      const _stats = await new Promise<webpack.Stats>((resolve, reject) => {
         compiler.run((err, stats) => {
           if (err) return reject(err)
           if (stats?.hasErrors()) return reject(new Error(stats.toString('errors-only')))

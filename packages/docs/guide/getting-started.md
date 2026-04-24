@@ -130,10 +130,13 @@ If anything looks off after setup, run `npx @inspecto-dev/cli doctor --json` bef
 
 ### UI Frameworks
 
-| Framework | Supported Versions | Notes                                                             |
-| :-------- | :----------------- | :---------------------------------------------------------------- |
-| React     | >= 16.8.0          | Supported via JSX/TSX AST transformation.                         |
-| Vue       | >= 3.0.0           | Supported via Vue SFC compiler. Vue 2 is currently not supported. |
+| Framework | Supported Versions | Notes                                                                                      |
+| :-------- | :----------------- | :----------------------------------------------------------------------------------------- |
+| React     | >= 16.8.0          | Supported via JSX/TSX AST transformation.                                                  |
+| Vue       | >= 3.0.0           | Supported via Vue SFC compiler. Vue 2 is currently not supported.                          |
+| Svelte    | >= 4.0.0           | Supported via Svelte compiler (Svelte 4 & Svelte 5).                                       |
+| Solid     | >= 1.0.0           | Supported via JSX/TSX AST transformation.                                                  |
+| Astro     | >= 4.0.0           | Supported via Astro compiler transforms plus the `@inspecto-dev/plugin/astro` integration. |
 
 ### Build Tools
 

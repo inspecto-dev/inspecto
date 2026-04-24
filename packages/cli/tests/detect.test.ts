@@ -45,7 +45,7 @@ describe('buildOnboardingContext', () => {
     })
     vi.mocked(frameworkDetector.detectFrameworks).mockResolvedValue({
       supported: ['react'],
-      unsupported: [{ name: 'Svelte', dep: 'svelte' }],
+      unsupported: [{ name: 'Angular', dep: 'angular' }],
     })
     vi.mocked(ideDetector.detectIDE).mockResolvedValue({
       detected: [{ ide: 'vscode', supported: true }],
@@ -79,7 +79,7 @@ describe('buildOnboardingContext', () => {
       },
       frameworks: {
         supported: ['react'],
-        unsupported: ['Svelte'],
+        unsupported: ['Angular'],
       },
       ides: [{ ide: 'vscode', supported: true }],
       providers: [{ id: 'codex', label: 'Codex CLI', supported: true, preferredMode: 'cli' }],

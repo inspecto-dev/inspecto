@@ -1,5 +1,5 @@
 import type { HotKeys } from './common.js'
-import type { Provider, IdeType } from './providers.js'
+import type { Provider } from './providers.js'
 import type {
   RuntimeContextConfig,
   RuntimeContextEnvelope,

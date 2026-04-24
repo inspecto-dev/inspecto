@@ -1,0 +1,19 @@
+---
+export interface Props {
+  title: string;
+  description: string;
+  steps: string[];
+}
+
+const { title, description, steps } = Astro.props;
+---
+<article class="panel mode-card">
+  <span class="eyebrow">Mode</span>
+  <h3>{title}</h3>
+  <p>{description}</p>
+  <ol>
+    {steps.map(step => (
+      <li>{step}</li>
+    ))}
+  </ol>
+</article>

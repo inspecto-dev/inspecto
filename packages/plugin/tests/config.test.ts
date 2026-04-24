@@ -30,12 +30,12 @@ vi.mock('node:fs', async () => {
   }
 })
 
-let callCount = 0
+let _callCount = 0
 
 describe('config resolution', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    callCount = 0
+    _callCount = 0
   })
 
   afterEach(() => {
@@ -43,12 +43,12 @@ describe('config resolution', () => {
   })
 
   function freshLoad(cwd: string, gitRoot?: string) {
-    callCount++
+    _callCount++
     return loadUserConfigSync(true, cwd, gitRoot)
   }
 
   function freshLoadPrompts(cwd: string, gitRoot?: string) {
-    callCount++
+    _callCount++
     return loadPromptsConfig(true, cwd, gitRoot)
   }
 

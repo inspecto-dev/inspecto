@@ -1,6 +1,8 @@
 import type { HotKey, HotKeys, SourceLocation } from '@inspecto-dev/types'
 
 const ATTR_NAME = 'data-inspecto'
+const ASTRO_FILE_ATTR_NAME = 'data-astro-source-file'
+const ASTRO_LOC_ATTR_NAME = 'data-astro-source-loc'
 
 export function parseAttrValue(value: string): SourceLocation | null {
   const parts = value.split(':')
@@ -14,9 +16,35 @@ export function parseAttrValue(value: string): SourceLocation | null {
   return { file, line, column: col }
 }
 
+export function parseAstroAttrValue(file: string, loc: string): SourceLocation | null {
+  const parts = loc.split(':')
+  if (parts.length !== 2) return null
+
+  const line = parseInt(parts[0]!, 10)
+  const column = parseInt(parts[1]!, 10)
+  if (isNaN(line) || isNaN(column) || !file) return null
+
+  return { file, line, column }
+}
+
+export function getInspectableLocation(el: Element): SourceLocation | null {
+  const attrValue = el.getAttribute(ATTR_NAME)
+  if (attrValue) {
+    return parseAttrValue(attrValue)
+  }
+
+  const astroFile = el.getAttribute(ASTRO_FILE_ATTR_NAME)
+  const astroLoc = el.getAttribute(ASTRO_LOC_ATTR_NAME)
+  if (astroFile && astroLoc) {
+    return parseAstroAttrValue(astroFile, astroLoc)
+  }
+
+  return null
+}
+
 export function findInspectable(el: Element | null): Element | null {
   while (el) {
-    if (el.hasAttribute(ATTR_NAME)) return el
+    if (getInspectableLocation(el)) return el
     el = el.parentElement
   }
   return null

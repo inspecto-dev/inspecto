@@ -103,7 +103,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Watch for inspecto.port.json file changes so we can push info automatically
   // when the user restarts their dev server.
-  const portFile = path.join(os.tmpdir(), 'inspecto.port.json')
+  const _portFile = path.join(os.tmpdir(), 'inspecto.port.json')
   let portFileWatcher: fs.FSWatcher | undefined
   try {
     // We watch the tmpdir because the file might not exist yet

@@ -236,7 +236,7 @@ describe('planner orchestration', () => {
       },
       frameworks: {
         supported: [],
-        unsupported: ['Svelte'],
+        unsupported: ['Angular'],
       },
       ides: [{ ide: 'vscode', supported: true }],
       providers: [{ id: 'codex', label: 'Codex CLI', supported: true, preferredMode: 'cli' }],
@@ -249,13 +249,13 @@ describe('planner orchestration', () => {
     expect(result.blockers).toEqual([
       {
         code: 'unsupported-framework',
-        message: 'Detected unsupported framework(s): Svelte',
+        message: 'Detected unsupported framework(s): Angular',
       },
     ])
     expect(result.actions).toEqual([
       {
         type: 'manual_step',
-        target: 'Svelte',
+        target: 'Angular',
         description:
           'Inspecto cannot auto-configure this framework yet. Follow the manual setup guide for the detected framework.',
       },
@@ -278,7 +278,7 @@ describe('planner orchestration', () => {
       },
       frameworks: {
         supported: ['react'],
-        unsupported: ['Svelte'],
+        unsupported: ['Angular'],
       },
       ides: [{ ide: 'vscode', supported: true }],
       providers: [{ id: 'codex', label: 'Codex CLI', supported: true, preferredMode: 'cli' }],
@@ -297,7 +297,7 @@ describe('planner orchestration', () => {
     expect(result.warnings).toEqual([
       {
         code: 'unsupported-framework-present',
-        message: 'Unsupported framework(s) also detected: Svelte',
+        message: 'Unsupported framework(s) also detected: Angular',
       },
     ])
     expect(result.actions).toEqual([
@@ -597,7 +597,7 @@ describe('planner orchestration', () => {
       },
       frameworks: {
         supported: ['react'],
-        unsupported: ['Svelte'],
+        unsupported: ['Angular'],
       },
       ides: [{ ide: 'vscode', supported: true }],
       providers: [{ id: 'codex', label: 'Codex CLI', supported: true, preferredMode: 'cli' }],
@@ -612,7 +612,7 @@ describe('planner orchestration', () => {
     })
     expect(result.environment).toEqual({
       frameworks: ['react'],
-      unsupportedFrameworks: ['Svelte'],
+      unsupportedFrameworks: ['Angular'],
       buildTools: [
         {
           tool: 'vite',
@@ -633,7 +633,7 @@ describe('planner orchestration', () => {
     expect(result.warnings).toEqual([
       {
         code: 'unsupported-framework-present',
-        message: 'Unsupported framework(s) also detected: Svelte',
+        message: 'Unsupported framework(s) also detected: Angular',
       },
     ])
   })
@@ -646,7 +646,7 @@ describe('planner orchestration', () => {
       project: { root: '/repo', packageManager: 'pnpm' },
       environment: {
         frameworks: ['react'],
-        unsupportedFrameworks: ['Svelte'],
+        unsupportedFrameworks: ['Angular'],
         buildTools: [],
         unsupportedBuildTools: ['Next.js'],
         ides: [{ ide: 'vscode', supported: true }],
@@ -677,7 +677,7 @@ describe('planner orchestration', () => {
       warnings: [
         {
           code: 'unsupported-framework-present',
-          message: 'Unsupported framework(s) also detected: Svelte',
+          message: 'Unsupported framework(s) also detected: Angular',
         },
       ],
       blockers: [
@@ -687,13 +687,13 @@ describe('planner orchestration', () => {
         },
         {
           code: 'unsupported-framework',
-          message: 'Detected unsupported framework(s): Svelte',
+          message: 'Detected unsupported framework(s): Angular',
         },
       ],
       project: { root: '/repo', packageManager: 'pnpm' },
       environment: {
         frameworks: ['react'],
-        unsupportedFrameworks: ['Svelte'],
+        unsupportedFrameworks: ['Angular'],
         buildTools: [],
         unsupportedBuildTools: ['Next.js'],
         ides: [{ ide: 'vscode', supported: true }],
@@ -712,13 +712,13 @@ describe('planner orchestration', () => {
     const output = logSpy.mock.calls.map(call => call.join(' ')).join('\n')
 
     expect(detectSpy).toHaveBeenCalledWith('/repo')
-    expect(output).toContain('Unsupported frameworks: Svelte')
+    expect(output).toContain('Unsupported frameworks: Angular')
     expect(output).toContain('Unsupported build tools: Next.js')
-    expect(output).not.toContain('Detected unsupported framework(s): Svelte')
+    expect(output).not.toContain('Detected unsupported framework(s): Angular')
     expect(output).not.toContain('Detected unsupported build tool(s): Next.js')
-    expect(output.match(/Unsupported frameworks: Svelte/g)).toHaveLength(1)
+    expect(output.match(/Unsupported frameworks: Angular/g)).toHaveLength(1)
     expect(output.match(/Unsupported build tools: Next.js/g)).toHaveLength(1)
-    expect(output.match(/Svelte/g)).toHaveLength(1)
+    expect(output.match(/Angular/g)).toHaveLength(1)
 
     cwdSpy.mockRestore()
     logSpy.mockRestore()

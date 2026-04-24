@@ -17,21 +17,13 @@ import {
   createRuntimeContextUi,
   formatRuntimeContextSummary,
   formatRuntimeErrorCount,
-  formatSourceAnchor,
   isFixIntent,
   isFixUiIntent,
   showError,
 } from './menu-helpers.js'
-import {
-  menuClass,
-  menuMetaClass,
-  loadingSpinnerClass,
-  menuItemClass,
-  runtimeToggleBadgeClass,
-  runtimeToggleClass,
-} from './styles.js'
+import { menuClass, loadingSpinnerClass } from './styles.js'
 
-const DISPLAY_NAMES: Record<Provider, string> = {
+const _DISPLAY_NAMES: Record<Provider, string> = {
   copilot: 'GitHub Copilot',
   'claude-code': 'Claude Code',
   gemini: 'Gemini',

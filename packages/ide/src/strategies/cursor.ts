@@ -25,7 +25,7 @@ async function executeCursorApi(payload: AiPayload): Promise<void> {
       await vscode.commands.executeCommand(COMMANDS.FOCUS)
       await new Promise(resolve => setTimeout(resolve, FOCUS_SETTLE_MS))
       await executeRobustPaste(payload.prompt)
-    } catch (e) {
+    } catch (_e) {
       // Fallback
       await vscode.commands.executeCommand('workbench.action.chat.open')
       await new Promise(resolve => setTimeout(resolve, FOCUS_SETTLE_MS))

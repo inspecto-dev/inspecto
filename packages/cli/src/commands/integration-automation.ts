@@ -427,7 +427,7 @@ export async function runIntegrationAutomation(
   }
 }
 
-function shouldAutoSend(assistant: string, ide: SupportedHostIde): boolean {
+function shouldAutoSend(assistant: string, _ide: SupportedHostIde): boolean {
   if (assistant === 'copilot') return true
   if (assistant === 'codex') return true
   return false

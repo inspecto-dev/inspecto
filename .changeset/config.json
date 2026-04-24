@@ -9,18 +9,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [
-    "inspecto",
-    "@inspecto-dev/docs",
-    "playground-nextjs",
-    "playground-esbuild",
-    "playground-react-rspack-legacy",
-    "playground-react-rspack",
-    "playground-react-vite",
-    "playground-rollup",
-    "playground-vue-vite",
-    "playground-nuxtjs",
-    "playground-react-webpack",
-    "playground-react-webpack4"
-  ]
+  "ignore": ["inspecto", "@inspecto-dev/docs", "playground-*"]
 }

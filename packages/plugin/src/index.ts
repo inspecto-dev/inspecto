@@ -172,5 +172,6 @@ export const webpackPlugin: (options?: UnpluginOptions) => any = InspectoPlugin.
 export const rspackPlugin = InspectoPlugin.rspack
 export const rollupPlugin = InspectoPlugin.rollup
 export const esbuildPlugin = InspectoPlugin.esbuild
-export { transformJsx }
+export { transformJsx, transformRouter }
+export { transformAstro } from './transform/transform-astro.js'
 export default InspectoPlugin

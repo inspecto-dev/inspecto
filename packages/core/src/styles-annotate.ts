@@ -9,7 +9,7 @@ import {
   annotateSidebarChipPanelClass,
   annotateSidebarClass,
   annotateSidebarEmptyClass,
-  annotateSidebarFieldClass,
+  annotateSidebarFieldClass as _annotateSidebarFieldClass,
   annotateSidebarFooterClass,
   annotateSidebarHeaderClass,
   annotateSidebarHintClass,

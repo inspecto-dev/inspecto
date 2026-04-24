@@ -40,18 +40,39 @@ yarn add -D @inspecto-dev/plugin
 
 ## 2. 配置构建工具
 
-### Vite
+### Vite (React, Vue, Svelte, Solid)
 
 ```typescript
 // vite.config.ts
 import { defineConfig } from 'vite'
 import { vitePlugin as inspecto } from '@inspecto-dev/plugin'
-import react from '@vitejs/plugin-react'
+// import react from '@vitejs/plugin-react'
+// import { svelte } from '@sveltejs/vite-plugin-svelte'
+// import solid from 'vite-plugin-solid'
 
 export default defineConfig({
-  plugins: [react(), inspecto()],
+  plugins: [
+    // 通常 inspecto() 应放置在框架专属 plugin 之前
+    inspecto(),
+    // frameworkPlugin(),
+  ],
 })
 ```
+
+### Astro
+
+```typescript
+// astro.config.mjs
+import { defineConfig } from 'astro/config'
+import { astroIntegration as inspecto } from '@inspecto-dev/plugin/astro'
+
+export default defineConfig({
+  integrations: [inspecto()],
+})
+```
+
+Astro 需要使用专门的 integration 入口，而不是仅仅复用通用的 Vite 配置。Inspecto 会在
+内部注册 Vite 转换逻辑，并在开发阶段通过 Astro 的页面脚本注入链路挂载浏览器端 runtime。
 
 ### Webpack
 

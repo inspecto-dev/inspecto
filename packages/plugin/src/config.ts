@@ -197,7 +197,7 @@ function readJsonSafely(filePath: string): any {
 /**
  * Resolve the exact target tool to dispatch to based on user config.
  */
-export function resolveTargetTool(config: InspectoSettings, ide: IdeType = 'vscode'): Provider {
+export function resolveTargetTool(config: InspectoSettings, _ide: IdeType = 'vscode'): Provider {
   // Support "provider.default" (e.g., "claude-code.extension")
   const defaultProvider = config['provider.default'] as string | undefined
   if (defaultProvider) {
@@ -418,7 +418,7 @@ export function watchConfig(onReload: () => void, cwd = process.cwd(), gitRoot?:
       })
       watcher.unref()
       watchers.push(watcher)
-    } catch (e) {
+    } catch (_e) {
       // ignore watch errors (e.g. unsupported fs)
     }
   }

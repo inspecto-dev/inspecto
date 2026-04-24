@@ -9,7 +9,7 @@ export class ViteStrategy implements InjectStrategy {
     return tool === 'vite'
   }
 
-  inject({ mod, detection }: InjectOptions): void {
+  inject({ mod, detection: _detection }: InjectOptions): void {
     addVitePlugin(mod, {
       from: '@inspecto-dev/plugin',
       constructor: 'inspecto',
@@ -17,7 +17,7 @@ export class ViteStrategy implements InjectStrategy {
     })
   }
 
-  getManualInstructions(detection: BuildToolDetection, reason: string): string[] {
+  getManualInstructions(_detection: BuildToolDetection, _reason: string): string[] {
     return [
       `import { vitePlugin as inspecto } from '@inspecto-dev/plugin'`,
       '',
