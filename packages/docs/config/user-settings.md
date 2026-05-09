@@ -61,6 +61,18 @@ Inspecto looks for configuration files in your project directory in the followin
 - **Default:** `"both"`
 - **Description:** Controls which action Inspecto emphasizes in `Annotate mode`. `"agent"` makes `Create Task` the primary action and is the canonical setting for hands-free MCP workflows. `"ide"` makes `Ask AI` the primary action for immediate IDE handoff flows. `"both"` will show both buttons.
 
+### `server.host`
+
+- **Type:** `string`
+- **Default:** `"127.0.0.1"`
+- **Description:** Controls which network interface the local Inspecto dev server binds to. Leave this as `127.0.0.1` for the common local-dev case. Set it to `0.0.0.0` or another explicit bind address only when your environment requires external access.
+
+### `server.publicUrl`
+
+- **Type:** `string`
+- **Example:** `"http://127.0.0.1:5678"`, `"https://my-devbox.example.com"`
+- **Description:** Controls the browser-visible base URL that Inspecto injects into client runtimes and MCP discovery flows. Set this when the dev server listens on one address but must be reached from the browser or agent through another address, such as devboxes, tunnels, containers, or remote previews.
+
 ### `prompt.includeSnippet`
 
 - **Type:** `boolean`

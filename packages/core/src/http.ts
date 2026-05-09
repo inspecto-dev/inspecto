@@ -12,7 +12,7 @@ import type {
 } from '@inspecto-dev/types'
 import { INSPECTO_API_PATHS } from '@inspecto-dev/types'
 
-let BASE_URL = globalThis.__AI_INSPECTOR_SERVER_URL__ || 'http://0.0.0.0:5678'
+let BASE_URL = globalThis.__AI_INSPECTOR_SERVER_URL__ || 'http://127.0.0.1:5678'
 const AI_BATCH_DISPATCH_PATH =
   INSPECTO_API_PATHS.AI_BATCH_DISPATCH ?? '/inspecto/api/v1/ai/dispatch/annotations'
 

@@ -26,11 +26,13 @@
   "mcpServers": {
     "inspecto": {
       "command": "npx",
-      "args": ["-y", "@inspecto-dev/cli@latest", "mcp", "--server-url", "http://0.0.0.0:5678"]
+      "args": ["-y", "@inspecto-dev/cli@latest", "mcp", "--server-url", "http://127.0.0.1:5678"]
     }
   }
 }
 ```
+
+如果浏览器或 Agent 访问 Inspecto dev server 时使用的主机名与监听地址不同，请在 `.inspecto/settings.local.json` 中设置 `server.publicUrl`，让浏览器注入和 MCP 发现统一使用可访问的地址。
 
 ## 推荐的使用模式
 

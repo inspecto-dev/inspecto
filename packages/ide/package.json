@@ -17,7 +17,7 @@
     "url": "https://github.com/inspecto-dev/inspecto/issues"
   },
   "engines": {
-    "vscode": "^1.70.0"
+    "vscode": "^1.118.0"
   },
   "categories": [
     "Other",

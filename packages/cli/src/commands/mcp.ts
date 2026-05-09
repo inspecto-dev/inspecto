@@ -241,7 +241,7 @@ export function createInspectoMcpRuntime(baseUrl: string): InspectoMcpRuntime {
 export function resolveInspectoServerBaseUrl(cwd: string): string | null {
   const ports = resolveServerPorts(cwd)
   const port = ports[0]
-  return port ? `http://0.0.0.0:${port}` : null
+  return port ? `http://127.0.0.1:${port}` : null
 }
 
 export function resolveServerPorts(cwd: string): number[] {

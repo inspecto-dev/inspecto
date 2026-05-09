@@ -1,5 +1,6 @@
 import type { UnpluginOptions } from '@inspecto-dev/types'
-import { startServer } from './server/index.js'
+import { startServer, serverState } from './server/index.js'
+import { resolvePublicServerUrl } from './server/server-url.js'
 import { vitePlugin } from './index.js'
 
 type AstroCommand = 'dev' | 'build' | 'preview' | 'sync'
@@ -13,10 +14,10 @@ interface AstroConfigSetupContext {
   updateConfig: (newConfig: Record<string, unknown>) => unknown
 }
 
-export function getAstroInjectedScript(serverPort: number): string {
+export function getAstroInjectedScript(serverPort: number, publicServerUrl?: string): string {
   return `
 import { mountInspector } from '@inspecto-dev/core';
-window.__AI_INSPECTOR_SERVER_URL__ = 'http://0.0.0.0:${serverPort}';
+window.__AI_INSPECTOR_SERVER_URL__ = '${publicServerUrl ?? `http://127.0.0.1:${serverPort}`}';
 mountInspector({
   serverUrl: window.__AI_INSPECTOR_SERVER_URL__,
 });
@@ -39,7 +40,17 @@ export function astroIntegration(options?: UnpluginOptions) {
         }
 
         const serverPort = await startServer()
-        injectScript('page', getAstroInjectedScript(serverPort))
+        injectScript(
+          'page',
+          getAstroInjectedScript(
+            serverPort,
+            resolvePublicServerUrl({
+              cwd: serverState.cwd || process.cwd(),
+              configRoot: serverState.configRoot || process.cwd(),
+              port: serverPort,
+            }),
+          ),
+        )
       },
     },
   }

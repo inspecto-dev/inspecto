@@ -45,7 +45,7 @@ describe('inspecto mcp command', () => {
       'utf-8',
     )
 
-    expect(resolveInspectoServerBaseUrl(cwd)).toBe('http://0.0.0.0:5680')
+    expect(resolveInspectoServerBaseUrl(cwd)).toBe('http://127.0.0.1:5680')
   })
 
   it('resolves the project server URL when Codex runs from a nested working directory', () => {
@@ -66,7 +66,7 @@ describe('inspecto mcp command', () => {
       'utf-8',
     )
 
-    expect(resolveInspectoServerBaseUrl(nestedCwd)).toBe('http://0.0.0.0:5681')
+    expect(resolveInspectoServerBaseUrl(nestedCwd)).toBe('http://127.0.0.1:5681')
   })
 
   it('exposes the expected MCP tool definitions', () => {

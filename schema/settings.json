@@ -65,6 +65,15 @@
       "description": "Whether runtime-context evidence collection is enabled for inspect and annotate flows. When enabled, runtimeErrorCount/maxRuntimeErrors cover runtime-error, promise-rejection, and console-error evidence; failed requests are tracked separately.",
       "default": false
     },
+    "server.host": {
+      "type": "string",
+      "description": "Host for the local inspecto server. Set to '0.0.0.0' to allow external connections.",
+      "default": "localhost"
+    },
+    "server.publicUrl": {
+      "type": "string",
+      "description": "Public URL for the local inspecto server. Useful when running behind a proxy or tunnel."
+    },
     "prompt.runtimeContextPreview": {
       "type": "boolean",
       "description": "Whether the browser UI should show a runtime-context preview.",

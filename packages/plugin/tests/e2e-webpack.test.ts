@@ -4,6 +4,8 @@ import { webpackPlugin } from '../src/index.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { createFsFromVolume, Volume } from 'memfs'
+import fs from 'node:fs'
+import os from 'node:os'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -17,7 +19,10 @@ describe('E2E Build Integration - Webpack', () => {
     const fixturePath = path.resolve(__dirname, './fixtures/react-app')
 
     const originalEnv = process.env.NODE_ENV
+    const originalHome = process.env.HOME
+    const isolatedHome = fs.mkdtempSync(path.join(os.tmpdir(), 'inspecto-plugin-home-'))
     process.env.NODE_ENV = 'development'
+    process.env.HOME = isolatedHome
 
     try {
       const compiler = webpack({
@@ -82,6 +87,7 @@ describe('E2E Build Integration - Webpack', () => {
       // expect(sanitizedCode).toMatchSnapshot()
     } finally {
       process.env.NODE_ENV = originalEnv
+      process.env.HOME = originalHome
     }
   })
 })

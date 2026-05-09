@@ -473,8 +473,14 @@ function resolveInstallPlan(assistant: string, options: InstallIntegrationOption
             target: '.gemini/skills/inspecto-onboarding/SKILL.md',
             localSource: 'skills/inspecto-onboarding-gemini/SKILL.md',
           },
+          {
+            source: `${REPO_RAW_BASE}/skills/inspecto-agent/SKILL.md`,
+            target: '.gemini/skills/inspecto-agent/SKILL.md',
+            localSource: 'skills/inspecto-agent/SKILL.md',
+          },
         ],
-        successMessage: 'Installed Gemini skill to .gemini/skills/inspecto-onboarding/SKILL.md',
+        successMessage:
+          'Installed Gemini skills to .gemini/skills/inspecto-onboarding and .gemini/skills/inspecto-agent',
         nextStep: 'Start a new Gemini CLI session and use /skills list to verify.',
       }
     case 'trae':
@@ -491,9 +497,15 @@ function resolveInstallPlan(assistant: string, options: InstallIntegrationOption
             localSource: 'skills/inspecto-onboarding-trae/scripts/run-inspecto.sh',
             executable: true,
           },
+          {
+            source: `${REPO_RAW_BASE}/skills/inspecto-agent/SKILL.md`,
+            target: '.trae/skills/inspecto-agent/SKILL.md',
+            localSource: 'skills/inspecto-agent/SKILL.md',
+          },
         ],
-        successMessage: 'Installed Trae skill to .trae/skills/inspecto-onboarding/SKILL.md',
-        nextStep: 'Open a new Trae chat and verify the inspecto-onboarding skill is available.',
+        successMessage:
+          'Installed Trae skills to .trae/skills/inspecto-onboarding and .trae/skills/inspecto-agent',
+        nextStep: 'Open a new Trae chat and verify the skills are available.',
       }
     case 'coco':
       return {
@@ -509,8 +521,14 @@ function resolveInstallPlan(assistant: string, options: InstallIntegrationOption
             localSource: 'skills/inspecto-onboarding-trae/scripts/run-inspecto.sh',
             executable: true,
           },
+          {
+            source: `${REPO_RAW_BASE}/skills/inspecto-agent/SKILL.md`,
+            target: '.trae/skills/inspecto-agent/SKILL.md',
+            localSource: 'skills/inspecto-agent/SKILL.md',
+          },
         ],
-        successMessage: 'Installed Coco skill to .trae/skills/inspecto-onboarding/SKILL.md',
+        successMessage:
+          'Installed Coco skills to .trae/skills/inspecto-onboarding and .trae/skills/inspecto-agent',
         nextStep: 'Start a new Coco session.',
       }
     case 'codebuddy':
@@ -527,11 +545,15 @@ function resolveInstallPlan(assistant: string, options: InstallIntegrationOption
             localSource: 'skills/inspecto-onboarding-codebuddy/scripts/run-inspecto.sh',
             executable: true,
           },
+          {
+            source: `${REPO_RAW_BASE}/skills/inspecto-agent/SKILL.md`,
+            target: '.codebuddy/skills/inspecto-agent/SKILL.md',
+            localSource: 'skills/inspecto-agent/SKILL.md',
+          },
         ],
         successMessage:
-          'Installed CodeBuddy skill to .codebuddy/skills/inspecto-onboarding/SKILL.md',
-        nextStep:
-          'Open a new CodeBuddy chat and verify the inspecto-onboarding skill is available.',
+          'Installed CodeBuddy skills to .codebuddy/skills/inspecto-onboarding and .codebuddy/skills/inspecto-agent',
+        nextStep: 'Open a new CodeBuddy chat and verify the skills are available.',
       }
     default:
       throw new Error(`Unknown assistant: ${assistant}`)
@@ -644,6 +666,10 @@ function resolveClaudeCodePlan(options: InstallIntegrationOptions): InstallPlan 
     scope === 'user'
       ? path.join(homedir(), '.claude/skills/inspecto-onboarding-claude-code')
       : '.claude/skills/inspecto-onboarding-claude-code'
+  const agentDir =
+    scope === 'user'
+      ? path.join(homedir(), '.claude/skills/inspecto-agent')
+      : '.claude/skills/inspecto-agent'
 
   return {
     assets: [
@@ -663,9 +689,14 @@ function resolveClaudeCodePlan(options: InstallIntegrationOptions): InstallPlan 
         executable: true,
         localSource: 'skills/inspecto-onboarding-claude-code/scripts/run-inspecto.sh',
       },
+      {
+        source: `${REPO_RAW_BASE}/skills/inspecto-agent/SKILL.md`,
+        target: path.join(agentDir, 'SKILL.md'),
+        localSource: 'skills/inspecto-agent/SKILL.md',
+      },
     ],
-    successMessage: `Installed Claude Code skill to ${baseDir}`,
-    nextStep: 'Restart Claude Code to load the new skill.',
+    successMessage: `Installed Claude Code skills to ${baseDir} and ${agentDir}`,
+    nextStep: 'Restart Claude Code to load the new skills.',
   }
 }
 
@@ -689,8 +720,14 @@ function resolveCopilotPlan(options: InstallIntegrationOptions): InstallPlan {
             target: '.github/skills/inspecto-onboarding/SKILL.md',
             localSource: 'skills/inspecto-onboarding-copilot/SKILL.md',
           },
+          {
+            source: `${REPO_RAW_BASE}/skills/inspecto-agent/SKILL.md`,
+            target: '.github/skills/inspecto-agent/SKILL.md',
+            localSource: 'skills/inspecto-agent/SKILL.md',
+          },
         ],
-        successMessage: 'Installed Copilot skill to .github/skills/inspecto-onboarding/SKILL.md',
+        successMessage:
+          'Installed Copilot skills to .github/skills/inspecto-onboarding and .github/skills/inspecto-agent',
         nextStep: 'Open a new Copilot chat or agent session.',
       }
     default:
@@ -716,8 +753,14 @@ function resolveCursorPlan(options: InstallIntegrationOptions): InstallPlan {
             target: '.cursor/skills/inspecto-onboarding/SKILL.md',
             localSource: 'skills/inspecto-onboarding-cursor/SKILL.md',
           },
+          {
+            source: `${REPO_RAW_BASE}/skills/inspecto-agent/SKILL.md`,
+            target: '.cursor/skills/inspecto-agent/SKILL.md',
+            localSource: 'skills/inspecto-agent/SKILL.md',
+          },
         ],
-        successMessage: 'Installed Cursor skill to .cursor/skills/inspecto-onboarding/SKILL.md',
+        successMessage:
+          'Installed Cursor skills to .cursor/skills/inspecto-onboarding and .cursor/skills/inspecto-agent',
         nextStep: 'Open a new Cursor chat.',
       }
     default:
