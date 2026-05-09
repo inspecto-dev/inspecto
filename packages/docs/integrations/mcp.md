@@ -26,11 +26,13 @@ If auto-discovery does not find the right local dev server (for example, when ru
   "mcpServers": {
     "inspecto": {
       "command": "npx",
-      "args": ["-y", "@inspecto-dev/cli@latest", "mcp", "--server-url", "http://0.0.0.0:5678"]
+      "args": ["-y", "@inspecto-dev/cli@latest", "mcp", "--server-url", "http://127.0.0.1:5678"]
     }
   }
 }
 ```
+
+If the browser or agent reaches the Inspecto dev server through a different hostname than the bind address, set `.inspecto/settings.local.json` with `server.publicUrl` so browser injection and MCP discovery use the same reachable URL.
 
 ## Recommended Workflows
 

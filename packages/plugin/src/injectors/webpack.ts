@@ -1,24 +1,26 @@
-export function getWebpackHtmlScript(serverPort: number) {
+export function getWebpackHtmlScript(serverPort: number, publicServerUrl?: string) {
   return `
 window.__AI_INSPECTOR_PORT__ = ${serverPort};
+window.__AI_INSPECTOR_SERVER_URL__ = '${publicServerUrl ?? `http://127.0.0.1:${serverPort}`}';
   window.addEventListener('load', () => {
     if (window.InspectoClient) {
       window.InspectoClient.mountInspector({
-        serverUrl: 'http://0.0.0.0:' + window.__AI_INSPECTOR_PORT__,
+        serverUrl: window.__AI_INSPECTOR_SERVER_URL__,
       });
     }
   });
 `
 }
 
-export function getWebpackAssetScript(serverPort: number) {
+export function getWebpackAssetScript(serverPort: number, publicServerUrl?: string) {
   return `
 if (typeof window !== 'undefined') {
   window.__AI_INSPECTOR_PORT__ = ${serverPort};
+  window.__AI_INSPECTOR_SERVER_URL__ = '${publicServerUrl ?? `http://127.0.0.1:${serverPort}`}';
   const _initInspecto = () => {
     if (window.InspectoClient) {
       window.InspectoClient.mountInspector({
-        serverUrl: 'http://0.0.0.0:' + window.__AI_INSPECTOR_PORT__,
+        serverUrl: window.__AI_INSPECTOR_SERVER_URL__,
       });
     } else {
       setTimeout(_initInspecto, 100);
@@ -36,6 +38,7 @@ if (typeof window !== 'undefined') {
 export function injectWebpack(
   compiler: any,
   serverPortFn: () => Promise<number>,
+  publicServerUrlFn: (port: number) => string,
   resolveClientModule: () => string,
 ) {
   const inspectoClientPath = resolveClientModule()
@@ -57,11 +60,12 @@ export function injectWebpack(
       const hooks = (HtmlWebpackPlugin.constructor as any).getHooks(compilation)
       hooks.alterAssetTagGroups.tapPromise('inspecto-overlay', async (data: any) => {
         const port = await serverPortFn()
+        const publicServerUrl = publicServerUrlFn(port)
         data.headTags.unshift({
           tagName: 'script',
           voidTag: false,
           meta: { plugin: 'inspecto-overlay' },
-          innerHTML: getWebpackHtmlScript(port),
+          innerHTML: getWebpackHtmlScript(port, publicServerUrl),
         })
         return data
       })
@@ -76,6 +80,7 @@ export function injectWebpack(
           },
           async (assets: any) => {
             const port = await serverPortFn()
+            const publicServerUrl = publicServerUrlFn(port)
 
             // Only inject into the main client entry chunks (e.g. main-app, main.js, umi.js)
             const mainAssetKey = Object.keys(assets).find(
@@ -87,7 +92,7 @@ export function injectWebpack(
 
             const originalSource = assets[mainAssetKey].source()
             assets[mainAssetKey] = new compiler.webpack.sources.RawSource(
-              getWebpackAssetScript(port) + '\n' + originalSource,
+              getWebpackAssetScript(port, publicServerUrl) + '\n' + originalSource,
             )
           },
         )

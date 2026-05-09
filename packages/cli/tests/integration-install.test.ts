@@ -176,9 +176,13 @@ describe('integration install', () => {
 
     await installIntegration('cursor', { mode: 'agents' })
 
-    expect(writeFileMock).toHaveBeenCalledTimes(1)
+    expect(writeFileMock).toHaveBeenCalledTimes(2)
     expect(writeFileMock).toHaveBeenCalledWith(
       '.cursor/skills/inspecto-onboarding/SKILL.md',
+      '# mock asset',
+    )
+    expect(writeFileMock).toHaveBeenCalledWith(
+      '.cursor/skills/inspecto-agent/SKILL.md',
       '# mock asset',
     )
   })
@@ -539,6 +543,7 @@ describe('integration install', () => {
         '/Users/tester/.claude/skills/inspecto-onboarding-claude-code/SKILL.md',
         '/Users/tester/.claude/skills/inspecto-onboarding-claude-code/agents/openai.yaml',
         '/Users/tester/.claude/skills/inspecto-onboarding-claude-code/scripts/run-inspecto.sh',
+        '/Users/tester/.claude/skills/inspecto-agent/SKILL.md',
       ],
       preferredInstall:
         'npx @inspecto-dev/cli integrations install claude-code --scope project --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',
@@ -570,6 +575,7 @@ describe('integration install', () => {
       targets: [
         '.trae/skills/inspecto-onboarding/SKILL.md',
         '.trae/skills/inspecto-onboarding/scripts/run-inspecto.sh',
+        '.trae/skills/inspecto-agent/SKILL.md',
       ],
       preferredInstall:
         'npx @inspecto-dev/cli integrations install coco --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',

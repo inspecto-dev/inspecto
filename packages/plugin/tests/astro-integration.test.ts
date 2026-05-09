@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('../src/server/index.js', () => ({
   startServer: vi.fn(async () => 6789),
+  serverState: {
+    cwd: '/repo',
+    configRoot: '/repo',
+  },
 }))
 
 import { astroIntegration, getAstroInjectedScript } from '../src/astro.js'
@@ -42,7 +46,7 @@ describe('astroIntegration', () => {
   it('builds a runtime script with the negotiated server URL', () => {
     const script = getAstroInjectedScript(6789)
 
-    expect(script).toContain("window.__AI_INSPECTOR_SERVER_URL__ = 'http://0.0.0.0:6789';")
+    expect(script).toContain("window.__AI_INSPECTOR_SERVER_URL__ = 'http://127.0.0.1:6789';")
     expect(script).toContain('mountInspector({')
   })
 })

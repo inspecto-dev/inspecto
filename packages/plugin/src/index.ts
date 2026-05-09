@@ -3,6 +3,7 @@ import type { UnpluginOptions } from '@inspecto-dev/types'
 import { extractTransformFilePath, shouldTransform } from './transform/utils.js'
 import { transformRouter, transformJsx } from './transform/index.js'
 import { startServer, serverState } from './server/index.js'
+import { resolvePublicServerUrl } from './server/server-url.js'
 import { resolveClientModule } from './injectors/utils.js'
 import { injectWebpack } from './injectors/webpack.js'
 import { injectRspack } from './injectors/rspack.js'
@@ -53,6 +54,13 @@ const InspectoPlugin = createUnplugin<UnpluginOptions | undefined>((userOptions 
     return serverPort
   }
 
+  const getPublicServerUrl = (port: number) =>
+    resolvePublicServerUrl({
+      cwd: serverState.cwd || process.cwd(),
+      configRoot: serverState.configRoot || projectRoot,
+      port,
+    })
+
   return {
     name: 'inspecto-overlay',
     enforce: 'pre',
@@ -75,7 +83,7 @@ const InspectoPlugin = createUnplugin<UnpluginOptions | undefined>((userOptions 
 
     webpack: compiler => {
       if (isProduction) return
-      injectWebpack(compiler, ensureServer, resolveClientModule)
+      injectWebpack(compiler, ensureServer, getPublicServerUrl, resolveClientModule)
     },
 
     rspack: compiler => {
@@ -106,7 +114,10 @@ const InspectoPlugin = createUnplugin<UnpluginOptions | undefined>((userOptions 
         if (id === VITE_VIRTUAL_MODULE_ID) {
           // serverPort is guaranteed to be set by the time Vite requests this module
           // (configureServer awaits ensureServer before the dev server accepts requests)
-          return getViteVirtualModuleScript(serverPort ?? DEFAULT_PORT)
+          return getViteVirtualModuleScript(
+            serverPort ?? DEFAULT_PORT,
+            getPublicServerUrl(serverPort ?? DEFAULT_PORT),
+          )
         }
         return null
       },

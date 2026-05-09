@@ -1,9 +1,10 @@
-export function getViteVirtualModuleScript(serverPort: number) {
+export function getViteVirtualModuleScript(serverPort: number, publicServerUrl?: string) {
   return `
 import { mountInspector } from '@inspecto-dev/core';
 window.__AI_INSPECTOR_PORT__ = ${serverPort};
+window.__AI_INSPECTOR_SERVER_URL__ = '${publicServerUrl ?? `http://127.0.0.1:${serverPort}`}';
 mountInspector({
-  serverUrl: 'http://0.0.0.0:' + window.__AI_INSPECTOR_PORT__,
+  serverUrl: window.__AI_INSPECTOR_SERVER_URL__,
 });
 `
 }

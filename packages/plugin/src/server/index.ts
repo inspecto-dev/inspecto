@@ -26,6 +26,7 @@ import { assertPathWithinProject, resolveWorkspacePath } from './path-guards.js'
 import { buildClientConfig } from './client-config.js'
 import { handleOpenFileRequest } from './open-file.js'
 import { resolveProjectRoot } from './project-root.js'
+import { resolveServerHost } from './server-url.js'
 import { annotationSessionStore, hasAgentReply } from './session-store.js'
 import { watchConfig, unwatchConfig, getGlobalLogLevel } from '../config.js'
 import { createLogger } from '../utils/logger.js'
@@ -99,6 +100,7 @@ export async function startServer(): Promise<number> {
   serverState.projectRoot = resolveProjectRoot()
   serverState.configRoot = serverState.projectRoot
   serverState.cwd = process.cwd()
+  const serverHost = resolveServerHost(serverState.cwd, serverState.configRoot)
 
   portfinder.basePort = 5678
   const port = await portfinder.getPortPromise()
@@ -132,7 +134,7 @@ export async function startServer(): Promise<number> {
   })
 
   await new Promise<void>((resolve, reject) => {
-    serverInstance!.listen(port, '0.0.0.0', () => {
+    serverInstance!.listen(port, serverHost, () => {
       serverInstance!.unref() // Allow process to exit
       resolve()
     })
@@ -163,7 +165,7 @@ export async function startServer(): Promise<number> {
     }
   })
 
-  serverLogger.info(`server running at http://0.0.0.0:${port}`)
+  serverLogger.info(`server running at http://${serverHost}:${port}`)
 
   return port
 }

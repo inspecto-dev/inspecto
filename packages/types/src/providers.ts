@@ -28,6 +28,8 @@ export interface InspectoSettings {
   [key: `provider.${string}`]: string | string[] | boolean | undefined
   'inspector.hotKey'?: HotKeys
   'annotate.deliveryMode'?: 'ide' | 'agent' | 'both'
+  'server.host'?: string
+  'server.publicUrl'?: string
   'prompt.includeSnippet'?: boolean
   'prompt.autoSend'?: boolean
 }
