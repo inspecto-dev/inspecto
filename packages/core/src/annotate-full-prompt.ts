@@ -2,28 +2,22 @@ import type {
   AnnotationTransport,
   RuntimeContextEnvelope,
   RuntimeEvidenceRecord,
-  ScreenshotContext,
 } from '@inspecto-dev/types'
 import { appendCssContextToPrompt } from './css-context.js'
 
 export function buildAnnotateFullPrompt(input: {
   instruction: string
   annotations: AnnotationTransport[]
-  responseMode: 'unified' | 'per-annotation'
   runtimeContext?: RuntimeContextEnvelope | null
-  screenshotContext?: ScreenshotContext | null
   cssContextPrompt?: string | null
 }): string {
   const instruction = input.instruction.trim()
   const body = buildSelectedElementsPrompt(input.annotations)
 
   const prompt = instruction ? `${instruction}\n\n${body}` : body
-  return appendScreenshotContextSection(
-    appendCssContextToPrompt(
-      appendRuntimeContextSection(prompt, input.runtimeContext),
-      input.cssContextPrompt,
-    ),
-    input.screenshotContext,
+  return appendCssContextToPrompt(
+    appendRuntimeContextSection(prompt, input.runtimeContext),
+    input.cssContextPrompt,
   )
 }
 
@@ -61,27 +55,6 @@ function appendRuntimeContextSection(
 ): string {
   if (!runtimeContext?.records.length) return prompt
   return `${prompt}\n\n${buildRuntimeContextSection(runtimeContext.records)}`
-}
-
-function appendScreenshotContextSection(
-  prompt: string,
-  screenshotContext: ScreenshotContext | null | undefined,
-): string {
-  if (!screenshotContext || (!screenshotContext.imageDataUrl && !screenshotContext.imageAssetId)) {
-    return prompt
-  }
-
-  const lines = [
-    'Visual screenshot context attached:',
-    `- capturedAt=${screenshotContext.capturedAt}`,
-    `- mimeType=${screenshotContext.mimeType}`,
-  ]
-
-  if (screenshotContext.imageAssetId) {
-    lines.push(`- imageAssetId=${screenshotContext.imageAssetId}`)
-  }
-
-  return `${prompt}\n\n${lines.join('\n')}`
 }
 
 function buildRuntimeContextSection(records: RuntimeEvidenceRecord[]): string {

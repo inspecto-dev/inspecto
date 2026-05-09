@@ -16,7 +16,7 @@ interface AstroConfigSetupContext {
 export function getAstroInjectedScript(serverPort: number): string {
   return `
 import { mountInspector } from '@inspecto-dev/core';
-window.__AI_INSPECTOR_SERVER_URL__ = 'http://127.0.0.1:${serverPort}';
+window.__AI_INSPECTOR_SERVER_URL__ = 'http://0.0.0.0:${serverPort}';
 mountInspector({
   serverUrl: window.__AI_INSPECTOR_SERVER_URL__,
 });

@@ -10,23 +10,33 @@ export async function promptIDEChoice(
   detections: { ide: string; supported: boolean }[],
 ): Promise<{ ide: string; supported: boolean } | null> {
   if (!process.stdin.isTTY) {
-    log.warn('Multiple IDEs detected but stdin is not interactive')
-    log.hint(`Using: ${detections[0]!.ide} (first match)`)
-    return detections[0]!
+    if (detections.length > 0) {
+      log.warn('Multiple IDEs detected but stdin is not interactive')
+      log.hint(`Using: ${detections[0]!.ide} (first match)`)
+      return detections[0]!
+    }
+    return { ide: 'none', supported: true }
   }
+
+  const choices = detections.map(d => ({
+    title: `${d.ide} ${d.supported ? '(supported)' : '(unsupported/limited)'}`,
+    value: d,
+  }))
+
+  choices.push({
+    title: 'none (Standalone / MCP / Browser-only)',
+    value: { ide: 'none', supported: true },
+  })
 
   const { choice } = await prompts({
     type: 'select',
     name: 'choice',
-    message: 'Detected multiple IDEs, please choose one:',
-    choices: detections.map((d, i) => ({
-      title: `${d.ide} ${d.supported ? '(supported)' : '(unsupported/limited)'}`,
-      value: i,
-    })),
+    message: 'Detected multiple IDEs, please choose one (or select none for standalone use):',
+    choices,
   })
 
   if (choice === undefined) return null
-  return detections[choice]!
+  return choice
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { HotKeys } from './common.js'
-import type { RuntimeContextConfig, ScreenshotContext, ScreenshotContextConfig } from './runtime.js'
+import type { RuntimeContextConfig } from './runtime.js'
 
 export type IdeType =
   | 'vscode'
@@ -9,6 +9,7 @@ export type IdeType =
   | 'codebuddy'
   | 'codebuddy-cn'
   | 'unknown'
+  | 'none'
 
 export type Provider =
   | 'copilot'
@@ -26,10 +27,9 @@ export interface InspectoSettings {
   ide?: IdeType
   [key: `provider.${string}`]: string | string[] | boolean | undefined
   'inspector.hotKey'?: HotKeys
-  'inspector.theme'?: 'light' | 'dark' | 'auto'
+  'annotate.deliveryMode'?: 'ide' | 'agent' | 'both'
   'prompt.includeSnippet'?: boolean
   'prompt.autoSend'?: boolean
-  'prompt.annotationResponseMode'?: 'unified' | 'per-annotation'
 }
 
 export const HOST_IDE_IDS = [
@@ -123,7 +123,6 @@ export interface AiPayload {
   line?: number
   column?: number
   snippet?: string
-  screenshotContext?: ScreenshotContext
   overrides?: ToolOverrides
   autoSend?: boolean
   ticket?: string
@@ -152,10 +151,9 @@ export interface InspectoConfig {
   prompts?: import('./prompts.js').IntentConfig[]
   hotKeys?: HotKeys
   theme?: 'light' | 'dark' | 'auto'
+  annotateDeliveryMode?: 'ide' | 'agent' | 'both'
   includeSnippet?: boolean
-  annotationResponseMode?: 'unified' | 'per-annotation'
   runtimeContext?: RuntimeContextConfig
-  screenshotContext?: ScreenshotContextConfig
 }
 
 export interface ServerState {

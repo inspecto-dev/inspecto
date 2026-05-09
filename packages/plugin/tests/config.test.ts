@@ -301,6 +301,18 @@ describe('config resolution', () => {
       expect(intents.every(intent => intent.aiIntent)).toBe(true)
     })
 
+    it('keeps built-in intent prompts concise and action-oriented', () => {
+      const intents = resolveIntents()
+      const prompts = intents.map(intent => intent.prompt ?? '').join('\n\n')
+
+      expect(prompts).not.toContain('Please:')
+      expect(prompts).not.toContain('Focus on:')
+      expect(prompts).toContain('Explain this')
+      expect(prompts).toContain('Fix the bug')
+      expect(prompts).toContain('Fix the UI issue')
+      expect(prompts).toContain('Review this')
+    })
+
     it('requires aiIntent for custom prompt objects', () => {
       const intents = resolveIntents([
         {

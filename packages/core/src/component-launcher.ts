@@ -1,6 +1,8 @@
 import type { HotKeys } from '@inspecto-dev/types'
 import { badgeClass } from './styles.js'
 import { getDeepActiveElement, hotKeysHeld } from './component-utils.js'
+import { t } from './i18n.js'
+import { pauseIconSvg, playIconSvg } from './icons.js'
 
 type LauncherContext = {
   options: { hotKeys?: HotKeys }
@@ -71,7 +73,7 @@ export function createBadge(ctx: unknown): HTMLDivElement {
 
   const titleSpan = document.createElement('span')
   titleSpan.className = `${badgeClass}-title`
-  titleSpan.textContent = 'Inspecto'
+  titleSpan.textContent = t('launcher.title')
 
   const eyes = document.createElement('span')
   eyes.className = `${badgeClass}-eyes`
@@ -99,8 +101,11 @@ export function createBadge(ctx: unknown): HTMLDivElement {
 
   const panelHeader = document.createElement('div')
   panelHeader.className = `${badgeClass}-panel-header`
-  panelHeader.innerHTML =
-    '<div data-inspecto-launcher-panel-title="true">Choose a mode</div><div data-inspecto-launcher-panel-subtitle="true">Your next page click will follow this mode.</div>'
+  const panelHeaderCopy = document.createElement('div')
+  panelHeaderCopy.className = `${badgeClass}-panel-header-copy`
+  panelHeaderCopy.innerHTML = `<div data-inspecto-launcher-panel-title="true">${t('launcher.panel.title')}</div><div data-inspecto-launcher-panel-subtitle="true">${t('launcher.panel.subtitle')}</div>`
+  const panelHeaderActions = document.createElement('div')
+  panelHeaderActions.className = `${badgeClass}-panel-header-actions`
 
   const modeGroup = document.createElement('div')
   modeGroup.className = `${badgeClass}-panel-group`
@@ -109,8 +114,7 @@ export function createBadge(ctx: unknown): HTMLDivElement {
   inspectBtn.type = 'button'
   inspectBtn.className = `${badgeClass}-panel-button`
   inspectBtn.dataset.inspectoLauncherAction = 'inspect'
-  inspectBtn.innerHTML =
-    '<span data-inspecto-launcher-title="true">Inspect</span><span data-inspecto-launcher-description="true">Click one component to inspect or ask AI</span>'
+  inspectBtn.innerHTML = `<span data-inspecto-launcher-title="true">${t('launcher.action.inspect.title')}</span><span data-inspecto-launcher-description="true">${t('launcher.action.inspect.description')}</span>`
   inspectBtn.addEventListener('click', event => {
     event.stopPropagation()
     if (state.disabled) setPaused(state, false)
@@ -124,8 +128,7 @@ export function createBadge(ctx: unknown): HTMLDivElement {
   annotateBtn.type = 'button'
   annotateBtn.className = `${badgeClass}-panel-button`
   annotateBtn.dataset.inspectoLauncherAction = 'annotate'
-  annotateBtn.innerHTML =
-    '<span data-inspecto-launcher-title="true">Annotate</span><span data-inspecto-launcher-description="true">Capture notes across components, then Ask AI once</span>'
+  annotateBtn.innerHTML = `<span data-inspecto-launcher-title="true">${t('launcher.action.annotate.title')}</span><span data-inspecto-launcher-description="true">${t('launcher.action.annotate.description')}</span>`
   annotateBtn.addEventListener('click', event => {
     event.stopPropagation()
     if (state.disabled) setPaused(state, false)
@@ -137,14 +140,18 @@ export function createBadge(ctx: unknown): HTMLDivElement {
 
   const pauseBtn = document.createElement('button')
   pauseBtn.type = 'button'
-  pauseBtn.className = `${badgeClass}-panel-button secondary`
+  pauseBtn.className = `${badgeClass}-panel-toggle-button`
   pauseBtn.dataset.inspectoLauncherAction = 'pause'
-  pauseBtn.innerHTML =
-    '<span data-inspecto-launcher-title="true">Pause selection</span><span data-inspecto-launcher-description="true">Use the page normally for a moment</span>'
+  pauseBtn.setAttribute('aria-label', t('launcher.action.pause.title'))
+  pauseBtn.setAttribute('aria-pressed', 'false')
+  pauseBtn.innerHTML = pauseIconSvg
   pauseBtn.addEventListener('click', event => {
     event.stopPropagation()
     setPaused(state, !state.disabled)
   })
+  const pauseText = document.createElement('div')
+  pauseText.className = `${badgeClass}-panel-status-text`
+  pauseText.dataset.inspectoLauncherPauseText = 'true'
 
   const hotkeyHint = document.createElement('div')
   hotkeyHint.className = `${badgeClass}-panel-hint`
@@ -155,7 +162,9 @@ export function createBadge(ctx: unknown): HTMLDivElement {
   utilityGroup.dataset.inspectoLauncherUtilityGroup = 'true'
 
   modeGroup.append(inspectBtn, annotateBtn)
-  utilityGroup.append(pauseBtn, hotkeyHint)
+  panelHeader.append(panelHeaderCopy, panelHeaderActions)
+  utilityGroup.append(hotkeyHint)
+  panelHeaderActions.append(pauseText, pauseBtn)
   panel.append(panelHeader, modeGroup, utilityGroup)
   titleBlock.append(titleSpan, stateSpan)
   content.append(indicator, titleBlock)
@@ -320,6 +329,9 @@ export function updateBadgeContent(ctx: unknown): void {
   const pauseBtn = state.badge.querySelector(
     `[data-inspecto-launcher-action="pause"]`,
   ) as HTMLButtonElement | null
+  const pauseText = state.badge.querySelector(
+    `[data-inspecto-launcher-pause-text]`,
+  ) as HTMLDivElement | null
   const hotkeyHint = state.badge.querySelector(
     `[data-inspecto-launcher-hint="hotkey"]`,
   ) as HTMLDivElement | null
@@ -332,6 +344,7 @@ export function updateBadgeContent(ctx: unknown): void {
     !inspectBtn ||
     !annotateBtn ||
     !pauseBtn ||
+    !pauseText ||
     !hotkeyHint
   ) {
     return
@@ -345,39 +358,46 @@ export function updateBadgeContent(ctx: unknown): void {
   let stateLabel: string
 
   if (state.disabled) {
-    stateLabel = 'Selection paused'
+    stateLabel = t('launcher.state.paused')
     indicator.dataset.state = 'paused'
     state.badge.classList.remove('active')
     state.badge.classList.add('disabled')
   } else if (state.mode === 'annotate') {
-    stateLabel = 'Annotate mode'
+    stateLabel = t('launcher.state.annotate')
     indicator.dataset.state = 'annotate'
     state.badge.classList.remove('disabled')
     state.badge.classList.add('active')
   } else if (state.active) {
-    stateLabel = 'Inspect mode'
+    stateLabel = t('launcher.state.inspect')
     indicator.dataset.state = 'inspect'
     state.badge.classList.remove('disabled')
     state.badge.classList.add('active')
   } else {
-    stateLabel = 'Ready'
+    stateLabel = t('launcher.state.ready')
     indicator.dataset.state = 'ready'
     state.badge.classList.remove('active', 'disabled')
   }
 
   stateSpan.dataset.state = indicator.dataset.state
   stateSpan.hidden = false
-  titleSpan.textContent = 'Inspecto'
+  titleSpan.textContent = t('launcher.title')
   stateSpan.textContent = stateLabel
 
   panel.style.display = state.launcherPanelOpen ? 'flex' : 'none'
-  pauseBtn.innerHTML = state.disabled
-    ? '<span data-inspecto-launcher-title="true">Resume selection</span><span data-inspecto-launcher-description="true">Start capturing page clicks again</span>'
-    : '<span data-inspecto-launcher-title="true">Pause selection</span><span data-inspecto-launcher-description="true">Use the page normally for a moment</span>'
+  const isPaused = state.disabled
+  pauseBtn.setAttribute(
+    'aria-label',
+    isPaused ? t('launcher.action.resume.title') : t('launcher.action.pause.title'),
+  )
+  pauseBtn.setAttribute('aria-pressed', isPaused ? 'true' : 'false')
+  pauseBtn.innerHTML = isPaused ? playIconSvg : pauseIconSvg
+  pauseText.textContent = isPaused
+    ? t('launcher.action.resume.title')
+    : t('launcher.action.pause.title')
   hotkeyHint.textContent =
     getEffectiveHotKeys(state) === false
-      ? 'Hotkey disabled. Open the launcher to choose Inspect or Annotate.'
-      : `Hotkey: ${getHotKeyLabel(state)} for quick jump`
+      ? t('launcher.hint.hotkeyDisabled')
+      : t('launcher.hint.hotkeyQuickJump', { hotkey: getHotKeyLabel(state) })
   inspectBtn.style.display = state.disabled ? 'none' : 'inline-flex'
   annotateBtn.style.display = state.disabled ? 'none' : 'inline-flex'
 

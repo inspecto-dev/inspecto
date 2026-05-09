@@ -260,7 +260,6 @@ The batch protocol stays simple:
 interface SendAnnotationsToAiRequest {
   instruction?: string
   annotations: AnnotationTransport[]
-  responseMode?: 'unified' | 'per-annotation'
   runtimeContext?: RuntimeContextEnvelope
   cssContextPrompt?: string
 }
@@ -270,7 +269,6 @@ Recommended defaults:
 
 - send one `AnnotationTransport` per saved record
 - include the current draft if it is complete enough to send
-- keep `responseMode = 'unified'`
 - keep screenshot transport out of the current annotate surface until screenshot UX is reintroduced
 
 ## Evidence Strategy

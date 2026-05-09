@@ -5,6 +5,7 @@ import type {
   RuntimeEvidenceRecord,
   SourceLocation,
 } from '@inspecto-dev/types'
+import { runtimeSummaryLabel, t } from './i18n.js'
 import {
   errorMsgClass,
   menuContextPreviewClass,
@@ -39,8 +40,8 @@ export function createAskInput(placeholder?: string) {
   const input = document.createElement('input')
   input.className = menuInputClass
   input.type = 'text'
-  input.placeholder = placeholder ?? 'Add a custom ask or extra instruction...'
-  input.setAttribute('aria-label', 'Custom ask')
+  input.placeholder = placeholder ?? t('menu.ask.placeholder.default')
+  input.setAttribute('aria-label', t('menu.ask.ariaLabel'))
 
   const sendIcon = document.createElement('div')
   sendIcon.className = menuInputIconClass
@@ -58,11 +59,39 @@ export function showError(menu: HTMLElement, message: string, errorCode?: string
 
   const errEl = document.createElement('div')
   errEl.className = errorMsgClass
-  errEl.textContent =
-    errorCode === 'FILE_NOT_FOUND'
-      ? 'Source file not found. Is the server running?'
-      : `Error: ${message}`
+  errEl.textContent = formatMenuErrorMessage(message, errorCode)
   menu.appendChild(errEl)
+}
+
+function formatMenuErrorMessage(message: string, errorCode?: string): string {
+  if (errorCode === 'CLIENT_CONFIG_UNAVAILABLE') {
+    return [
+      'Inspecto is not connected to the local dev server or could not load its client config.',
+      'Restart your dev server and confirm `@inspecto-dev/plugin` is installed in the active build config, then run `inspecto doctor` or `npx @inspecto-dev/cli doctor` if this continues.',
+    ].join(' ')
+  }
+
+  if (errorCode === 'SERVER_UNAVAILABLE') {
+    return 'Inspecto could not reach the local dev server. Restart your dev server, then try again. If it still fails, run `inspecto doctor` or `npx @inspecto-dev/cli doctor` from the project root.'
+  }
+
+  if (errorCode === 'FILE_NOT_FOUND') {
+    return 'Source file not found. Restart the dev server or run `npx @inspecto-dev/cli doctor` from the project root.'
+  }
+
+  if (errorCode === 'IDE_UNAVAILABLE' || errorCode === 'IDE_NOT_FOUND') {
+    return 'Unable to open the source file in your editor. Confirm the editor command or URI scheme is available, and set the `ide` field in `.inspecto/settings.local.json` if auto-detection chooses the wrong editor.'
+  }
+
+  if (errorCode === 'EXTENSION_NOT_INSTALLED') {
+    return 'The target AI extension is not installed or not available in this editor. Install it, then run `npx @inspecto-dev/cli doctor` if dispatch still fails.'
+  }
+
+  if (errorCode === 'CLIPBOARD_WRITE_FAILED') {
+    return 'Inspecto could not write the fallback prompt to the clipboard. Check browser clipboard permissions and try again.'
+  }
+
+  return `Error: ${message}`
 }
 
 export function isFixIntent(intent: Pick<IntentConfig, 'id' | 'aiIntent'>): boolean {
@@ -99,7 +128,7 @@ export function createRuntimeContextUi(
   const toggle = document.createElement('button')
   toggle.type = 'button'
   toggle.className = menuContextToggleClass
-  toggle.textContent = 'Show preview'
+  toggle.textContent = t('menu.preview.show')
 
   const preview = document.createElement('div')
   preview.className = menuContextPreviewClass
@@ -110,7 +139,7 @@ export function createRuntimeContextUi(
     event.preventDefault()
     event.stopPropagation()
     preview.hidden = !preview.hidden
-    toggle.textContent = preview.hidden ? 'Show preview' : 'Hide preview'
+    toggle.textContent = preview.hidden ? t('menu.preview.show') : t('menu.preview.hide')
   })
 
   container.append(toggle, preview)
@@ -122,15 +151,11 @@ export function formatRuntimeContextSummary(runtimeContext: RuntimeContextEnvelo
   const { runtimeErrorCount, failedRequestCount } = runtimeContext.summary
 
   if (runtimeErrorCount > 0) {
-    parts.push(
-      `${runtimeErrorCount} ${runtimeErrorCount === 1 ? 'runtime error' : 'runtime errors'}`,
-    )
+    parts.push(runtimeSummaryLabel('error', runtimeErrorCount))
   }
 
   if (failedRequestCount > 0) {
-    parts.push(
-      `${failedRequestCount} ${failedRequestCount === 1 ? 'failed request' : 'failed requests'}`,
-    )
+    parts.push(runtimeSummaryLabel('request', failedRequestCount))
   }
 
   return parts.join(' • ')

@@ -2,7 +2,6 @@ import type {
   IdeType,
   Provider,
   ProviderMode,
-  ScreenshotContext,
   ServerState,
   ToolOverrides,
 } from '@inspecto-dev/types'
@@ -28,7 +27,6 @@ export interface PromptDispatchPayload {
   line?: number
   column?: number
   snippet?: string
-  screenshotContext?: ScreenshotContext
 }
 
 export interface PromptDispatchResult {
@@ -77,7 +75,6 @@ export function dispatchPromptThroughIde(
     line: payload.line,
     column: payload.column,
     snippet: payload.snippet,
-    ...(payload.screenshotContext ? { screenshotContext: payload.screenshotContext } : {}),
     overrides: runtime.overrides,
     autoSend: runtime.autoSend,
   })

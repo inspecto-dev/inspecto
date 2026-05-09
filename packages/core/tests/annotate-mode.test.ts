@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AnnotationTransport, SendAnnotationsToAiRequest } from '@inspecto-dev/types'
+import { type SendAnnotationsToAiRequest } from '@inspecto-dev/types'
 import { mountInspector, unmountInspector } from '../src/index.js'
 import { buildAnnotateFullPrompt } from '../src/annotate-full-prompt.js'
-import { sendAnnotationsToAi, setBaseUrl } from '../src/http.js'
+import { openFileWithDiagnostics, sendAnnotationsToAi, setBaseUrl } from '../src/http.js'
+import { toAnnotateErrorMessage } from '../src/component-annotate-ui.js'
+
+const SYSTEM_STARTED_MESSAGE = 'Agent claimed this task through MCP.'
 
 describe('annotate mode transport', () => {
   const fetchMock = vi.fn()
@@ -10,7 +13,7 @@ describe('annotate mode transport', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     vi.stubGlobal('fetch', fetchMock)
-    setBaseUrl('http://127.0.0.1:5678')
+    setBaseUrl('http://0.0.0.0:5678')
     vi.useFakeTimers()
   })
 
@@ -42,7 +45,7 @@ describe('annotate mode transport', () => {
     await sendAnnotationsToAi(req)
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:5678/inspecto/api/v1/ai/dispatch/annotations',
+      'http://0.0.0.0:5678/inspecto/api/v1/ai/dispatch/annotations',
       expect.objectContaining({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -50,9 +53,101 @@ describe('annotate mode transport', () => {
       }),
     )
   })
+
+  it('opens source files through the plugin server source endpoint', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true }),
+    })
+
+    await expect(
+      openFileWithDiagnostics({
+        file: '/repo/App.tsx',
+        line: 12,
+        column: 4,
+      }),
+    ).resolves.toEqual({ success: true })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://0.0.0.0:5678/inspecto/api/v1/source/open',
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file: '/repo/App.tsx',
+          line: 12,
+          column: 4,
+        }),
+      }),
+    )
+  })
+
+  it('returns server unavailable when annotation dispatch cannot reach the dev server', async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError('fetch failed'))
+
+    const result = await sendAnnotationsToAi({
+      annotations: [
+        {
+          note: 'Review this button spacing.',
+          intent: 'review',
+          targets: [
+            {
+              location: { file: '/repo/App.tsx', line: 12, column: 4 },
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Local dev server unavailable',
+      errorCode: 'SERVER_UNAVAILABLE',
+    })
+  })
+
+  it('formats server unavailable annotation errors with a clear next step', () => {
+    expect(toAnnotateErrorMessage(null, 'SERVER_UNAVAILABLE')).toContain(
+      'Inspecto could not reach the local dev server',
+    )
+    expect(toAnnotateErrorMessage(null, 'SERVER_UNAVAILABLE')).toContain('inspecto doctor')
+  })
 })
 
 describe('annotate mode integration', () => {
+  class FakeEventSource {
+    static instances: FakeEventSource[] = []
+
+    readonly listeners = new Map<string, Array<(event: Event) => void>>()
+    closed = false
+
+    constructor(readonly url: string) {
+      FakeEventSource.instances.push(this)
+    }
+
+    addEventListener(type: string, listener: (event: Event) => void): void {
+      const listeners = this.listeners.get(type) ?? []
+      listeners.push(listener)
+      this.listeners.set(type, listeners)
+    }
+
+    close(): void {
+      this.closed = true
+    }
+
+    emit(type: string, payload: unknown): void {
+      const listeners = this.listeners.get(type) ?? []
+      const event = { data: JSON.stringify(payload) } as Event
+      for (const listener of listeners) {
+        listener(event)
+      }
+    }
+
+    static reset(): void {
+      FakeEventSource.instances = []
+    }
+  }
+
   function configResponse(overrides: Record<string, unknown> = {}) {
     return {
       ok: true,
@@ -71,6 +166,7 @@ describe('annotate mode integration', () => {
 
   beforeEach(() => {
     vi.useFakeTimers()
+    FakeEventSource.reset()
   })
 
   afterEach(() => {
@@ -606,10 +702,10 @@ describe('annotate mode integration', () => {
     )
     instructionInput.dispatchEvent(new Event('input', { bubbles: true }))
 
-    const previewButton = shadowRoot.querySelector(
-      '[data-inspecto-annotate-raw-prompt-button="true"]',
-    ) as HTMLButtonElement
-    previewButton.click()
+    const previewButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.getAttribute('title') === 'View raw prompt payload',
+    )
+    previewButton?.click()
 
     const preview = shadowRoot.querySelector(
       '[data-inspecto-annotate-raw-preview="true"]',
@@ -707,7 +803,8 @@ describe('annotate mode integration', () => {
     )
     expect(inspector.runtimeContextCollector.snapshot().records).toHaveLength(1)
 
-    const annotatePauseButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+    const annotateSidebar = shadowRoot.querySelector('.inspecto-annotate-sidebar') as HTMLElement
+    const annotatePauseButton = Array.from(annotateSidebar.querySelectorAll('button')).find(
       button => button.getAttribute('aria-label') === 'Pause selection',
     ) as HTMLButtonElement
     annotatePauseButton.click()
@@ -754,7 +851,9 @@ describe('annotate mode integration', () => {
     expect(panel.textContent).toContain('Choose a mode')
     expect(panel.textContent).toContain('Your next page click will follow this mode.')
     expect(panel.textContent).toContain('Click one component to inspect or ask AI')
-    expect(panel.textContent).toContain('Capture notes across components, then Ask AI once')
+    expect(panel.textContent).toContain(
+      'Capture notes across components, then create a task or ask once',
+    )
 
     const annotateButton = shadowRoot.querySelector(
       '[data-inspecto-launcher-action="annotate"]',
@@ -791,7 +890,7 @@ describe('annotate mode integration', () => {
       '[data-inspecto-launcher-action="annotate"]',
     ) as HTMLButtonElement
 
-    expect(resumeButton.textContent).toContain('Resume selection')
+    expect(resumeButton.getAttribute('aria-label')).toBe('Resume selection')
     resumeButton.click()
 
     expect(inspectButton.getAttribute('aria-pressed')).toBe('false')
@@ -939,34 +1038,6 @@ describe('annotate mode integration', () => {
     expect(sidebarToggle.getAttribute('data-visual-state')).toBe('active')
   })
 
-  it('hides annotate screenshot entry points for now even when screenshot support is available', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(configResponse({ screenshotContext: { enabled: true } }))
-    vi.stubGlobal('fetch', fetchMock)
-
-    document.body.innerHTML =
-      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
-
-    const _inspector = await mountInspector({ defaultActive: true, mode: 'annotate' })
-    document
-      .getElementById('target')!
-      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
-    await Promise.resolve()
-
-    const host = document.querySelector('inspecto-overlay') as HTMLElement
-    const shadowRoot = host.shadowRoot!
-    const sidebarToggle = shadowRoot.querySelector(
-      '.inspecto-annotate-sidebar button[aria-label="Attach screenshot context"]',
-    ) as HTMLButtonElement | null
-    const composerToggle = shadowRoot.querySelector(
-      '[data-inspecto-annotate-composer] button[aria-label="Attach screenshot context"]',
-    ) as HTMLButtonElement | null
-
-    expect(sidebarToggle?.style.display).toBe('none')
-    expect(composerToggle?.style.display).toBe('none')
-  })
-
   it('keeps CSS toggle scoped to the current element prompt only', async () => {
     const fetchMock = vi.fn().mockResolvedValue(configResponse())
     vi.stubGlobal('fetch', fetchMock)
@@ -1021,10 +1092,10 @@ describe('annotate mode integration', () => {
     secondNote.value = 'Review the item.'
     secondNote.dispatchEvent(new Event('input', { bubbles: true }))
 
-    const previewButton = shadowRoot.querySelector(
-      '[data-inspecto-annotate-raw-prompt-button="true"]',
-    ) as HTMLButtonElement
-    previewButton.click()
+    const previewButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.getAttribute('title') === 'View raw prompt payload',
+    )
+    previewButton?.click()
 
     const preview = shadowRoot.querySelector(
       '[data-inspecto-annotate-raw-preview="true"]',
@@ -1050,11 +1121,10 @@ describe('annotate mode integration', () => {
     expect(composerToggle.getAttribute('aria-pressed')).toBe('false')
   })
 
-  it('keeps the runtime bug icon state intact in annotate mode without a screenshot toggle', async () => {
+  it('keeps the runtime bug icon state intact in annotate mode', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       configResponse({
         runtimeContext: { enabled: true, preview: true },
-        screenshotContext: { enabled: true },
       }),
     )
     vi.stubGlobal('fetch', fetchMock)
@@ -1083,16 +1153,12 @@ describe('annotate mode integration', () => {
     const runtimeToggle = shadowRoot.querySelector(
       '.inspecto-annotate-sidebar button[aria-label="Attach runtime context"]',
     ) as HTMLButtonElement
-    const screenshotToggle = shadowRoot.querySelector(
-      '.inspecto-annotate-sidebar button[aria-label="Attach screenshot context"]',
-    ) as HTMLButtonElement | null
     const badge = runtimeToggle.querySelector('[data-runtime-error-badge]') as HTMLElement
 
     runtimeToggle.click()
     expect(runtimeToggle.getAttribute('aria-pressed')).toBe('true')
     expect(runtimeToggle.getAttribute('data-visual-state')).toBe('active')
     expect(badge.hidden).toBe(false)
-    expect(screenshotToggle?.style.display).toBe('none')
     expect(runtimeToggle.getAttribute('aria-pressed')).toBe('true')
     expect(runtimeToggle.getAttribute('data-visual-state')).toBe('active')
     expect(badge.hidden).toBe(false)
@@ -1249,67 +1315,6 @@ describe('annotate mode integration', () => {
     expect(req.cssContextPrompt).toContain('display=flex')
   })
 
-  it('resolves batch screenshot targets from outgoing annotations when another draft is open', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(configResponse())
-    vi.stubGlobal('fetch', fetchMock)
-
-    document.body.innerHTML = `
-      <button data-inspecto="/repo/App.tsx:10:2" id="first">First</button>
-      <button data-inspecto="/repo/App.tsx:14:2" id="second">Second</button>
-      <button data-inspecto="/repo/App.tsx:18:2" id="third">Third</button>
-    `
-
-    const inspector = (await mountInspector({ defaultActive: true, mode: 'annotate' })) as any
-
-    document
-      .getElementById('third')!
-      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
-    await Promise.resolve()
-
-    const batchAnnotations: AnnotationTransport[] = [
-      {
-        note: 'First note',
-        intent: 'review',
-        targets: [{ location: { file: '/repo/App.tsx', line: 10, column: 2 }, selector: '#first' }],
-      },
-      {
-        note: 'Second note',
-        intent: 'review',
-        targets: [
-          { location: { file: '/repo/App.tsx', line: 14, column: 2 }, selector: '#second' },
-        ],
-      },
-    ]
-
-    expect(inspector.resolveAnnotateScreenshotElement(batchAnnotations, 'batch')).toBe(
-      document.getElementById('first'),
-    )
-  })
-
-  it('appends screenshot context details to annotate prompt previews when present', () => {
-    const prompt = buildAnnotateFullPrompt({
-      instruction: 'Review this feedback.',
-      annotations: [
-        {
-          note: 'Adjust the spacing.',
-          intent: 'review',
-          targets: [{ location: { file: '/repo/App.tsx', line: 10, column: 2 } }],
-        },
-      ],
-      responseMode: 'unified',
-      screenshotContext: {
-        enabled: true,
-        capturedAt: '2026-04-04T12:00:00.000Z',
-        mimeType: 'image/png',
-        imageDataUrl: 'data:image/png;base64,AAA=',
-      },
-    })
-
-    expect(prompt).toContain('Visual screenshot context attached:')
-    expect(prompt).toContain('capturedAt=2026-04-04T12:00:00.000Z')
-    expect(prompt).toContain('mimeType=image/png')
-  })
-
   it('builds a minimal single-selection prompt from the selected element', () => {
     const prompt = buildAnnotateFullPrompt({
       instruction: 'Review li spacing here.',
@@ -1326,7 +1331,6 @@ describe('annotate mode integration', () => {
           ],
         },
       ],
-      responseMode: 'unified',
     })
 
     expect(prompt).toContain('Review li spacing here.')
@@ -1361,7 +1365,6 @@ describe('annotate mode integration', () => {
           ],
         },
       ],
-      responseMode: 'unified',
     })
 
     expect(prompt).toContain('Compare li and li.')
@@ -1400,7 +1403,6 @@ describe('annotate mode integration', () => {
           ],
         },
       ],
-      responseMode: 'unified',
     })
 
     expect(prompt).toContain('Compare li with button.badge and Unknown target.')
@@ -1410,27 +1412,6 @@ describe('annotate mode integration', () => {
     expect(prompt).not.toContain('selector=.item')
     expect(prompt).not.toContain('selector=.cta .badge')
     expect(prompt).not.toContain('- button.badge | App.tsx:18:4 | note=Check hierarchy.')
-  })
-
-  it('omits screenshot context details when no image payload is available', () => {
-    const prompt = buildAnnotateFullPrompt({
-      instruction: 'Review this feedback.',
-      annotations: [
-        {
-          note: 'Adjust the spacing.',
-          intent: 'review',
-          targets: [{ location: { file: '/repo/App.tsx', line: 10, column: 2 } }],
-        },
-      ],
-      responseMode: 'unified',
-      screenshotContext: {
-        enabled: true,
-        capturedAt: '2026-04-04T12:00:00.000Z',
-        mimeType: 'image/png',
-      },
-    })
-
-    expect(prompt).not.toContain('Visual screenshot context attached:')
   })
 
   it('resets the annotate runtime toggle after exiting and re-entering annotate mode', async () => {
@@ -1489,7 +1470,8 @@ describe('annotate mode integration', () => {
     const host = document.querySelector('inspecto-overlay') as HTMLElement
     const shadowRoot = host.shadowRoot!
 
-    const pauseButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+    const annotateSidebar = shadowRoot.querySelector('.inspecto-annotate-sidebar') as HTMLElement
+    const pauseButton = Array.from(annotateSidebar.querySelectorAll('button')).find(
       button => button.getAttribute('aria-label') === 'Pause selection',
     ) as HTMLButtonElement
     pauseButton.click()
@@ -1506,7 +1488,7 @@ describe('annotate mode integration', () => {
 
     expect(inspector.runtimeContextCollector.snapshot().records).toHaveLength(1)
 
-    const resumeButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+    const resumeButton = Array.from(annotateSidebar.querySelectorAll('button')).find(
       button => button.getAttribute('aria-label') === 'Resume selection',
     ) as HTMLButtonElement
     resumeButton.click()
@@ -2391,10 +2373,561 @@ describe('annotate mode integration', () => {
     })
   })
 
-  it('uses configured annotation response mode for record sends', async () => {
+  it('creates an agent task from annotate mode when Create Task is used', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(configResponse({ annotationResponseMode: 'per-annotation' }))
+      .mockResolvedValueOnce(configResponse())
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            instruction: '',
+            annotations: [],
+            messages: [],
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    const createTask = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Create Task',
+    ) as HTMLButtonElement
+
+    createTask.click()
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+
+    const req = JSON.parse(fetchMock.mock.calls[1]![1].body as string) as SendAnnotationsToAiRequest
+    expect(req.deliveryMode).toBe('agent')
+    expect(req.annotations).toHaveLength(1)
+  })
+
+  it('preserves the annotate sidebar draft after Create Task succeeds', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(configResponse())
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+            instruction: 'Preserve this task context.',
+            annotations: [],
+            messages: [],
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    const instructionInput = shadowRoot.querySelector(
+      '[aria-label="Overall goal"]',
+    ) as HTMLDivElement
+    instructionInput.textContent = 'Preserve this task context.'
+    instructionInput.dispatchEvent(new Event('input', { bubbles: true }))
+
+    const note = shadowRoot.querySelector(
+      '[data-inspecto-annotate-composer] textarea',
+    ) as HTMLTextAreaElement
+    note.value = 'Keep this selected component in the sidebar.'
+    note.dispatchEvent(new Event('input', { bubbles: true }))
+
+    const createTask = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Create Task',
+    ) as HTMLButtonElement
+
+    createTask.click()
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+
+    const req = JSON.parse(fetchMock.mock.calls[1]![1].body as string) as SendAnnotationsToAiRequest
+    expect(req.instruction).toBe('Preserve this task context.')
+    expect(req.annotations[0]?.note).toBe('Keep this selected component in the sidebar.')
+
+    const preservedInstruction = shadowRoot.querySelector(
+      '[aria-label="Overall goal"]',
+    ) as HTMLDivElement
+    const preservedNote = shadowRoot.querySelector(
+      '[data-inspecto-annotate-composer] textarea',
+    ) as HTMLTextAreaElement
+
+    expect(preservedInstruction.childNodes[0]?.textContent).toBe('Preserve this task context.')
+    expect(preservedNote.value).toBe('Keep this selected component in the sidebar.')
+    expect(shadowRoot.textContent).toContain('Task created from your notes.')
+  })
+
+  it('subscribes to live session updates after creating an agent task', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(configResponse())
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+            instruction: '',
+            annotations: [],
+            messages: [],
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource as unknown as typeof EventSource)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    const createTask = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Create Task',
+    ) as HTMLButtonElement
+
+    createTask.click()
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+    expect(FakeEventSource.instances).toHaveLength(1)
+    expect(FakeEventSource.instances[0]?.url).toBe(
+      'http://0.0.0.0:5678/inspecto/api/v1/sessions/events?sessionId=session-1',
+    )
+
+    FakeEventSource.instances[0]?.emit('session-message-appended', {
+      type: 'session-message-appended',
+      session: {
+        id: 'session-1',
+        status: 'in_progress',
+        createdAt: 100,
+        updatedAt: 120,
+        instruction: '',
+        annotations: [],
+        messages: [
+          {
+            id: 'message-1',
+            role: 'agent',
+            text: 'Working on it now.',
+            createdAt: 120,
+          },
+        ],
+      },
+    })
+    await Promise.resolve()
+
+    expect(shadowRoot.textContent).toContain('◔ in progress')
+    expect(shadowRoot.textContent).toContain('Working on it now.')
+
+    FakeEventSource.instances[0]?.emit('session-status-updated', {
+      type: 'session-status-updated',
+      session: {
+        id: 'session-1',
+        status: 'resolved',
+        createdAt: 100,
+        updatedAt: 140,
+        resolvedAt: 140,
+        instruction: '',
+        annotations: [],
+        messages: [
+          {
+            id: 'message-1',
+            role: 'agent',
+            text: 'Working on it now.',
+            createdAt: 120,
+          },
+        ],
+      },
+    })
+    await Promise.resolve()
+
+    expect(FakeEventSource.instances[0]?.closed).toBe(true)
+    expect(shadowRoot.textContent).toContain('complete')
+  })
+
+  it('shows a task-created status after creating an agent task', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(configResponse())
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+            instruction: '',
+            annotations: [],
+            messages: [],
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource as unknown as typeof EventSource)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    const createTask = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Create Task',
+    ) as HTMLButtonElement
+
+    createTask.click()
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+
+    expect(shadowRoot.textContent).toContain('Task created from your notes.')
+    expect(shadowRoot.textContent).toContain('If it has not started, ask AI to continue.')
+  })
+
+  it('shows the standard pending task hint when Create Task creates a task', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(configResponse())
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+            instruction: '',
+            annotations: [],
+            messages: [],
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource as unknown as typeof EventSource)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    const createTask = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Create Task',
+    ) as HTMLButtonElement
+
+    createTask.click()
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+
+    expect(shadowRoot.textContent).toContain('Task created from your notes.')
+    expect(shadowRoot.textContent).toContain('If it has not started, ask AI to continue.')
+  })
+
+  it('renders acknowledged task system updates before the first agent reply', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(configResponse())
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'acknowledged',
+            createdAt: 100,
+            updatedAt: 100,
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'acknowledged',
+            createdAt: 100,
+            updatedAt: 100,
+            acknowledgedAt: 100,
+            instruction: '',
+            annotations: [],
+            messages: [],
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource as unknown as typeof EventSource)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    const createTask = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Create Task',
+    ) as HTMLButtonElement
+
+    createTask.click()
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+
+    FakeEventSource.instances[0]?.emit('session-message-appended', {
+      type: 'session-message-appended',
+      session: {
+        id: 'session-1',
+        status: 'acknowledged',
+        createdAt: 100,
+        updatedAt: 110,
+        acknowledgedAt: 100,
+        instruction: '',
+        annotations: [],
+        messages: [
+          {
+            id: 'message-system',
+            role: 'system',
+            text: SYSTEM_STARTED_MESSAGE,
+            createdAt: 110,
+          },
+        ],
+      },
+    })
+    await Promise.resolve()
+
+    expect(shadowRoot.textContent).toContain(SYSTEM_STARTED_MESSAGE)
+    expect(shadowRoot.textContent).toContain('AI connected. Waiting for update.')
+  })
+
+  it('keeps a new saved annotation after the previous task was resolved', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(configResponse())
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+            instruction: '',
+            annotations: [],
+            messages: [],
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource as unknown as typeof EventSource)
+
+    document.body.innerHTML = `
+      <button data-inspecto="/repo/App.tsx:10:2" id="first">First</button>
+      <button data-inspecto="/repo/App.tsx:20:2" id="second">Second</button>
+    `
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+
+    document
+      .getElementById('first')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    let note = shadowRoot.querySelector(
+      '[data-inspecto-annotate-composer] textarea',
+    ) as HTMLTextAreaElement
+    note.value = 'First note'
+    note.dispatchEvent(new Event('input', { bubbles: true }))
+
+    const saveNote = () =>
+      Array.from(shadowRoot.querySelectorAll('button')).find(
+        button => button.textContent === 'Save note',
+      ) as HTMLButtonElement
+    const createTask = () =>
+      Array.from(shadowRoot.querySelectorAll('button')).find(
+        button => button.textContent === 'Create Task',
+      ) as HTMLButtonElement
+
+    saveNote().click()
+    await Promise.resolve()
+    createTask().click()
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+
+    FakeEventSource.instances[0]?.emit('session-status-updated', {
+      type: 'session-status-updated',
+      session: {
+        id: 'session-1',
+        status: 'resolved',
+        createdAt: 100,
+        updatedAt: 140,
+        resolvedAt: 140,
+        instruction: '',
+        annotations: [],
+        messages: [],
+      },
+    })
+    await Promise.resolve()
+
+    document
+      .getElementById('second')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    note = shadowRoot.querySelector(
+      '[data-inspecto-annotate-composer] textarea',
+    ) as HTMLTextAreaElement
+    note.value = 'Second note'
+    note.dispatchEvent(new Event('input', { bubbles: true }))
+
+    saveNote().click()
+    await Promise.resolve()
+
+    expect(shadowRoot.querySelectorAll('[data-inspecto-annotate-overlay-box]')).toHaveLength(1)
+    expect(shadowRoot.textContent).toContain('Second note')
+    expect(shadowRoot.textContent).not.toContain('First note')
+    const currentTaskTitle = Array.from(shadowRoot.querySelectorAll('div')).find(
+      node => node.textContent === 'Current task',
+    ) as HTMLDivElement | undefined
+    expect(currentTaskTitle?.parentElement?.parentElement).toHaveProperty('style.display', 'none')
+  })
+
+  it('always sends unified annotation response mode', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(configResponse())
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true }),
@@ -2431,6 +2964,5 @@ describe('annotate mode integration', () => {
 
     const req = JSON.parse(fetchMock.mock.calls[1]![1].body as string) as SendAnnotationsToAiRequest
     expect(req.instruction).toBe('')
-    expect(req.responseMode).toBe('per-annotation')
   })
 })

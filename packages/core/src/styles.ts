@@ -13,7 +13,7 @@ export function applyHeaderIconButtonStyles(button: HTMLButtonElement): void {
   button.style.borderColor = 'var(--inspecto-border-subtle)'
   button.style.background = 'var(--inspecto-surface-subtle)'
   button.style.color = 'var(--inspecto-text-secondary)'
-  button.style.font = '600 14px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+  button.style.font = '600 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
   button.style.borderRadius = 'var(--inspecto-radius-pill)'
   button.style.display = 'inline-flex'
   button.style.alignItems = 'center'

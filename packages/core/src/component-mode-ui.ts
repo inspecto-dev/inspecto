@@ -9,7 +9,6 @@ type ModeUiContext = {
   mode: 'inspect' | 'annotate'
   annotateCapturePaused: boolean
   annotateRuntimeContextEnabled: boolean
-  annotateScreenshotContextEnabled: boolean
   annotateCssContextEnabled: boolean
   annotateSidebar: ReturnType<typeof createAnnotateSidebar> | null
   annotateOverlay: { clear(): void } | null
@@ -54,7 +53,6 @@ export function syncModeUi(ctx: unknown): void {
 
   state.annotateCapturePaused = false
   state.annotateRuntimeContextEnabled = false
-  state.annotateScreenshotContextEnabled = false
   state.annotateCssContextEnabled = false
   state.annotateSidebar?.destroy()
   state.annotateSidebar = null

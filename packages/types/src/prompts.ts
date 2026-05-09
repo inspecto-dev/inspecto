@@ -1,17 +1,11 @@
 import type { HotKeys } from './common.js'
-import type { Provider } from './providers.js'
-import type {
-  RuntimeContextConfig,
-  RuntimeContextEnvelope,
-  ScreenshotContext,
-  ScreenshotContextConfig,
-} from './runtime.js'
+import type { RuntimeContextConfig, RuntimeContextEnvelope } from './runtime.js'
 import type { SourceLocation } from './common.js'
 import type { AiErrorCode } from './runtime.js'
+import type { Provider } from './providers.js'
 
 export type AiIntent = 'ask' | 'fix' | 'review' | 'redesign'
 export type AnnotationIntent = AiIntent
-export type IntentLabels = Partial<Record<Provider | 'clipboard', string>>
 
 export interface IntentConfigBase {
   id: string
@@ -35,18 +29,20 @@ export type InspectoPromptsConfig =
       items: (string | IntentConfig)[]
     }
 
+export type InspectoLocale = 'en' | 'zh-CN' | (string & {})
+export type InspectoMessages = Partial<Record<string, string>>
+
 export interface InspectorOptions {
+  locale?: InspectoLocale
+  messages?: InspectoMessages
   hotKeys?: HotKeys
-  labels?: IntentLabels
   askPlaceholder?: string
   serverUrl?: string
   maxSnippetLines?: number
   defaultActive?: boolean
   theme?: 'light' | 'dark' | 'auto'
   includeSnippet?: boolean
-  annotationResponseMode?: 'unified' | 'per-annotation'
   runtimeContext?: RuntimeContextConfig
-  screenshotContext?: ScreenshotContextConfig
 }
 
 export interface SendToAiRequest {
@@ -55,7 +51,6 @@ export interface SendToAiRequest {
   prompt?: string
   target?: Provider
   runtimeContext?: RuntimeContextEnvelope
-  screenshotContext?: ScreenshotContext
 }
 
 export interface SendToAiResponse {

@@ -1,12 +1,8 @@
-import type {
-  IntentConfig,
-  RuntimeContextEnvelope,
-  ScreenshotContext,
-  SourceLocation,
-} from '@inspecto-dev/types'
+import type { IntentConfig, RuntimeContextEnvelope, SourceLocation } from '@inspecto-dev/types'
 import { appendCssContextToPrompt } from './css-context.js'
-import { appendScreenshotContextToPrompt, buildPromptForIntent } from './fix-bug-prompt.js'
+import { buildPromptForIntent } from './fix-bug-prompt.js'
 import { fetchSnippet } from './http.js'
+import { t } from './i18n.js'
 import { isFixUiIntent } from './menu-helpers.js'
 import { menuItemClass } from './styles.js'
 
@@ -18,7 +14,6 @@ export function createIntentActionButtons(input: {
   resolveRuntimeContext: (
     intent: Pick<IntentConfig, 'id' | 'aiIntent'>,
   ) => RuntimeContextEnvelope | null
-  resolveScreenshotContext: () => Promise<ScreenshotContext | null>
   resolveCssContextPrompt: (intent?: Pick<IntentConfig, 'id'>) => string | null
   onSend: (payload: {
     label: string
@@ -26,7 +21,6 @@ export function createIntentActionButtons(input: {
     prompt: string
     snippetText: string
     runtimeContext: RuntimeContextEnvelope | null
-    screenshotContext: ScreenshotContext | null
   }) => Promise<void>
   onError: (message: string, errorCode?: string) => void
 }): HTMLButtonElement[] {
@@ -39,7 +33,7 @@ export function createIntentActionButtons(input: {
     btn.addEventListener('click', async event => {
       event.stopPropagation()
       btn.disabled = true
-      btn.textContent = 'Sending...'
+      btn.textContent = t('menu.sending')
 
       try {
         let snippetResult = null
@@ -53,15 +47,11 @@ export function createIntentActionButtons(input: {
         }
 
         const requestRuntimeContext = input.resolveRuntimeContext(intent)
-        const requestScreenshotContext = await input.resolveScreenshotContext()
         const requestCssContextPrompt = input.resolveCssContextPrompt(
           isFixUiIntent(intent) ? intent : undefined,
         )
         const prompt = appendCssContextToPrompt(
-          appendScreenshotContextToPrompt(
-            buildPromptForIntent(intent, input.location, snippetResult, requestRuntimeContext),
-            requestScreenshotContext,
-          ),
+          buildPromptForIntent(intent, input.location, snippetResult, requestRuntimeContext),
           requestCssContextPrompt,
         )
 
@@ -71,7 +61,6 @@ export function createIntentActionButtons(input: {
           prompt,
           snippetText: snippetResult?.snippet || '',
           runtimeContext: requestRuntimeContext,
-          screenshotContext: requestScreenshotContext,
         })
       } catch (err) {
         btn.disabled = false

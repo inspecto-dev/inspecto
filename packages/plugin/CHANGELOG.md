@@ -1,5 +1,13 @@
 # @inspecto-dev/plugin
 
+## 0.3.9
+
+### Patch Changes
+
+- release 0.3.9
+- Updated dependencies
+  - @inspecto-dev/types@0.3.9
+
 ## 0.3.8
 
 ### Patch Changes

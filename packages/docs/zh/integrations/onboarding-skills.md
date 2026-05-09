@@ -70,18 +70,20 @@ Set up Inspecto in this project
 
 这里列出了所有支持的助手及其安装目标。
 
-| 助手        | 类型         | 安装目标                                 | 说明                             |
-| :---------- | :----------- | :--------------------------------------- | :------------------------------- |
-| Codex       | Native skill | `.agents/skills/` 或 `~/.agents/skills/` | 用户级或项目级。                 |
-| Claude Code | Native skill | `.claude/skills/` 或 `~/.claude/skills/` | 用户级或项目级。                 |
-| Copilot     | Native skill | `.github/skills/inspecto-onboarding/`    | 项目级。请在目标项目根目录执行。 |
-| Cursor      | Native skill | `.cursor/skills/inspecto-onboarding/`    | 项目级。请在目标项目根目录执行。 |
-| Gemini      | Native skill | `.gemini/skills/inspecto-onboarding/`    | 项目级。请在目标项目根目录执行。 |
-| Trae        | Native skill | `.trae/skills/inspecto-onboarding/`      | 项目级。请在目标项目根目录执行。 |
-| Coco        | Native skill | `.trae/skills/inspecto-onboarding/`      | 项目级。请在目标项目根目录执行。 |
-| CodeBuddy   | Native skill | `.codebuddy/skills/inspecto-onboarding/` | 项目级。请在目标项目根目录执行。 |
+| 助手        | 类型         | 安装目标                                 | 说明                                                         |
+| :---------- | :----------- | :--------------------------------------- | :----------------------------------------------------------- |
+| Codex       | Native skill | `.agents/skills/` 或 `~/.agents/skills/` | 用户级或项目级。默认会安装 onboarding skill 和 agent skill。 |
+| Claude Code | Native skill | `.claude/skills/` 或 `~/.claude/skills/` | 用户级或项目级。                                             |
+| Copilot     | Native skill | `.github/skills/inspecto-onboarding/`    | 项目级。请在目标项目根目录执行。                             |
+| Cursor      | Native skill | `.cursor/skills/inspecto-onboarding/`    | 项目级。请在目标项目根目录执行。                             |
+| Gemini      | Native skill | `.gemini/skills/inspecto-onboarding/`    | 项目级。请在目标项目根目录执行。                             |
+| Trae        | Native skill | `.trae/skills/inspecto-onboarding/`      | 项目级。请在目标项目根目录执行。                             |
+| Coco        | Native skill | `.trae/skills/inspecto-onboarding/`      | 项目级。请在目标项目根目录执行。                             |
+| CodeBuddy   | Native skill | `.codebuddy/skills/inspecto-onboarding/` | 项目级。请在目标项目根目录执行。                             |
 
 默认情况下，所有的 onboarding 集成都会将配置写入纯本地的文件（`.inspecto/settings.local.json` 和 `.inspecto/prompts.local.json`），保持你的代码仓库干净整洁。
+
+对于 Codex，CLI 目前只会安装 skills；MCP server 配置仍需要你单独补上，所以「标注模式」不会默认切成 task-first。
 
 常见安装命令示例：
 
@@ -125,7 +127,7 @@ npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 
 :::
 
-仅当你想在运行安装之前检查阻止项，或者需要排查问题时，才使用 `inspecto integrations doctor <assistant> --host-ide <ide> --compact`。
+仅当你想在运行安装之前检查阻止项，或者需要排查问题时，才使用 `npx @inspecto-dev/cli integrations doctor <assistant> --host-ide <ide> --compact`。
 
 ## 它的底层工作原理
 
@@ -134,11 +136,9 @@ npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 1. `onboard --json`：分析项目并返回结构化的计划。
 2. `onboard --json --target <candidateId>`：如果需要选择目标，先说明这一步是在选择要接入 Inspecto 的本地开发构建目标，再使用上一次返回中的某个 candidate id 重新运行。CLI 也兼容接受返回里的 `configPath` 作为兜底值。
 3. `onboard --json --yes`：在获得你的确认后，应用代码变更。
-4. 引导你安装 IDE 插件（这是一个必选步骤）。
+4. 引导你安装 IDE 插件（如使用 IDE 模式）。
 5. 确认启动 dev server 的命令。
 
 这可以保证实际的文件修改，始终由 Inspecto CLI 的解析器安全地完成，而不是依赖助手来手动修改你的配置文件。
 
-> 关于 JSON 字段语义和自动化规则，请参阅 [Onboarding Contract](./onboarding-contract.md)。
->
 > 关于 `inspecto integrations doctor --json` 的字段语义和退出状态码，请参阅 `packages/cli/README.md`。

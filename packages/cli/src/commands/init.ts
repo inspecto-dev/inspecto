@@ -202,11 +202,15 @@ export async function init(options: InitOptions): Promise<void> {
   }
 
   // IDE detection
-  let selectedIDE: { ide: string; supported: boolean } | null = null
+  let selectedIDE: { ide: string; supported: boolean } | null
 
   if (ideProbe.detected.length === 0) {
-    log.error('No IDE detected in current project')
-    log.hint('Please open this project in a supported IDE (like VS Code)')
+    if (process.stdin.isTTY) {
+      log.warn('No IDE detected in current project')
+      selectedIDE = await promptIDEChoice([])
+    } else {
+      selectedIDE = { ide: 'none', supported: true }
+    }
   } else if (ideProbe.detected.length === 1) {
     selectedIDE = ideProbe.detected[0]!
   } else {

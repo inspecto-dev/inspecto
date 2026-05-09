@@ -317,8 +317,7 @@ export const overlayMenuStyles = `
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
   }
 
-  .${menuItemClass}[data-role="runtime-context-toggle"],
-  .${menuItemClass}[data-role="screenshot-context-toggle"] {
+  .${menuItemClass}[data-role="runtime-context-toggle"] {
     flex: 0 0 auto;
     width: 28px;
     height: 28px;

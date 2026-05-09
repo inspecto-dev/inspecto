@@ -22,9 +22,12 @@ import {
   persistCurrentDraft as persistAnnotateDraft,
   rebindCurrentAnnotationElements as rebindAnnotateElements,
   renderAnnotateSelectionOverlay as renderAnnotateOverlay,
+  refreshLatestAnnotateSession as refreshLatestAnnotateSessionState,
   restoreEditingRecord as restoreAnnotateEditingRecord,
   sendAnnotationBatch as sendAnnotateBatch,
   showAnnotateSuccess as showAnnotateBatchSuccess,
+  startLatestAnnotateSessionStream as startLatestAnnotateSessionStreamState,
+  stopLatestAnnotateSessionStream as stopLatestAnnotateSessionStreamState,
   toAnnotateErrorMessage as toAnnotateRequestErrorMessage,
   toAnnotationTransportFromRecord as toAnnotateTransportFromRecord,
 } from './component-annotate.js'
@@ -64,8 +67,6 @@ import {
 import {
   canAttachCssContext as canAttachCssEvidence,
   canAttachRuntimeContext as canAttachRuntimeEvidence,
-  canAttachScreenshotContext as canAttachScreenshotEvidence,
-  captureAnnotateScreenshotContext as captureAnnotateScreenshotEvidence,
   captureCssContextPromptForElement as captureCssPromptForElement,
   formatRuntimeContextSummary as formatRuntimeSummary,
   getAnnotateCssContextPrompt as getAnnotateCssPrompt,
@@ -74,7 +75,6 @@ import {
   getRuntimeContextLimits as getRuntimeEvidenceLimits,
   isCssContextEnabledForTarget as isCssEnabledForTarget,
   isCssContextEnabledForTransportTarget as isCssEnabledForTransportTarget,
-  resolveAnnotateScreenshotElement as resolveAnnotateScreenshotTarget,
   syncRuntimeContextCapture as syncRuntimeCapture,
 } from './component-evidence.js'
 import { createElementSelector } from './component-utils.js'
@@ -82,13 +82,14 @@ import { createRuntimeContextCollector, createRuntimeContextEnvelope } from './r
 import type {
   AnnotationTransport,
   AnnotationTarget,
+  AnnotationWorkSession,
+  AnnotationWorkSessionSummary,
   AiErrorCode,
   FeedbackRecord,
   FeedbackRecordDraft,
   InspectorOptions,
   SourceLocation,
   HotKeys,
-  ScreenshotContext,
 } from '@inspecto-dev/types'
 export type InspectorMode = 'inspect' | 'annotate'
 type InspectoOptions = InspectorOptions & { mode?: InspectorMode }
@@ -123,21 +124,28 @@ class InspectoElement extends BaseElement {
   private annotateEditingRecord: FeedbackRecord | null = null
   private badge!: HTMLDivElement
   private configLoadPromise: Promise<void> | null = null
-  private annotationResponseMode: 'unified' | 'per-annotation' = 'unified'
   private annotateInstructionDraft = DEFAULT_ANNOTATE_INSTRUCTION
   private annotateErrorMessage = ''
   private annotateRuntimeContextEnabled = false
-  private annotateScreenshotContextEnabled = false
   private annotateCssContextEnabled = false
+  private annotateDeliveryMode: 'ide' | 'agent' | 'both' = 'both'
   private annotateSendState: {
     isSending: boolean
-    scope: 'batch' | null
+    scope: 'quick-ask' | 'create-task' | null
   } = {
     isSending: false,
     scope: null,
   }
-  private annotateSuccessScope: 'batch' | null = null
+  private annotateLatestSessionSummary: AnnotationWorkSessionSummary | null = null
+  private annotateLatestSessionDetail: AnnotationWorkSession | null = null
+  private annotateLatestSessionStream:
+    | import('./http.js').AnnotationSessionEventStreamConnection
+    | null = null
+  private annotateLatestSessionLoading = false
+  private annotateLatestSessionError = ''
+  private annotateSuccessScope: 'quick-ask' | 'create-task' | null = null
   private annotateSuccessTimeout: ReturnType<typeof setTimeout> | null = null
+  private annotateSuccessOnClear: (() => void) | null = null
   private pendingAnnotateViewportFrame: number | null = null
   private runtimeContextCollector = createRuntimeContextCollector()
   private cleanupRuntimeContextCapture: (() => void) | null = null
@@ -186,10 +194,6 @@ class InspectoElement extends BaseElement {
 
   private getEffectiveHotKeys(): HotKeys {
     return getLauncherHotKeys(this)
-  }
-
-  private getAnnotationResponseMode(): 'unified' | 'per-annotation' {
-    return this.annotationResponseMode
   }
 
   private updateBadgeContent(): void {
@@ -259,10 +263,6 @@ class InspectoElement extends BaseElement {
     return canAttachRuntimeEvidence(this)
   }
 
-  private canAttachScreenshotContext(): boolean {
-    return canAttachScreenshotEvidence(this)
-  }
-
   private canAttachCssContext(): boolean {
     return canAttachCssEvidence()
   }
@@ -313,20 +313,6 @@ class InspectoElement extends BaseElement {
 
   private getCollectedRuntimeErrorCount(): number {
     return getRuntimeErrorCount(this)
-  }
-
-  private resolveAnnotateScreenshotElement(
-    annotations: AnnotationTransport[],
-    scope: 'current' | 'batch',
-  ): Element | null {
-    return resolveAnnotateScreenshotTarget(this, annotations, scope)
-  }
-
-  private async captureAnnotateScreenshotContext(
-    annotations: AnnotationTransport[],
-    scope: 'current' | 'batch',
-  ): Promise<ScreenshotContext | null> {
-    return captureAnnotateScreenshotEvidence(this, annotations, scope)
   }
 
   private addTargetToCurrentAnnotation(element: Element, location: SourceLocation): void {
@@ -397,8 +383,20 @@ class InspectoElement extends BaseElement {
     clearAnnotateSuccessState(this)
   }
 
-  private showAnnotateSuccess(scope: 'batch'): void {
+  private showAnnotateSuccess(scope: 'quick-ask' | 'create-task'): void {
     showAnnotateBatchSuccess(this, scope)
+  }
+
+  private async refreshLatestAnnotateSession(): Promise<void> {
+    return refreshLatestAnnotateSessionState(this)
+  }
+
+  private startLatestAnnotateSessionStream(sessionId: string): void {
+    startLatestAnnotateSessionStreamState(this, sessionId)
+  }
+
+  private stopLatestAnnotateSessionStream(): void {
+    stopLatestAnnotateSessionStreamState(this)
   }
 
   private toAnnotateErrorMessage(errorCode?: AiErrorCode, fallback?: string): string {
@@ -411,11 +409,12 @@ class InspectoElement extends BaseElement {
 
   private async sendAnnotationBatch(
     annotations: AnnotationTransport[],
-    scope: 'batch',
+    scope: 'quick-ask' | 'create-task',
     instruction: string,
+    deliveryMode: 'ide' | 'agent',
     onSuccess: () => void,
   ): Promise<void> {
-    return sendAnnotateBatch(this, annotations, scope, instruction, onSuccess)
+    return sendAnnotateBatch(this, annotations, scope, instruction, deliveryMode, onSuccess)
   }
 
   private syncModeUi(): void {

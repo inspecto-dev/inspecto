@@ -10,12 +10,13 @@ To achieve the magical "Click in browser -> Open AI in IDE" workflow, Inspecto r
 - **Trae CN**: Fully supported. (`ide: "trae-cn"`)
 - **CodeBuddy**: Fully supported. (`ide: "codebuddy"`)
 - **CodeBuddy CN**: Fully supported. (`ide: "codebuddy-cn"`)
+- **None (Standalone/MCP)**: Fully supported. (`ide: "none"`)
 
-_Note: JetBrains IDEs and other editors are not currently supported for direct AI payload injection._
+_Note: JetBrains IDEs and other editors are not currently supported for direct AI payload injection, but you can still use the "none" option to use the Clipboard and MCP capabilities._
 
 ## Installation
 
-When you use assistant-first onboarding or run `inspecto init`, Inspecto will attempt to install the extension into your detected IDE when the platform supports automatic installation.
+When you use assistant-first onboarding or run `npx @inspecto-dev/cli init`, Inspecto will attempt to install the extension into your detected IDE when the platform supports automatic installation.
 
 If you need to install it manually:
 
@@ -70,4 +71,14 @@ The IDE Extension is extremely lightweight. Its sole purpose is to:
 2. Receive the payload containing the file path, code snippet, and selected AI tool.
 3. Automatically execute the correct internal IDE commands to open the file and trigger the corresponding AI extension (or spawn the CLI in the terminal).
 
-Without this extension, Inspecto cannot complete the normal IDE handoff. Depending on the selected provider and fallback chain, it may fall back to clipboard delivery instead of opening the IDE target directly.
+Without this extension, Inspecto cannot complete the normal IDE handoff via URI schemes.
+
+### Standalone / MCP / Browser-only mode (`ide: "none"`)
+
+If you are using MCP integration, want to use a non-supported IDE, or simply don't want to install the IDE extension, you can set `ide: "none"` in your `.inspecto/settings.local.json`.
+
+In this mode:
+
+- **Copy Context**: The Inspecto UI provides a prominent "Copy Context" button that writes the selected elements and their source code paths directly to your clipboard in Markdown format.
+- **MCP Integration**: Inspecto can deliver context directly to a running MCP server.
+- The browser will not attempt to open `vscode://` or other URI schemes, avoiding any "App not found" alerts.

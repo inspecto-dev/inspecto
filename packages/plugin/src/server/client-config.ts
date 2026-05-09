@@ -20,7 +20,7 @@ export async function buildClientConfig(
     ...info,
     prompts: resolveIntents(promptsConfig),
     hotKeys: userConfig['inspector.hotKey'] ?? 'alt',
-    theme: userConfig['inspector.theme'] ?? 'auto',
+    annotateDeliveryMode: userConfig['annotate.deliveryMode'] ?? 'both',
     includeSnippet: userConfig['prompt.includeSnippet'] ?? false,
     runtimeContext: {
       enabled: true,
@@ -28,10 +28,6 @@ export async function buildClientConfig(
       maxRuntimeErrors: 3,
       maxFailedRequests: 2,
     },
-    screenshotContext: {
-      enabled: false,
-    },
-    annotationResponseMode: userConfig['prompt.annotationResponseMode'] ?? 'unified',
     autoSend: userConfig['prompt.autoSend'] ?? false,
   }
 }

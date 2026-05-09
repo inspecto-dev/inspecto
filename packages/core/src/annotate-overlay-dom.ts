@@ -1,5 +1,6 @@
 import { applyHeaderIconButtonStyles } from './styles.js'
-import { bugIconSvg, screenshotIconSvg, cssIconSvg } from './icons.js'
+import { bugIconSvg, cssIconSvg } from './icons.js'
+import { t } from './i18n.js'
 
 export function createAnnotateOverlayDom(
   shadowRoot: ShadowRoot,
@@ -94,32 +95,17 @@ export function createAnnotateOverlayDom(
 
   const composerOpenButton = document.createElement('button')
   composerOpenButton.type = 'button'
-  composerOpenButton.setAttribute('aria-label', 'Open in Editor')
-  composerOpenButton.title = 'Open in Editor'
+  composerOpenButton.setAttribute('aria-label', t('menu.openInEditor'))
+  composerOpenButton.title = t('menu.openInEditor')
   composerOpenButton.textContent = '↗'
   composerOpenButton.style.appearance = 'none'
   composerOpenButton.style.cursor = 'pointer'
   applyHeaderIconButtonStyles(composerOpenButton)
 
-  const composerScreenshotButton = document.createElement('button')
-  composerScreenshotButton.type = 'button'
-  composerScreenshotButton.setAttribute('aria-label', 'Attach screenshot context')
-  composerScreenshotButton.title = 'Attach screenshot context'
-  composerScreenshotButton.style.appearance = 'none'
-  composerScreenshotButton.style.cursor = 'pointer'
-  composerScreenshotButton.style.display = 'none'
-  applyHeaderIconButtonStyles(composerScreenshotButton)
-  composerScreenshotButton.innerHTML = screenshotIconSvg
-  const screenshotSvgElement = composerScreenshotButton.querySelector('svg')
-  if (screenshotSvgElement) {
-    screenshotSvgElement.style.width = '18px'
-    screenshotSvgElement.style.height = '18px'
-  }
-
   const composerCssButton = document.createElement('button')
   composerCssButton.type = 'button'
-  composerCssButton.setAttribute('aria-label', 'Attach CSS context')
-  composerCssButton.title = 'Attach CSS context'
+  composerCssButton.setAttribute('aria-label', t('menu.attachCss'))
+  composerCssButton.title = t('menu.attachCss')
   composerCssButton.style.appearance = 'none'
   composerCssButton.style.cursor = 'pointer'
   composerCssButton.style.display = 'none'
@@ -133,8 +119,8 @@ export function createAnnotateOverlayDom(
 
   const composerRuntimeButton = document.createElement('button')
   composerRuntimeButton.type = 'button'
-  composerRuntimeButton.setAttribute('aria-label', 'Attach runtime context')
-  composerRuntimeButton.title = 'Attach runtime context'
+  composerRuntimeButton.setAttribute('aria-label', t('menu.attachRuntime'))
+  composerRuntimeButton.title = t('menu.attachRuntime')
   composerRuntimeButton.style.appearance = 'none'
   composerRuntimeButton.style.position = 'relative'
   composerRuntimeButton.style.cursor = 'pointer'
@@ -169,7 +155,7 @@ export function createAnnotateOverlayDom(
   composerRuntimeButton.append(composerRuntimeIcon, composerRuntimeBadge)
 
   const composerInput = document.createElement('textarea')
-  composerInput.placeholder = 'What should change for this component?'
+  composerInput.placeholder = t('annotate.composer.placeholder')
   composerInput.style.width = '100%'
   composerInput.style.minHeight = '100px'
   composerInput.style.boxSizing = 'border-box'
@@ -193,47 +179,42 @@ export function createAnnotateOverlayDom(
 
   const cancelButton = document.createElement('button')
   cancelButton.type = 'button'
-  cancelButton.textContent = 'Cancel'
+  cancelButton.textContent = t('annotate.cancel')
   cancelButton.style.appearance = 'none'
   cancelButton.style.border = 'none'
   cancelButton.style.background = 'transparent'
   cancelButton.style.color = tokens.textSecondary()
-  cancelButton.style.font = '500 14px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+  cancelButton.style.font = '500 11px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
   cancelButton.style.padding = '8px 10px'
   cancelButton.style.cursor = 'pointer'
 
   const deleteButton = document.createElement('button')
   deleteButton.type = 'button'
-  deleteButton.textContent = 'Delete'
+  deleteButton.textContent = t('annotate.delete')
   deleteButton.style.appearance = 'none'
   deleteButton.style.border = 'none'
   deleteButton.style.background = 'transparent'
   deleteButton.style.color = 'rgba(248, 113, 113, 0.92)'
-  deleteButton.style.font = '500 14px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+  deleteButton.style.font = '500 11px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
   deleteButton.style.padding = '8px 10px'
   deleteButton.style.cursor = 'pointer'
   deleteButton.style.display = 'none'
 
   const addButton = document.createElement('button')
   addButton.type = 'button'
-  addButton.textContent = 'Save note'
+  addButton.textContent = t('annotate.saveNote')
   addButton.style.appearance = 'none'
   addButton.style.border = 'none'
   addButton.style.borderRadius = tokens.radiusPill()
   addButton.style.background = `linear-gradient(180deg, ${tokens.accentPrimary()} 0%, ${tokens.accentPrimaryStrong()} 100%)`
   addButton.style.color = '#ffffff'
-  addButton.style.font = '600 14px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+  addButton.style.font = '600 11px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
   addButton.style.minHeight = '36px'
   addButton.style.padding = '0 18px'
   addButton.style.cursor = 'pointer'
   addButton.style.boxShadow = tokens.shadowAccent()
 
-  composerHeaderActions.append(
-    composerScreenshotButton,
-    composerCssButton,
-    composerRuntimeButton,
-    composerOpenButton,
-  )
+  composerHeaderActions.append(composerCssButton, composerRuntimeButton, composerOpenButton)
   composerActions.append(deleteButton, cancelButton, addButton)
   composerHeader.append(composerHeaderText, composerHeaderActions)
   composer.append(composerHeader, composerInput, composerActions)
@@ -265,7 +246,6 @@ export function createAnnotateOverlayDom(
     composerHeaderTitle,
     composerHeaderMeta,
     composerOpenButton,
-    composerScreenshotButton,
     composerCssButton,
     composerRuntimeButton,
     composerRuntimeBadge,

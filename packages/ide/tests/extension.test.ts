@@ -41,7 +41,11 @@ const mockFs = vi.hoisted(() => ({
 vi.mock('node:fs', () => mockFs)
 vi.mock('node:os', () => ({ tmpdir: () => '/tmp' }))
 
-import { resolveServerPorts, __testingGetPreferredWorkspaceRoot } from '../src/extension.ts'
+import {
+  activate,
+  resolveServerPorts,
+  __testingGetPreferredWorkspaceRoot,
+} from '../src/extension.ts'
 import { InspectoUriHandler } from '../src/uri-handler.ts'
 import { __resetInspectoOutputChannelForTests } from '../src/output-channel.ts'
 
@@ -81,7 +85,7 @@ describe('resolveServerPorts', () => {
     expect(picked).toBe('/repo/inspecto')
   })
 
-  it('preserves screenshot context when loading a ticket payload', async () => {
+  it('loads ticket payloads without expecting screenshot context', async () => {
     const handler = new InspectoUriHandler('vscode')
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -90,12 +94,6 @@ describe('resolveServerPorts', () => {
         target: 'copilot',
         targetType: 'extension',
         prompt: 'Review this UI',
-        screenshotContext: {
-          enabled: true,
-          capturedAt: '2026-04-04T12:00:00.000Z',
-          mimeType: 'image/png',
-          imageDataUrl: 'data:image/png;base64,AAA=',
-        },
       }),
     })
 
@@ -111,7 +109,6 @@ describe('resolveServerPorts', () => {
       expect.anything(),
       expect.objectContaining({
         prompt: 'Review this UI',
-        screenshotContext: expect.objectContaining({ mimeType: 'image/png' }),
       }),
     )
   })
@@ -184,5 +181,30 @@ describe('resolveServerPorts', () => {
         target: 'codex',
       }),
     )
+  })
+
+  it('shows a warning action when automatic IDE info push cannot reach the dev server', async () => {
+    vi.useFakeTimers()
+    const fetchMock = vi.fn().mockRejectedValue(new Error('ECONNREFUSED'))
+    vi.stubGlobal('fetch', fetchMock)
+    mockFs.readFileSync.mockImplementation(() => {
+      throw new Error('missing port file')
+    })
+    mockFs.watch.mockReturnValue({ close: vi.fn() })
+    vscodeMock.window.showWarningMessage.mockResolvedValue(undefined)
+
+    activate({ subscriptions: { push: vi.fn() } } as any)
+
+    for (let i = 0; i < 5; i += 1) {
+      await vi.runOnlyPendingTimersAsync()
+    }
+
+    expect(vscodeMock.window.showWarningMessage).toHaveBeenCalledWith(
+      expect.stringContaining('Inspecto could not reach the local dev server'),
+      'Push IDE Info',
+      'Open Output',
+    )
+
+    vi.useRealTimers()
   })
 })

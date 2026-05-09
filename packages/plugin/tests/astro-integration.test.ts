@@ -42,7 +42,7 @@ describe('astroIntegration', () => {
   it('builds a runtime script with the negotiated server URL', () => {
     const script = getAstroInjectedScript(6789)
 
-    expect(script).toContain("window.__AI_INSPECTOR_SERVER_URL__ = 'http://127.0.0.1:6789';")
+    expect(script).toContain("window.__AI_INSPECTOR_SERVER_URL__ = 'http://0.0.0.0:6789';")
     expect(script).toContain('mountInspector({')
   })
 })

@@ -1,23 +1,22 @@
-import type { RuntimeContextEnvelope, ScreenshotContext, SourceLocation } from '@inspecto-dev/types'
+import type { RuntimeContextEnvelope, SourceLocation } from '@inspecto-dev/types'
 import { appendCssContextToPrompt } from './css-context.js'
-import { appendRuntimeContextToPrompt, appendScreenshotContextToPrompt } from './fix-bug-prompt.js'
+import { appendRuntimeContextToPrompt } from './fix-bug-prompt.js'
 import { buildPrompt, CUSTOM_PROMPT_TEMPLATE } from './intents.js'
-import { fetchSnippet, openFile, sendToAi } from './http.js'
+import { fetchSnippet, openFileWithDiagnostics, sendToAi } from './http.js'
 
 export async function openAndSendInspectPrompt(input: {
   location: SourceLocation
   snippetText: string
   promptText: string
   runtimeContext?: RuntimeContextEnvelope | null
-  screenshotContext?: ScreenshotContext | null
   onSuccess: () => void
   onRestore: () => void
   onError: (message: string, errorCode?: string) => void
 }): Promise<void> {
-  const opened = await openFile(input.location)
-  if (!opened) {
+  const openResult = await openFileWithDiagnostics(input.location)
+  if (!openResult.success) {
     input.onRestore()
-    input.onError('Unable to open file in the IDE.', 'IDE_UNAVAILABLE')
+    input.onError('Unable to open the source file.', openResult.errorCode ?? 'IDE_UNAVAILABLE')
     return
   }
 
@@ -28,7 +27,6 @@ export async function openAndSendInspectPrompt(input: {
     snippet: input.snippetText,
     prompt: input.promptText,
     ...(input.runtimeContext ? { runtimeContext: input.runtimeContext } : {}),
-    ...(input.screenshotContext ? { screenshotContext: input.screenshotContext } : {}),
   })
 
   if (result.success) {
@@ -54,7 +52,6 @@ export async function buildCustomInspectPrompt(input: {
   includeSnippet: boolean
   maxSnippetLines: number
   runtimeContext?: RuntimeContextEnvelope | null
-  screenshotContext?: ScreenshotContext | null
   cssContextPrompt?: string | null
 }) {
   let snippetResult = null
@@ -68,16 +65,13 @@ export async function buildCustomInspectPrompt(input: {
   }
 
   const prompt = appendCssContextToPrompt(
-    appendScreenshotContextToPrompt(
-      appendRuntimeContextToPrompt(
-        buildPrompt(
-          buildCustomInspectPromptTemplate(input.ask.trim(), input.location, input.targetLabel),
-          input.location,
-          snippetResult,
-        ),
-        input.runtimeContext?.records ?? [],
+    appendRuntimeContextToPrompt(
+      buildPrompt(
+        buildCustomInspectPromptTemplate(input.ask.trim(), input.location, input.targetLabel),
+        input.location,
+        snippetResult,
       ),
-      input.screenshotContext ?? null,
+      input.runtimeContext?.records ?? [],
     ),
     input.cssContextPrompt ?? null,
   )

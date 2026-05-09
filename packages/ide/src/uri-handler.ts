@@ -37,7 +37,7 @@ export class InspectoUriHandler implements vscode.UriHandler {
       for (const port of ports) {
         try {
           const res = await fetch(
-            `http://127.0.0.1:${port}${INSPECTO_API_PATHS.AI_TICKET}/${ticketId}`,
+            `http://0.0.0.0:${port}${INSPECTO_API_PATHS.AI_TICKET}/${ticketId}`,
           )
           serverReached = true
           if (res.ok) {

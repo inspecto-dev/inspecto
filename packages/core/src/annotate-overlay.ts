@@ -2,7 +2,7 @@ type SelectedTargetOverlayEntry = {
   id: string
   element: Element
   order: number
-  state?: 'current' | 'saved'
+  state?: 'current' | 'saved' | 'completed'
   note?: string
   onActivate?: () => void
 }
@@ -10,6 +10,7 @@ type SelectedTargetOverlayEntry = {
 export type { SelectedTargetOverlayEntry }
 
 import { createAnnotateOverlayDom } from './annotate-overlay-dom.js'
+import { t } from './i18n.js'
 import {
   applyComposerRuntimeButtonState,
   applyOverlayState,
@@ -30,8 +31,6 @@ type ComposerOptions = {
   targetMeta?: string
   note: string
   onOpenInEditor?: () => void
-  canAttachScreenshotContext?: boolean
-  screenshotContextEnabled?: boolean
   canAttachCssContext?: boolean
   cssContextEnabled?: boolean
   canAttachRuntimeContext?: boolean
@@ -39,7 +38,6 @@ type ComposerOptions = {
   runtimeContextSummary?: string
   runtimeErrorCount?: number
   saveLabel?: string
-  onToggleScreenshotContext?: () => void
   onToggleCssContext?: () => void
   onToggleRuntimeContext?: () => void
   onUpdateNote?: (note: string) => void
@@ -66,6 +64,7 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
     textTertiary: () => readToken('--inspecto-text-tertiary', 'rgba(255, 255, 255, 0.46)'),
     accentPrimary: () => readToken('--inspecto-accent-primary', '#5d52f3'),
     accentPrimaryStrong: () => readToken('--inspecto-accent-primary-strong', '#4639d7'),
+    successColor: () => readToken('--inspecto-success-color', '#10b981'),
     shadowFloating: () =>
       readToken('--inspecto-shadow-floating', '0 20px 48px rgba(0, 0, 0, 0.28)'),
     shadowAccent: () => readToken('--inspecto-shadow-accent', '0 8px 18px rgba(79, 70, 229, 0.28)'),
@@ -82,7 +81,6 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
     composerHeaderTitle,
     composerHeaderMeta,
     composerOpenButton,
-    composerScreenshotButton,
     composerCssButton,
     composerRuntimeButton,
     composerRuntimeBadge,
@@ -218,7 +216,7 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
       const noteBadge = box.querySelector('[data-inspecto-annotate-overlay-note]') as HTMLDivElement
       badge.textContent = String(target.order)
 
-      if ((target.state ?? 'current') === 'saved') {
+      if ((target.state ?? 'current') === 'saved' || (target.state ?? 'current') === 'completed') {
         const trimmedNote = target.note?.trim() ?? ''
         const hasNote = trimmedNote.length > 0
         noteBadge.style.display = hasNote ? 'block' : 'none'
@@ -262,25 +260,6 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
       composerHeaderMeta.textContent = composerOptions.targetMeta ?? ''
       composerHeaderMeta.style.display = composerOptions.targetMeta ? '' : 'none'
       composerOpenButton.onclick = () => composerOptions.onOpenInEditor?.()
-      composerScreenshotButton.style.display = composerOptions.canAttachScreenshotContext
-        ? 'inline-flex'
-        : 'none'
-      composerScreenshotButton.setAttribute(
-        'aria-pressed',
-        composerOptions.screenshotContextEnabled ? 'true' : 'false',
-      )
-      composerScreenshotButton.dataset.visualState = composerOptions.screenshotContextEnabled
-        ? 'active'
-        : 'inactive'
-      composerScreenshotButton.title = composerOptions.screenshotContextEnabled
-        ? 'Screenshot context enabled'
-        : 'Attach screenshot context'
-      applyComposerRuntimeButtonState(
-        composerScreenshotButton,
-        tokens,
-        composerOptions.screenshotContextEnabled === true,
-      )
-      composerScreenshotButton.onclick = () => composerOptions.onToggleScreenshotContext?.()
       composerCssButton.style.display = composerOptions.canAttachCssContext ? 'inline-flex' : 'none'
       composerCssButton.setAttribute(
         'aria-pressed',
@@ -290,8 +269,8 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
         ? 'active'
         : 'inactive'
       composerCssButton.title = composerOptions.cssContextEnabled
-        ? 'CSS context enabled'
-        : 'Attach CSS context'
+        ? t('menu.cssEnabled')
+        : t('menu.attachCss')
       applyComposerRuntimeButtonState(
         composerCssButton,
         tokens,
@@ -317,13 +296,13 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
           : 'none'
       composerRuntimeButton.title = composerOptions.runtimeContextEnabled
         ? composerOptions.runtimeErrorCount
-          ? `Runtime context enabled • ${formatRuntimeErrorCount(composerOptions.runtimeErrorCount)} errors`
+          ? `${t('menu.runtimeEnabled')} • ${t('annotate.runtimeErrors', { count: formatRuntimeErrorCount(composerOptions.runtimeErrorCount) })}`
           : composerOptions.runtimeContextSummary
-            ? `Runtime context enabled • ${composerOptions.runtimeContextSummary}`
-            : 'Runtime context enabled'
+            ? `${t('menu.runtimeEnabled')} • ${composerOptions.runtimeContextSummary}`
+            : t('menu.runtimeEnabled')
         : composerOptions.runtimeErrorCount
-          ? `Attach runtime context • ${formatRuntimeErrorCount(composerOptions.runtimeErrorCount)} errors`
-          : 'Attach runtime context'
+          ? `${t('menu.attachRuntime')} • ${t('annotate.runtimeErrors', { count: formatRuntimeErrorCount(composerOptions.runtimeErrorCount) })}`
+          : t('menu.attachRuntime')
       applyComposerRuntimeButtonState(
         composerRuntimeButton,
         tokens,
@@ -338,7 +317,7 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
       composer.style.transform = 'translate3d(0, 0, 0) scale(1)'
       placeComposer(composerTarget, !targetChanged)
       composerInput.oninput = () => composerOptions.onUpdateNote?.(composerInput.value)
-      addButton.textContent = composerOptions.saveLabel ?? 'Save note'
+      addButton.textContent = composerOptions.saveLabel ?? t('annotate.saveNote')
       addButton.onclick = () => composerOptions.onSave?.()
       cancelButton.onclick = () => composerOptions.onCancel?.()
       deleteButton.style.display = composerOptions.onDelete ? 'inline-flex' : 'none'
@@ -353,17 +332,15 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
     activeComposerPlacement = null
     composerInput.value = ''
     composerInput.oninput = null
-    addButton.textContent = 'Save note'
+    addButton.textContent = t('annotate.saveNote')
     addButton.onclick = null
     cancelButton.onclick = null
     composerOpenButton.onclick = null
-    composerScreenshotButton.style.display = 'none'
-    composerScreenshotButton.onclick = null
     composerCssButton.style.display = 'none'
     composerCssButton.onclick = null
     composerCssButton.setAttribute('aria-pressed', 'false')
     composerCssButton.dataset.visualState = 'inactive'
-    composerCssButton.title = 'Attach CSS context'
+    composerCssButton.title = t('menu.attachCss')
     applyComposerRuntimeButtonState(composerCssButton, tokens, false)
     composerRuntimeButton.style.display = 'none'
     composerRuntimeButton.onclick = null
@@ -382,10 +359,8 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
     activeComposerTargetId = null
     activeComposerPlacement = null
     composerInput.value = ''
-    addButton.textContent = 'Save note'
+    addButton.textContent = t('annotate.saveNote')
     composerOpenButton.onclick = null
-    composerScreenshotButton.style.display = 'none'
-    composerScreenshotButton.onclick = null
     composerRuntimeButton.style.display = 'none'
     composerRuntimeButton.onclick = null
     deleteButton.style.display = 'none'

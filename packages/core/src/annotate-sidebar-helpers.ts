@@ -1,4 +1,5 @@
 import type { FeedbackRecord, FeedbackRecordSession } from '@inspecto-dev/types'
+import { t } from './i18n.js'
 
 export type PromptChipRecord = {
   id: string
@@ -6,7 +7,7 @@ export type PromptChipRecord = {
   locationLabel: string
   selector?: string | undefined
   note: string
-  state: 'draft' | 'saved'
+  state: 'draft' | 'saved' | 'completed'
 }
 
 export type InstructionSegment =
@@ -37,14 +38,20 @@ export function createSidebarButton(
 
 export function getLiveStatusMessage(input: {
   isSending: boolean
-  sendingScope: 'batch' | null
-  successScope: 'batch' | null
+  sendingScope: 'quick-ask' | 'create-task' | null
+  successScope: 'quick-ask' | 'create-task' | null
 }): string {
-  if (input.isSending && input.sendingScope === 'batch') {
-    return 'Sending notes to AI.'
+  if (input.isSending && input.sendingScope === 'quick-ask') {
+    return t('annotate.liveStatus.quickAskSending')
   }
-  if (!input.isSending && input.successScope === 'batch') {
-    return 'Notes sent to AI.'
+  if (input.isSending && input.sendingScope === 'create-task') {
+    return t('annotate.liveStatus.createTaskSending')
+  }
+  if (!input.isSending && input.successScope === 'quick-ask') {
+    return t('annotate.liveStatus.quickAskSent')
+  }
+  if (!input.isSending && input.successScope === 'create-task') {
+    return t('annotate.liveStatus.taskCreated')
   }
   return ''
 }
@@ -56,24 +63,28 @@ export function formatRuntimeErrorCount(count: number): string {
 
 export function toLocationLabel(record: FeedbackRecord | FeedbackRecordSession['current']): string {
   const target = record.target
-  if (!target) return 'Unknown source'
+  if (!target) return t('annotate.source.unknown')
   return `${target.location.file}:${target.location.line}:${target.location.column}`
 }
 
-export function getPromptChipRecords(session: FeedbackRecordSession): PromptChipRecord[] {
+export function getPromptChipRecords(
+  session: FeedbackRecordSession,
+  isLatestSessionResolved?: boolean,
+): PromptChipRecord[] {
+  const savedState: PromptChipRecord['state'] = isLatestSessionResolved ? 'completed' : 'saved'
   const chips: PromptChipRecord[] = session.records.map(record => ({
     id: record.id,
-    label: record.target.label || 'Unknown target',
+    label: record.target.label || t('annotate.target.unknown'),
     locationLabel: toLocationLabel(record),
     ...(record.target.selector ? { selector: record.target.selector } : {}),
     note: record.note,
-    state: 'saved',
+    state: savedState,
   }))
 
   if (session.current.target) {
     chips.push({
       id: session.current.id,
-      label: session.current.target.label || 'Unknown target',
+      label: session.current.target.label || t('annotate.target.unknown'),
       locationLabel: toLocationLabel(session.current),
       ...(session.current.target.selector ? { selector: session.current.target.selector } : {}),
       note: session.current.note,
@@ -167,8 +178,11 @@ export function getInstructionChipIdSignature(segments: InstructionSegment[]): s
     .join('|')
 }
 
-export function getChipSignature(session: FeedbackRecordSession): string {
-  return getPromptChipRecords(session)
+export function getChipSignature(
+  session: FeedbackRecordSession,
+  isLatestSessionResolved?: boolean,
+): string {
+  return getPromptChipRecords(session, isLatestSessionResolved)
     .map(chip => `${chip.id}:${chip.state}:${chip.label}`)
     .join('|')
 }

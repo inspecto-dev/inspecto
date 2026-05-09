@@ -83,7 +83,7 @@ export function printNextJsManualInstructions() {
     '  useEffect(() => {',
     "    if (process.env.NODE_ENV !== 'production') {",
     "      import('@inspecto-dev/core').then(({ mountInspector }) => {",
-    "        mountInspector({ serverUrl: 'http://127.0.0.1:5678' })",
+    "        mountInspector({ serverUrl: 'http://0.0.0.0:5678' })",
     '      })',
     '    }',
     '  }, [])',

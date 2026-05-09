@@ -42,7 +42,7 @@ If `doctor` finds no anomalies but Inspecto still isn't working normally, please
 - **Target AI tool misconfigured**: Inspecto needs to know which AI to send the code to. Check the `provider.default` field in your `.inspecto/settings.local.json` file and ensure it points to your active AI assistant (e.g., `"copilot.extension"` or `"claude-code.cli"`).
 - **Cross-device/environment issues**: Currently, Inspecto relies on local networking for Browser-IDE communication. If you are running the frontend on a remote server (like Remote SSH or a DevContainer) but accessing it from a local browser, the connection might fail.
 
-### 3. Assistant onboarding or `inspecto init` failed?
+### 3. Assistant onboarding or `npx @inspecto-dev/cli init` failed?
 
 - **Manual configuration required**: Although the CLI is smart, highly customized project setups (like complex Monorepos or custom Vite/Webpack configs) might cause automated code injection to fail. In this case, please refer to the official documentation and follow the **"Manual Installation"** steps to introduce the plugin in your `vite.config.ts` or `webpack.config.js` manually.
 

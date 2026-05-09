@@ -13,6 +13,10 @@ import {
 } from '../src/styles.js'
 import type { FeedbackRecordSession } from '@inspecto-dev/types'
 
+const SYSTEM_STARTED_MESSAGE = 'Agent claimed this task through MCP.'
+const SYSTEM_WARNING_MESSAGE = 'Agent reported MCP connectivity issues.'
+const SYSTEM_NO_UPDATE_MESSAGE = 'Agent exited without posting a follow-up update.'
+
 function createTarget(id: string, line: number, label: string) {
   return {
     id,
@@ -68,7 +72,8 @@ function createSidebarOptions(
     onResumeCapture: vi.fn(),
     onUpdateInstruction: vi.fn(),
     onRemovePromptChip: vi.fn(),
-    onSend: vi.fn(),
+    onQuickAsk: vi.fn(),
+    onCreateTask: vi.fn(),
     onEditRecord: vi.fn(),
     onExit: vi.fn(),
     ...overrides,
@@ -86,6 +91,7 @@ describe('annotate sidebar', () => {
   })
 
   afterEach(() => {
+    vi.restoreAllMocks()
     document.body.innerHTML = ''
   })
 
@@ -111,7 +117,8 @@ describe('annotate sidebar', () => {
     const onPauseCapture = vi.fn()
     const onEditRecord = vi.fn()
     const onUpdateInstruction = vi.fn()
-    const onSend = vi.fn()
+    const onQuickAsk = vi.fn()
+    const onCreateTask = vi.fn()
     const onExit = vi.fn()
 
     const sidebar = createAnnotateSidebar(
@@ -120,7 +127,8 @@ describe('annotate sidebar', () => {
         onPauseCapture,
         onEditRecord,
         onUpdateInstruction,
-        onSend,
+        onQuickAsk,
+        onCreateTask,
         onExit,
       }),
     )
@@ -149,7 +157,10 @@ describe('annotate sidebar', () => {
     expect(onEditRecord).toHaveBeenCalledWith('record-1')
 
     clickButtonByText('Ask AI')
-    expect(onSend).toHaveBeenCalled()
+    expect(onQuickAsk).toHaveBeenCalled()
+
+    clickButtonByText('Create Task')
+    expect(onCreateTask).toHaveBeenCalled()
 
     clickButtonByLabel('Exit annotate mode')
     expect(onExit).toHaveBeenCalled()
@@ -162,7 +173,8 @@ describe('annotate sidebar', () => {
         onResumeCapture: vi.fn(),
         onUpdateInstruction,
         onEditRecord,
-        onSend,
+        onQuickAsk,
+        onCreateTask,
         onExit,
       }),
     )
@@ -181,6 +193,9 @@ describe('annotate sidebar', () => {
       shadowRoot,
       createSidebarOptions(createEmptySession(), {
         includedRecords: [],
+        annotateDeliveryMode: 'both',
+        preferredAction: 'create-task',
+        isSending: false,
       }),
     )
 
@@ -192,16 +207,21 @@ describe('annotate sidebar', () => {
     ).toBe('Capturing clicks')
     expect(shadowRoot.textContent).toContain('Start by clicking a component')
     expect(shadowRoot.textContent).toContain(
-      'Each click opens one note. Save a few notes first, then add an overall goal and Ask AI once.',
+      'Each click opens one note. Save a few notes first, then add an overall goal and create a task or ask once.',
     )
     const buttons = Array.from(shadowRoot.querySelectorAll('button'))
     expect(buttons.find(button => button.textContent === 'Ask AI')?.hasAttribute('disabled')).toBe(
       true,
     )
     expect(
-      buttons.find(button => button.getAttribute('title') === 'View raw prompt payload')?.style
-        .display,
-    ).toBe('none')
+      buttons.find(button => button.textContent === 'Create Task')?.hasAttribute('disabled'),
+    ).toBe(true)
+    const previewButton = buttons.find(
+      button => button.getAttribute('title') === 'View raw prompt payload',
+    )
+    if (previewButton && previewButton.parentElement) {
+      expect(previewButton.parentElement.style.display).toBe('none')
+    }
   })
 
   it('shows the sidebar once saved records exist', () => {
@@ -227,7 +247,7 @@ describe('annotate sidebar', () => {
     )
 
     const sendAll = Array.from(shadowRoot.querySelectorAll('button')).find(
-      button => button.textContent === 'Ask AI',
+      button => button.textContent === 'Create Task',
     ) as HTMLButtonElement
 
     expect(sendAll.disabled).toBe(false)
@@ -432,7 +452,7 @@ describe('annotate sidebar', () => {
     expect(
       (shadowRoot.querySelector('[data-inspecto-annotate-header-status="true"]') as HTMLElement)
         .textContent,
-    ).toBe('Capturing clicks • Quick capture on')
+    ).toBe('Capturing clicks • Toggle quick capture on')
   })
 
   it('calls onToggleQuickCapture once when the quick capture toggle is clicked', () => {
@@ -450,12 +470,343 @@ describe('annotate sidebar', () => {
     expect(onToggleQuickCapture).toHaveBeenCalledTimes(1)
   })
 
-  it('uses one primary send action for the whole batch', () => {
+  it('offers quick ask and create task actions for the whole batch', () => {
     createAnnotateSidebar(shadowRoot, createSidebarOptions())
 
     const buttons = Array.from(shadowRoot.querySelectorAll('button'))
     expect(buttons.filter(button => button.textContent === 'Ask AI')).toHaveLength(1)
+    expect(buttons.filter(button => button.textContent === 'Create Task')).toHaveLength(1)
     expect(buttons.some(button => button.textContent === 'Treat selected as one issue')).toBe(false)
+  })
+
+  it('shows only create task in agent delivery mode', () => {
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        annotateDeliveryMode: 'agent',
+        preferredAction: 'create-task',
+      }),
+    )
+
+    const buttons = Array.from(shadowRoot.querySelectorAll('button'))
+    const askAiButton = buttons.find(button => button.textContent === 'Ask AI') as
+      | HTMLButtonElement
+      | undefined
+    const createTaskButton = buttons.find(button => button.textContent === 'Create Task') as
+      | HTMLButtonElement
+      | undefined
+    expect(askAiButton?.style.display).toBe('none')
+    expect(createTaskButton?.style.display).toBe('')
+    expect(shadowRoot.textContent).not.toContain('Recommended: Ask AI for one-off questions')
+    const recommendedLabel = Array.from(shadowRoot.querySelectorAll('div')).find(
+      node => node.textContent === 'Recommended: Create Task',
+    ) as HTMLDivElement | undefined
+    expect(recommendedLabel?.style.display).toBe('none')
+  })
+
+  it('hides debug helper actions in agent delivery mode', () => {
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        annotateDeliveryMode: 'agent',
+        preferredAction: 'create-task',
+      }),
+    )
+
+    const previewButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.getAttribute('title') === 'View raw prompt payload',
+    ) as HTMLButtonElement | undefined
+    const copyContextButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.getAttribute('title') === '复制上下文',
+    ) as HTMLButtonElement | undefined
+
+    expect(previewButton?.style.display).toBe('none')
+    expect(copyContextButton).toBeUndefined()
+  })
+
+  it('hides raw prompt payload section in agent delivery mode', () => {
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        annotateDeliveryMode: 'agent',
+        preferredAction: 'create-task',
+      }),
+    )
+
+    const fullPromptSection = shadowRoot.querySelector(
+      '[data-variant="full-prompt"]',
+    ) as HTMLElement | null
+    expect(fullPromptSection?.style.display).toBe('none')
+  })
+
+  it('keeps element notes collapsed in agent delivery mode', () => {
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        annotateDeliveryMode: 'agent',
+        preferredAction: 'create-task',
+      }),
+    )
+
+    const notesSection = shadowRoot.querySelector(
+      '[data-variant="records"]',
+    ) as HTMLDetailsElement | null
+    expect(notesSection?.open).toBe(false)
+  })
+
+  it('switches the primary annotate action when preferredAction is quick-ask', () => {
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        preferredAction: 'quick-ask',
+      }),
+    )
+
+    const askAiButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Ask AI',
+    ) as HTMLButtonElement
+    const createTaskButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Create Task',
+    ) as HTMLButtonElement
+
+    expect(askAiButton.classList.contains('primary')).toBe(false)
+    expect(createTaskButton.classList.contains('primary')).toBe(false)
+    expect(shadowRoot.textContent).toContain('Recommended: Ask AI')
+  })
+
+  it('hides recommended action by default', () => {
+    createAnnotateSidebar(shadowRoot, createSidebarOptions())
+
+    expect(shadowRoot.textContent).toContain('Recommended: Create Task')
+  })
+
+  it('de-emphasizes Ask AI when Create Task is the preferred action', () => {
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        preferredAction: 'create-task',
+        annotateDeliveryMode: 'both',
+        isSending: false,
+      }),
+    )
+
+    const askAiButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Ask AI',
+    ) as HTMLButtonElement
+    const createTaskButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Create Task',
+    ) as HTMLButtonElement
+
+    expect(askAiButton.dataset.emphasis).toBe('secondary')
+    expect(createTaskButton.dataset.emphasis).toBe('primary')
+    expect(askAiButton.dataset.layoutRole).toBe('secondary')
+    expect(createTaskButton.dataset.layoutRole).toBe('primary')
+    expect(askAiButton.style.flex).toBe('1 1 0%')
+    expect(createTaskButton.style.flex).toBe('1 1 0%')
+    expect(askAiButton.title).toBe('Ask AI')
+    expect(createTaskButton.title).toBe('Create Task')
+  })
+
+  it('renders current task copy and a human-friendly pending message', () => {
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        latestSessionSummary: {
+          id: 'session-12345678',
+          status: 'pending',
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      }),
+    )
+
+    expect(shadowRoot.textContent).toContain('Current task')
+    expect(shadowRoot.textContent).toContain('Sent to AI.')
+    const refreshButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.getAttribute('title') === 'Refresh current task',
+    ) as HTMLButtonElement | undefined
+    expect(refreshButton?.style.display).toBe('none')
+  })
+
+  it('styles latest task status and reveals it after task creation succeeds', async () => {
+    const scrollIntoView = vi.fn()
+    vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(scrollIntoView)
+
+    const controller = createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createEmptySession(), {
+        successScope: 'create-task',
+        annotateDeliveryMode: 'both',
+        preferredAction: 'create-task',
+      }),
+    )
+
+    controller.update(
+      createSidebarOptions(createEmptySession(), {
+        successScope: 'create-task',
+        annotateDeliveryMode: 'both',
+        preferredAction: 'create-task',
+        latestSessionSummary: {
+          id: 'session-abcdef12',
+          status: 'in_progress',
+          createdAt: 1,
+          updatedAt: 2,
+        },
+      }),
+    )
+
+    const status = Array.from(shadowRoot.querySelectorAll('span')).find(
+      element => element.textContent === '◔ in progress',
+    ) as HTMLSpanElement
+
+    expect(status).not.toBeNull()
+    expect(status.style.color).toBe('#73b2ff')
+    expect(scrollIntoView).toHaveBeenCalled()
+  })
+
+  it('shows a follow-up verification hint when the latest agent task is complete', () => {
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        latestSessionDetail: {
+          id: 'session-resolved',
+          status: 'resolved',
+          instruction: '',
+          annotations: [],
+          messages: [],
+          createdAt: 1,
+          updatedAt: 2,
+          resolvedAt: 3,
+        },
+      }),
+    )
+
+    expect(shadowRoot.textContent).toContain('✓ complete')
+    expect(shadowRoot.textContent).toContain('Review the result. Create a follow-up if needed.')
+  })
+
+  it('shows the latest system message for an acknowledged task', () => {
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        latestSessionDetail: {
+          id: 'session-acknowledged',
+          status: 'acknowledged',
+          instruction: '',
+          annotations: [],
+          messages: [
+            {
+              id: 'message-system',
+              role: 'system',
+              text: SYSTEM_STARTED_MESSAGE,
+              createdAt: 2,
+            },
+          ],
+          createdAt: 1,
+          updatedAt: 2,
+          acknowledgedAt: 2,
+        },
+      }),
+    )
+
+    expect(shadowRoot.textContent).toContain('◔ acknowledged')
+    expect(shadowRoot.textContent).toContain(SYSTEM_STARTED_MESSAGE)
+    expect(shadowRoot.textContent).toContain('AI connected. Waiting for update.')
+    const message = Array.from(shadowRoot.querySelectorAll('div')).find(element =>
+      element.textContent?.includes(SYSTEM_STARTED_MESSAGE),
+    ) as HTMLDivElement
+    expect(message.dataset.variant).toBe('system-info')
+    expect(message.style.color).toBe('#9ed8ff')
+  })
+
+  it('shows reconnect affordance when current task updates disconnect', () => {
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        latestSessionSummary: {
+          id: 'session-12345678',
+          status: 'in_progress',
+          createdAt: 1,
+          updatedAt: 2,
+        },
+        latestSessionError: 'Live session updates disconnected. You can refresh to reconnect.',
+      }),
+    )
+
+    expect(shadowRoot.textContent).toContain(
+      'Connection lost. Reconnect to keep following this task.',
+    )
+    const reconnectButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.getAttribute('title') === 'Refresh current task',
+    ) as HTMLButtonElement | undefined
+    expect(reconnectButton?.style.display).toBe('')
+    expect(reconnectButton?.textContent).toBe('Reconnect')
+  })
+
+  it('keeps historical worker warnings visible in the latest task panel', () => {
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        latestSessionDetail: {
+          id: 'session-worker-failed',
+          status: 'acknowledged',
+          instruction: '',
+          annotations: [],
+          messages: [
+            {
+              id: 'message-system-failed',
+              role: 'system',
+              text: SYSTEM_WARNING_MESSAGE,
+              createdAt: 2,
+            },
+          ],
+          createdAt: 1,
+          updatedAt: 2,
+          acknowledgedAt: 2,
+        },
+      }),
+    )
+
+    expect(shadowRoot.textContent).toContain('◔ acknowledged')
+    expect(shadowRoot.textContent).toContain(SYSTEM_WARNING_MESSAGE)
+    expect(shadowRoot.textContent).toContain('AI connected. Waiting for update.')
+    const message = Array.from(shadowRoot.querySelectorAll('div')).find(element =>
+      element.textContent?.includes(SYSTEM_WARNING_MESSAGE),
+    ) as HTMLDivElement
+    expect(message.dataset.variant).toBe('system-info')
+    expect(message.style.color).toBe('#9ed8ff')
+  })
+
+  it('shows historical no-session-update messages without special status overrides', () => {
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        latestSessionDetail: {
+          id: 'session-worker-no-update',
+          status: 'acknowledged',
+          instruction: '',
+          annotations: [],
+          messages: [
+            {
+              id: 'message-system-no-update',
+              role: 'system',
+              text: SYSTEM_NO_UPDATE_MESSAGE,
+              createdAt: 2,
+            },
+          ],
+          createdAt: 1,
+          updatedAt: 2,
+          acknowledgedAt: 2,
+        },
+      }),
+    )
+
+    expect(shadowRoot.textContent).toContain('◔ acknowledged')
+    expect(shadowRoot.textContent).toContain('AI connected. Waiting for update.')
+    const message = Array.from(shadowRoot.querySelectorAll('div')).find(element =>
+      element.textContent?.includes(SYSTEM_NO_UPDATE_MESSAGE),
+    ) as HTMLDivElement
+    expect(message.dataset.variant).toBe('system-info')
   })
 
   it('shows sending and success states through button labels and aria-live', () => {
@@ -463,24 +814,23 @@ describe('annotate sidebar', () => {
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
         isSending: true,
-        sendingScope: 'batch',
+        sendingScope: 'quick-ask',
       }),
     )
 
     expect(shadowRoot.textContent).toContain('Sending...')
     const liveRegion = shadowRoot.querySelector('[role="status"]') as HTMLElement | null
-    expect(liveRegion?.textContent).toBe('Sending notes to AI.')
+    expect(liveRegion?.textContent).toBe('Sending notes to your IDE assistant.')
 
     sidebar.update(
       createSidebarOptions(createRecordSession(), {
         isSending: false,
         sendingScope: null,
-        successScope: 'batch',
+        successScope: 'create-task',
       }),
     )
 
-    expect(shadowRoot.textContent).toContain('Sent')
-    expect(liveRegion?.textContent).toBe('Notes sent to AI.')
+    expect(liveRegion?.textContent).toBe('Task created from your notes.')
   })
 
   it('opens raw prompt preview below the footer when there is not enough space above', () => {
@@ -490,7 +840,14 @@ describe('annotate sidebar', () => {
       value: 320,
     })
 
-    createAnnotateSidebar(shadowRoot, createSidebarOptions())
+    createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        annotateDeliveryMode: 'both',
+        preferredAction: 'create-task',
+        isSending: false,
+      }),
+    )
 
     const footer = shadowRoot.querySelector(`.${annotateSidebarFooterClass}`) as HTMLElement
     const previewButton = Array.from(shadowRoot.querySelectorAll('button')).find(
@@ -500,7 +857,9 @@ describe('annotate sidebar', () => {
       '[data-inspecto-annotate-raw-preview]',
     ) as HTMLElement | null
 
-    expect(previewButton).not.toBeUndefined()
+    if (previewButton) {
+      expect(previewButton).not.toBeUndefined()
+    }
     expect(previewFloat).not.toBeNull()
 
     footer.getBoundingClientRect = () =>
@@ -523,13 +882,15 @@ describe('annotate sidebar', () => {
         left: 0,
         top: 0,
         width: 320,
-        height: 220,
+        height: 400,
         right: 320,
-        bottom: 220,
+        bottom: 400,
         toJSON: () => {},
       }) as DOMRect
 
-    previewButton!.click()
+    if (previewButton) {
+      previewButton.click()
+    }
 
     expect(previewFloat?.style.top).toBe('calc(100% + 8px)')
     expect(previewFloat?.style.bottom).toBe('auto')

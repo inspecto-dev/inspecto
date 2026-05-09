@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  appendScreenshotContextToPrompt,
   buildFixBugPrompt,
   buildPromptForIntent,
   selectFixBugEvidence,
@@ -34,15 +33,9 @@ describe('fix bug prompt assembly', () => {
     expect(records.map(record => record.id)).toEqual(['high'])
   })
 
-  it('renders the evidence-guided contract while preserving configured fix-bug guidance as reference', () => {
+  it('renders a concise evidence-guided fix-bug prompt with optional custom guidance', () => {
     const prompt = buildFixBugPrompt({
-      template: `I found a bug in the following component from \`{{file}}\` (line {{line}}).
-
-Please:
-
-1. Identify potential bugs or issues in this code
-2. Explain the root cause of each issue
-3. Provide a fixed version with minimal changes`,
+      template: 'Use Simplified Chinese in the final answer.',
       location: { file: '/repo/src/App.tsx', line: 10, column: 5 },
       snippet: 'throw new Error("boom")',
       records: [
@@ -59,18 +52,15 @@ Please:
       ],
     })
 
-    expect(prompt).toContain('You are fixing a bug for the currently inspected UI target.')
+    expect(prompt).toContain('Fix the bug for the inspected UI target.')
     expect(prompt).toContain('Target source context:')
-    expect(prompt).toContain('High-confidence runtime evidence:')
-    expect(prompt).toContain('Response contract:')
-    expect(prompt).toContain('1. Most likely root cause')
-    expect(prompt).toContain('Configured intent guidance (reference only):')
-    expect(prompt).toContain(
-      'I found a bug in the following component from `{{file}}` (line {{line}}).',
-    )
-    expect(prompt).toContain('Please:')
-    expect(prompt).toContain('Identify potential bugs or issues in this code')
-    expect(prompt).toContain('Provide a fixed version with minimal changes')
+    expect(prompt).toContain('Runtime evidence:')
+    expect(prompt).toContain('Task:')
+    expect(prompt).toContain('Additional guidance:')
+    expect(prompt).toContain('Use Simplified Chinese in the final answer.')
+    expect(prompt).not.toContain('Guardrails:')
+    expect(prompt).not.toContain('Response contract:')
+    expect(prompt).not.toContain('Configured intent guidance')
   })
 
   it('routes fix-bug intents through the evidence-guided builder and other intents through buildPrompt', () => {
@@ -113,16 +103,15 @@ Please:
       null,
     )
 
-    expect(fixBugPrompt).toContain('You are fixing a bug for the currently inspected UI target.')
+    expect(fixBugPrompt).toContain('Fix the bug for the inspected UI target.')
     expect(fixBugPrompt).toContain('Cannot read properties of undefined')
     expect(fixBugPrompt).not.toContain('None selected. Do not treat unrelated logs as proof.')
+    expect(fixBugPrompt).not.toContain('Fix {{file}}')
     expect(explainPrompt).toContain('Explain /repo/src/App.tsx')
-    expect(explainPrompt).not.toContain(
-      'You are fixing a bug for the currently inspected UI target.',
-    )
+    expect(explainPrompt).not.toContain('Fix the bug for the inspected UI target.')
   })
 
-  it('preserves prepend and append guidance for fix-bug intents', () => {
+  it('preserves prepend and append guidance for fix-bug intents without re-adding the base template', () => {
     const fixBugPrompt = buildPromptForIntent(
       {
         id: 'fix-bug',
@@ -142,10 +131,11 @@ Please:
       },
     )
 
-    expect(fixBugPrompt).toContain('Configured intent guidance (reference only):')
+    expect(fixBugPrompt).toContain('Additional guidance:')
     expect(fixBugPrompt).toContain('Use Simplified Chinese in the final answer.')
-    expect(fixBugPrompt).toContain('Fix {{file}}')
     expect(fixBugPrompt).toContain('Keep code changes minimal and explain any trade-offs.')
+    expect(fixBugPrompt).not.toContain('Fix {{file}}')
+    expect(fixBugPrompt).not.toContain('Configured intent guidance')
   })
 
   it('appends runtime evidence to non-fix-bug prompts only when evidence exists', () => {
@@ -209,18 +199,5 @@ Please:
     expect(explainPrompt).toContain('GET /api/user -> 500')
     expect(plainPrompt).toContain('Explain /repo/src/App.tsx')
     expect(plainPrompt).not.toContain('Relevant runtime context:')
-  })
-
-  it('appends screenshot context when only an asset id is available', () => {
-    const prompt = appendScreenshotContextToPrompt('Explain the issue.', {
-      enabled: true,
-      capturedAt: '2026-04-04T12:00:00.000Z',
-      mimeType: 'image/png',
-      imageAssetId: 'asset_123',
-    })
-
-    expect(prompt).toContain('Visual screenshot context attached:')
-    expect(prompt).toContain('capturedAt=2026-04-04T12:00:00.000Z')
-    expect(prompt).toContain('mimeType=image/png')
   })
 })

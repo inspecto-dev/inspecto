@@ -11,6 +11,7 @@ import { detect } from './commands/detect.js'
 import { devLink, devStatus, devUnlink } from './commands/dev-config.js'
 import { init } from './commands/init.js'
 import { doctor } from './commands/doctor.js'
+import { startMcpServer } from './commands/mcp.js'
 import { onboard } from './commands/onboard.js'
 import { plan } from './commands/plan.js'
 import { teardown } from './commands/teardown.js'
@@ -75,6 +76,10 @@ interface DevCommandOptions extends JsonCommandOptions {
   repo?: string
 }
 
+interface McpCommandOptions extends GlobalOptions {
+  serverUrl?: string
+}
+
 const integrationScopes = ['project', 'user'] as const
 const integrationModes = ['skills', 'instructions', 'agents', 'rules'] as const
 
@@ -123,6 +128,21 @@ export function createCli(_argv: readonly string[] = process.argv): CAC {
         throw new Error(
           'Usage:\n  inspecto dev link [--cli-bin <path>] [--repo <path>]\n  inspecto dev status [--json]\n  inspecto dev unlink [--json]',
         )
+      } catch (error) {
+        exitWithError(error, options)
+      }
+    })
+
+  cli
+    .command('mcp', 'Run Inspecto as a minimal stdio MCP server for agents')
+    .option('--server-url <url>', 'Use an explicit Inspecto dev server base URL')
+    .option('--debug', 'Enable debug mode to show full error traces', { default: false })
+    .action(async (options: McpCommandOptions) => {
+      try {
+        await startMcpServer({
+          ...(options.serverUrl ? { serverUrl: options.serverUrl } : {}),
+          version,
+        })
       } catch (error) {
         exitWithError(error, options)
       }

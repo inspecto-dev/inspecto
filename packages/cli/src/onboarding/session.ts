@@ -14,6 +14,7 @@ import { resolveOnboardingTarget } from './target-resolution.js'
 import { readJSON } from '../utils/fs.js'
 import type {
   OnboardCommandResult,
+  OnboardingDailyUsageHandoff,
   OnboardingContext,
   OnboardingDiagnostics,
   OnboardingExecutionResult,
@@ -256,9 +257,37 @@ function buildConfirmation(
   }
 }
 
+async function buildDailyUsageHandoff(
+  projectRoot: string,
+): Promise<OnboardingDailyUsageHandoff | undefined> {
+  const localSettings =
+    (await readJSON<Record<string, unknown>>(
+      path.join(projectRoot, '.inspecto', 'settings.local.json'),
+    )) ?? {}
+  const sharedSettings =
+    (await readJSON<Record<string, unknown>>(
+      path.join(projectRoot, '.inspecto', 'settings.json'),
+    )) ?? {}
+  const annotateDeliveryMode =
+    (localSettings['annotate.deliveryMode'] as string | undefined) ??
+    (sharedSettings['annotate.deliveryMode'] as string | undefined)
+
+  if (annotateDeliveryMode !== 'agent') {
+    return undefined
+  }
+
+  return {
+    mode: 'agent',
+    skill: 'inspecto-agent',
+    prompt: 'Use $inspecto-agent to claim Inspecto tasks continuously',
+    requiresMcp: true,
+  }
+}
+
 function buildPreApplyResult(
   status: ResolvedOnboardingSession['status'],
   session: ResolvedOnboardingSession,
+  dailyUsage?: OnboardingDailyUsageHandoff,
 ): OnboardCommandResult {
   const diagnostics: OnboardingDiagnostics | undefined =
     session.summary.risks.length > 0 ||
@@ -292,6 +321,7 @@ function buildPreApplyResult(
     ...(session.pendingSteps ? { pendingSteps: session.pendingSteps } : {}),
     ...(session.assistantPrompt ? { assistantPrompt: session.assistantPrompt } : {}),
     ...(session.patches ? { patches: session.patches } : {}),
+    ...(dailyUsage ? { dailyUsage } : {}),
     ...(diagnostics ? { diagnostics } : {}),
   }
 }
@@ -353,6 +383,7 @@ export async function resolveOnboardingSession(
 ): Promise<ResolvedOnboardingSession> {
   const rootContext = await buildOnboardingContext(root)
   const rootVerification = await buildVerification(root, rootContext.packageManager)
+  const rootDailyUsage = await buildDailyUsageHandoff(root)
   const frameworkSupportByPackage = await detectFrameworkSupportByPackage(root, rootContext)
   const target = resolveOnboardingTarget({
     repoRoot: root,
@@ -392,6 +423,7 @@ export async function resolveOnboardingSession(
       ...(plan.pendingSteps ? { pendingSteps: plan.pendingSteps } : {}),
       ...(plan.assistantPrompt ? { assistantPrompt: plan.assistantPrompt } : {}),
       ...(plan.patches ? { patches: plan.patches } : {}),
+      ...(rootDailyUsage ? { dailyUsage: rootDailyUsage } : {}),
     }
   }
 
@@ -418,6 +450,7 @@ export async function resolveOnboardingSession(
 
   const context = await buildTargetedContext(rootContext, target.selected!)
   const verification = await buildVerification(context.root, context.packageManager)
+  const dailyUsage = await buildDailyUsageHandoff(context.root)
   const plan = createPlanResult(context)
   const summary = buildOnboardingSummary(plan, context.root)
   const confirmation = buildConfirmation(
@@ -469,6 +502,7 @@ export async function resolveOnboardingSession(
     ...(plan.pendingSteps ? { pendingSteps: plan.pendingSteps } : {}),
     ...(plan.assistantPrompt ? { assistantPrompt: plan.assistantPrompt } : {}),
     ...(plan.patches ? { patches: plan.patches } : {}),
+    ...(dailyUsage ? { dailyUsage } : {}),
   }
 }
 
@@ -477,6 +511,7 @@ export async function applyResolvedOnboardingSession(
   options: ResolveOnboardingSessionOptions = {},
 ): Promise<OnboardCommandResult> {
   const verification = await buildVerification(session.projectRoot, session.context.packageManager)
+  const dailyUsage = await buildDailyUsageHandoff(session.projectRoot)
   const applyResult = await applyOnboardingPlan({
     repoRoot: process.cwd(),
     projectRoot: session.projectRoot,
@@ -528,12 +563,17 @@ export async function applyResolvedOnboardingSession(
     ...(session.pendingSteps ? { pendingSteps: session.pendingSteps } : {}),
     ...(session.assistantPrompt ? { assistantPrompt: session.assistantPrompt } : {}),
     ...(session.patches ? { patches: session.patches } : {}),
+    ...(dailyUsage ? { dailyUsage } : {}),
     ...(diagnostics ? { diagnostics } : {}),
   }
 }
 
-export function buildDeferredOnboardResult(
+export async function buildDeferredOnboardResult(
   session: ResolvedOnboardingSession,
-): OnboardCommandResult {
-  return buildPreApplyResult(session.status, session)
+): Promise<OnboardCommandResult> {
+  return buildPreApplyResult(
+    session.status,
+    session,
+    await buildDailyUsageHandoff(session.projectRoot),
+  )
 }

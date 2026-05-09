@@ -4,6 +4,12 @@ export { devLink, devStatus, devUnlink } from './commands/dev-config.js'
 export { init } from './commands/init.js'
 export { collectDoctorResult, doctor } from './commands/doctor.js'
 export { integrationDoctor } from './commands/integration-doctor.js'
+export {
+  startMcpServer,
+  createInspectoMcpRuntime,
+  createInspectoMcpServer,
+  resolveInspectoServerBaseUrl,
+} from './commands/mcp.js'
 export { onboard } from './commands/onboard.js'
 export { plan } from './commands/plan.js'
 export { teardown } from './commands/teardown.js'

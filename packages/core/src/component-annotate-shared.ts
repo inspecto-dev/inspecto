@@ -3,9 +3,10 @@ import type { SelectedTargetOverlayEntry } from './annotate-overlay.js'
 import type {
   AnnotationTarget,
   AnnotationTransport,
+  AnnotationWorkSession,
+  AnnotationWorkSessionSummary,
   FeedbackRecord,
   FeedbackRecordDraft,
-  ScreenshotContext,
 } from '@inspecto-dev/types'
 
 export type AnnotateContext = {
@@ -33,8 +34,6 @@ export type AnnotateContext = {
         targetMeta: string
         note: string
         onOpenInEditor: () => void
-        canAttachScreenshotContext: boolean
-        screenshotContextEnabled: boolean
         canAttachCssContext: boolean
         cssContextEnabled: boolean
         canAttachRuntimeContext: boolean
@@ -57,14 +56,20 @@ export type AnnotateContext = {
   annotateInstructionDraft: string
   annotateErrorMessage: string
   annotateRuntimeContextEnabled: boolean
-  annotateScreenshotContextEnabled: boolean
   annotateCssContextEnabled: boolean
+  annotateDeliveryMode: 'ide' | 'agent' | 'both'
   annotateSendState: {
     isSending: boolean
-    scope: 'batch' | null
+    scope: 'quick-ask' | 'create-task' | null
   }
-  annotateSuccessScope: 'batch' | null
+  annotateLatestSessionSummary: AnnotationWorkSessionSummary | null
+  annotateLatestSessionDetail: AnnotationWorkSession | null
+  annotateLatestSessionStream: import('./http.js').AnnotationSessionEventStreamConnection | null
+  annotateLatestSessionLoading: boolean
+  annotateLatestSessionError: string
+  annotateSuccessScope: 'quick-ask' | 'create-task' | null
   annotateSuccessTimeout: ReturnType<typeof setTimeout> | null
+  annotateSuccessOnClear: (() => void) | null
   configLoadPromise: Promise<void> | null
   mode: 'inspect' | 'annotate'
   shadowRootEl: ShadowRoot
@@ -77,8 +82,10 @@ export type AnnotateContext = {
   renderAnnotateSelectionOverlay(): void
   clearAnnotateError(): void
   clearAnnotateSuccess(): void
-  showAnnotateSuccess(scope: 'batch'): void
-  getAnnotationResponseMode(): 'unified' | 'per-annotation'
+  showAnnotateSuccess(scope: 'quick-ask' | 'create-task'): void
+  refreshLatestAnnotateSession(): Promise<void>
+  startLatestAnnotateSessionStream(sessionId: string): void
+  stopLatestAnnotateSessionStream(): void
   getAnnotateRuntimeContext(
     annotations: AnnotationTransport[],
     includeWhenDisabled?: boolean,
@@ -95,10 +102,6 @@ export type AnnotateContext = {
   ): string
   getCollectedRuntimeErrorCount(): number
   canAttachCssContext(): boolean
-  captureAnnotateScreenshotContext(
-    annotations: AnnotationTransport[],
-    scope: 'current' | 'batch',
-  ): Promise<ScreenshotContext | null>
 }
 
 export function asAnnotateContext(ctx: unknown): AnnotateContext {

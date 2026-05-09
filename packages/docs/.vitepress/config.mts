@@ -14,6 +14,7 @@ export default defineConfig({
 
   cleanUrls: true,
   lastUpdated: true,
+  srcExclude: ['**/design/**'],
 
   locales: {
     root: {
@@ -34,11 +35,11 @@ export default defineConfig({
             text: '入门',
             collapsed: false,
             items: [
-              { text: '简介', link: '/zh/guide/introduction' },
               { text: '快速开始', link: '/zh/guide/getting-started' },
-              { text: '常见问题 (FAQ)', link: '/zh/guide/faq' },
+              { text: '简介', link: '/zh/guide/introduction' },
+              { text: '兼容性清单', link: '/zh/guide/compatibility-checklist' },
               { text: '手动安装', link: '/zh/guide/manual-installation' },
-              { text: '迭代计划 (Roadmap)', link: '/zh/guide/roadmap' }
+              { text: '常见问题 (FAQ)', link: '/zh/guide/faq' }
             ],
           },
           {
@@ -54,8 +55,8 @@ export default defineConfig({
             collapsed: false,
             items: [
               { text: 'AI 工具支持', link: '/zh/integrations/ai-tools' },
+              { text: 'MCP 集成', link: '/zh/integrations/mcp' },
               { text: 'Onboarding 集成', link: '/zh/integrations/onboarding-skills' },
-              { text: 'Onboarding Contract', link: '/zh/integrations/onboarding-contract' },
               { text: 'IDE 扩展', link: '/zh/integrations/ide' },
             ],
           },
@@ -97,11 +98,11 @@ export default defineConfig({
         text: 'Guide',
         collapsed: false,
         items: [
-          { text: 'Introduction', link: '/guide/introduction' },
           { text: 'Getting Started', link: '/guide/getting-started' },
-          { text: 'Troubleshooting (FAQ)', link: '/guide/faq' },
+          { text: 'Introduction', link: '/guide/introduction' },
+          { text: 'Compatibility Checklist', link: '/guide/compatibility-checklist' },
           { text: 'Manual Installation', link: '/guide/manual-installation' },
-          { text: 'Roadmap', link: '/guide/roadmap' }
+          { text: 'Troubleshooting (FAQ)', link: '/guide/faq' }
         ],
       },
       {
@@ -117,8 +118,8 @@ export default defineConfig({
         collapsed: false,
         items: [
           { text: 'AI Tools', link: '/integrations/ai-tools' },
+          { text: 'MCP Integration', link: '/integrations/mcp' },
           { text: 'Onboarding Integrations', link: '/integrations/onboarding-skills' },
-          { text: 'Onboarding Contract', link: '/integrations/onboarding-contract' },
           { text: 'IDE Extensions', link: '/integrations/ide' },
         ],
       },

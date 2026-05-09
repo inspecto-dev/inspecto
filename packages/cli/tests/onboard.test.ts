@@ -352,6 +352,12 @@ describe('onboard command', () => {
         'Complete the remaining client-side mount step for your App Router entry.',
       ],
       assistantPrompt: 'Complete the remaining Inspecto onboarding for this Next.js project.',
+      dailyUsage: {
+        mode: 'agent',
+        skill: 'inspecto-agent',
+        prompt: 'Use $inspecto-agent to claim Inspecto tasks continuously',
+        requiresMcp: true,
+      },
       patches: [
         {
           path: 'next.config.mjs',
@@ -393,6 +399,12 @@ describe('onboard command', () => {
         'Complete the remaining client-side mount step for your App Router entry.',
       ],
       assistantPrompt: 'Complete the remaining Inspecto onboarding for this Next.js project.',
+      dailyUsage: {
+        mode: 'agent',
+        skill: 'inspecto-agent',
+        prompt: 'Use $inspecto-agent to claim Inspecto tasks continuously',
+        requiresMcp: true,
+      },
       patches: [
         {
           path: 'next.config.mjs',
@@ -424,6 +436,9 @@ describe('onboard command', () => {
         'Review the generated Next.js patch plan for next.config.mjs.',
         'Complete the remaining client-side mount step for your App Router entry.',
       ]),
+    )
+    expect(result.handoff?.dailyUsage?.prompt).toBe(
+      'Use $inspecto-agent to claim Inspecto tasks continuously',
     )
     expect(result.assistantPrompt).toContain('Complete the remaining Inspecto onboarding')
     expect(result.patches).toEqual(

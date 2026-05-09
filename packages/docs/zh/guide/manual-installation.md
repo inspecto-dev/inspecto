@@ -2,7 +2,7 @@
 
 虽然 `@inspecto-dev/cli` 可以自动处理大部分初始化工作，但如果你正在使用非常复杂的自定义构建脚本，或是某些不完全受官方支持的元框架（Meta-framework），你可能需要进行手动配置。
 
-把这份文档当成兜底路径，而不是默认入口。在大多数情况下，更推荐 assistant-first onboarding 或 `inspecto init`。
+把这份文档当成兜底路径，而不是默认入口。在大多数情况下，更推荐 assistant-first onboarding 或 `npx @inspecto-dev/cli init`。
 
 在阅读这页之前，请先尝试：
 
@@ -20,20 +20,20 @@ npx @inspecto-dev/cli integrations install <assistant> --host-ide <vscode|cursor
 
 ## 1. 安装插件依赖
 
-首先，将插件安装为开发环境依赖：
+首先，将插件和核心客户端安装为开发环境依赖：
 
 ::: code-group
 
 ```bash [npm]
-npm install -D @inspecto-dev/plugin
+npm install -D @inspecto-dev/plugin @inspecto-dev/core
 ```
 
 ```bash [pnpm]
-pnpm add -D @inspecto-dev/plugin
+pnpm add -D @inspecto-dev/plugin @inspecto-dev/core
 ```
 
 ```bash [yarn]
-yarn add -D @inspecto-dev/plugin
+yarn add -D @inspecto-dev/plugin @inspecto-dev/core
 ```
 
 :::
@@ -122,11 +122,13 @@ export default {
 }
 ```
 
-## 3. 安装 IDE 扩展（必须）
+## 3. 安装 IDE 扩展（可选）
 
-与 assistant-first onboarding 或 `inspecto init` 不同，手动安装时**你必须自己为你的编辑器安装 Inspecto 配套扩展**。没有这个扩展，浏览器将无法把代码发送到你的 IDE 中。
+如果你希望浏览器通过 URI scheme 直接把代码发送到你的 IDE，请安装 Inspecto 配套扩展。没有这个扩展，你仍然可以使用 MCP 或"复制上下文"按钮。
 
 请参考 [IDE 扩展集成指南](../integrations/ide.md) 完成 VS Code、Cursor、Trae 或 CodeBuddy 中插件的安装。
+
+> **如果你使用纯浏览器模式 (Standalone) 并且不依赖 IDE 插件，你可以跳过这一步**。请参考 [MCP 集成指南](../integrations/mcp.md) 了解如何将你的独立 Agent 直接连接到 Inspecto，而无需安装任何 IDE 扩展。
 
 ## 4. 配置项目参数
 
@@ -160,7 +162,7 @@ import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   webpack: (config, { dev, isServer }) => {
-    // 仅在开发环境并且是客户端构建时注入
+    // 仅在客户端开发环境注入
     if (dev && !isServer) {
       config.plugins.push(inspecto())
     }
@@ -224,7 +226,7 @@ import { mountInspector } from '@inspecto-dev/core'
 
 if (process.env.NODE_ENV !== 'production') {
   mountInspector({
-    serverUrl: 'http://127.0.0.1:5678', // 默认的本地服务端口
+    serverUrl: 'http://0.0.0.0:5678', // 默认的本地服务端口
   })
 }
 ```
