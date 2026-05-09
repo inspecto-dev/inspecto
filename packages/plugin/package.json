@@ -84,7 +84,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@babel/parser": "^7.24.0",
+    "@babel/parser": "^7.29.3",
     "@babel/traverse": "^7.24.0",
     "@babel/types": "^7.24.0",
     "@inspecto-dev/types": "workspace:*",
