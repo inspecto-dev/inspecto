@@ -50,18 +50,6 @@ export interface RuntimeContextConfig {
   maxFailedRequests?: number
 }
 
-export interface ScreenshotContext {
-  enabled: boolean
-  capturedAt: string
-  mimeType: string
-  imageDataUrl?: string
-  imageAssetId?: string
-}
-
-export interface ScreenshotContextConfig {
-  enabled?: boolean
-}
-
 export interface OpenFileRequest {
   file: string
   line: number
@@ -131,6 +119,85 @@ export interface AnnotationSession {
   queue: Annotation[]
 }
 
+export type AnnotationSessionStatus =
+  | 'pending'
+  | 'acknowledged'
+  | 'in_progress'
+  | 'resolved'
+  | 'dismissed'
+
+export type AnnotationThreadRole = 'user' | 'agent' | 'system'
+
+export interface AnnotationThreadMessage {
+  id: string
+  role: AnnotationThreadRole
+  text: string
+  createdAt: number
+}
+
+export interface AnnotationWorkSession {
+  id: string
+  instruction: string
+  annotations: Annotation[]
+  deliveryMode?: AnnotationDeliveryMode
+  runtimeContext?: RuntimeContextEnvelope
+  cssContextPrompt?: string
+  pageUrl?: string
+  route?: string
+  status: AnnotationSessionStatus
+  messages: AnnotationThreadMessage[]
+  createdAt: number
+  updatedAt: number
+  acknowledgedAt?: number
+  resolvedAt?: number
+}
+
+export interface AnnotationWorkSessionSummary {
+  id: string
+  status: AnnotationSessionStatus
+  createdAt: number
+  updatedAt: number
+}
+
+export interface CreateAnnotationWorkSessionInput {
+  instruction?: string
+  annotations: Annotation[]
+  deliveryMode?: AnnotationDeliveryMode
+  runtimeContext?: RuntimeContextEnvelope
+  cssContextPrompt?: string
+  pageUrl?: string
+  route?: string
+  messages?: AnnotationThreadMessage[]
+}
+
+export interface AppendAnnotationThreadMessageInput {
+  role: AnnotationThreadRole
+  text: string
+}
+
+export interface AnnotationSessionReplyRequest {
+  role: AnnotationThreadRole
+  text: string
+}
+
+export interface AnnotationSessionResolveRequest {
+  message?: string
+}
+
+export interface AnnotationSessionClaimRequest {
+  timeoutMs?: number
+}
+
+export type AnnotationSessionEventType =
+  | 'session-created'
+  | 'session-message-appended'
+  | 'session-status-updated'
+
+export interface AnnotationSessionEvent {
+  type: AnnotationSessionEventType
+  session: AnnotationWorkSession
+}
+
 export interface AnnotationTransportTarget {
   location: SourceLocation
   label?: string
@@ -144,30 +211,40 @@ export interface AnnotationTransport {
   targets: AnnotationTransportTarget[]
 }
 
+export type AnnotationDeliveryMode = 'ide' | 'agent'
+
 export interface SendAnnotationsToAiRequest {
   instruction?: string
   annotations: AnnotationTransport[]
-  responseMode?: 'unified' | 'per-annotation'
   runtimeContext?: RuntimeContextEnvelope
-  screenshotContext?: ScreenshotContext
   cssContextPrompt?: string
+  deliveryMode?: AnnotationDeliveryMode
 }
 
 export interface SendAnnotationsToAiResponse {
   success: boolean
   error?: string
   errorCode?: AiErrorCode
+  session?: AnnotationWorkSessionSummary
   fallbackPayload?: {
     prompt: string
   }
 }
 
+export interface AnnotationSessionMutationResponse {
+  success: boolean
+  error?: string
+  session?: AnnotationWorkSession
+}
+
 export type AiErrorCode =
   | 'INVALID_REQUEST'
   | 'FORBIDDEN_PATH'
+  | 'IDE_UNAVAILABLE'
   | 'IDE_NOT_FOUND'
   | 'EXTENSION_NOT_INSTALLED'
   | 'CLIPBOARD_WRITE_FAILED'
   | 'SNIPPET_TOO_LARGE'
   | 'FILE_NOT_FOUND'
+  | 'SERVER_UNAVAILABLE'
   | 'UNKNOWN'

@@ -4,7 +4,7 @@ layout: home
 hero:
   name: 'Inspecto'
   text: 'Inspect UI from your browser.'
-  tagline: 'Inspecto is a browser-first frontend workflow for source lookup and automated AI handoff. Inspect one component, annotate a batch, or jump to source to reduce browser-to-editor context switching.'
+  tagline: 'Inspecto is a browser-first frontend workflow for source lookup and automated AI handoff.'
   image:
     src: /icon.png
     alt: Inspecto Logo
@@ -89,11 +89,13 @@ import HeroArchitecture from './components/HeroArchitecture.vue'
   <div class="home-panel home-panel--accent">
     <h3>Fastest path</h3>
     <ol>
-      <li><strong>Navigate to your project root</strong> (most integrations are installed per-project).</li>
-      <li><strong>Install</strong> the integration matching your assistant.</li>
-      <li><strong>Wait for onboarding to open</strong> in your IDE.</li>
-      <li><strong>Only if onboarding does not open</strong>, send <code>Set up Inspecto in this project</code> manually.</li>
+      <li><strong>Navigate to your project root</strong> and run the install command for your assistant.</li>
+      <li><strong>Follow the onboarding</strong> that opens in your IDE (or send <code>Set up Inspecto in this project</code> if it doesn't).</li>
+      <li><strong>Open your app</strong> in the browser and start using Inspect mode, Annotate mode, or Alt + Click.</li>
     </ol>
+    <p style="margin: 12px 0 0; font-size: 0.85rem; color: var(--vp-c-text-2);">
+      Using a standalone agent? See <a href="/integrations/mcp">MCP Integration</a> for IDE-free setup.
+    </p>
   </div>
 </div>
 

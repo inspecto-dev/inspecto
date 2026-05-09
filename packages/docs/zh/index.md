@@ -4,7 +4,7 @@ layout: home
 hero:
   name: 'Inspecto'
   text: '直接在浏览器里 Inspect UI。'
-  tagline: 'Inspecto 是一套浏览器优先的前端工作流，用来更快定位源码并把正确上下文自动交给 AI。你可以直接在页面里进入 Inspect mode、Annotate mode，或者用 Quick jump 打开源码，减少浏览器和编辑器之间的来回切换。'
+  tagline: 'Inspecto 是一套浏览器优先的前端工作流，用来更快定位源码并把正确上下文自动交给 AI。'
   image:
     src: /icon.png
     alt: Inspecto Logo
@@ -20,13 +20,13 @@ hero:
       link: /inspecto/demo/inspecto.mov
 
 features:
-  - title: Inspect mode
+  - title: 检查模式
     details: 'Inspect 单个组件，自动附带准确上下文，然后立即唤起 AI 提问。'
-  - title: Annotate mode
+  - title: 标注模式
     details: '跨多个组件圈选多条修改意见，补充一个整体目标，再一次性打包发给 AI。'
-  - title: Quick jump
+  - title: 快速跳转
     details: '按住 `Alt` + `点击` 页面元素，瞬间在编辑器中打开准确的源码位置，告别手动搜索。'
-  - title: Assistant-first 接入
+  - title: 助手引导接入
     details: '由 AI 助手主导的智能接入。在项目根目录运行安装命令，让 AI 在 IDE 中自动引导你完成配置。'
   - title: 低风险接入
     details: '基于编译时属性注入，生产环境自动 treeshaking，并通过 Shadow DOM 避免污染业务样式。'
@@ -56,18 +56,18 @@ import HeroArchitecture from '../components/HeroArchitecture.vue'
 
 <div class="mode-grid">
   <div class="mode-card">
-    <img :src="'/inspecto/inspect-mode.gif'" alt="Inspect mode workflow" />
-    <h3>Inspect mode</h3>
+    <img :src="'/inspecto/inspect-mode.gif'" alt="检查模式 workflow" />
+    <h3>检查模式</h3>
     <p>Inspect 单个组件，自动附带准确上下文，然后立即唤起 AI 提问。</p>
   </div>
   <div class="mode-card">
-    <img :src="'/inspecto/annotate-mode.gif'" alt="Annotate mode workflow" />
-    <h3>Annotate mode</h3>
+    <img :src="'/inspecto/annotate-mode.gif'" alt="标注模式 workflow" />
+    <h3>标注模式</h3>
     <p>跨多个组件圈选多条修改意见，补充一个整体目标，再一次性打包发给 AI。</p>
   </div>
   <div class="mode-card">
-    <img :src="'/inspecto/quick-jump.gif'" alt="Quick jump workflow" />
-    <h3>Quick jump</h3>
+    <img :src="'/inspecto/quick-jump.gif'" alt="快速跳转 workflow" />
+    <h3>快速跳转</h3>
     <p>按住 <code>Alt + 点击</code> 页面元素，瞬间在编辑器中打开准确的源码位置，告别手动搜索。</p>
   </div>
 </div>
@@ -89,11 +89,13 @@ import HeroArchitecture from '../components/HeroArchitecture.vue'
   <div class="home-panel home-panel--accent">
     <h3>最快路径</h3>
     <ol>
-      <li><strong>进入你的项目根目录</strong>（大多数集成是基于项目的）。</li>
-      <li><strong>安装</strong>对应你 AI 助手的集成。</li>
-      <li><strong>等待 onboarding</strong> 在你的 IDE 中自动打开。</li>
-      <li><strong>只有在 onboarding 没有打开时</strong>，再手动发送 <code>Set up Inspecto in this project</code>。</li>
+      <li><strong>进入项目根目录</strong>，运行对应 AI 助手的安装命令。</li>
+      <li><strong>跟随 IDE 中自动打开的 onboarding</strong>（如果没有自动打开，发送 <code>Set up Inspecto in this project</code>）。</li>
+      <li><strong>在浏览器中打开应用</strong>，开始使用检查模式、标注模式或 Alt + Click。</li>
     </ol>
+    <p style="margin: 12px 0 0; font-size: 0.85rem; color: var(--vp-c-text-2);">
+      使用独立 Agent？查看 <a href="/zh/integrations/mcp">MCP 集成</a> 了解无需 IDE 的安装方式。
+    </p>
   </div>
 </div>
 

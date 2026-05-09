@@ -32,6 +32,10 @@ Always prefer the single-entry onboarding command over the legacy detect/plan/ap
 10. Otherwise, use `verification.message` and tell the user to start their normal dev server command manually.
 11. If the result includes `handoff.patches`, treat them as the primary source of truth for the remaining work. Apply those patches directly before exploring framework docs or unrelated project files.
 12. Only do broader documentation or repo exploration when a returned patch is clearly insufficient or conflicts with the local project structure.
+13. After validation succeeds, if the onboarding result includes `handoff.dailyUsage`, use that payload as the post-onboarding runtime handoff:
+    - tell the user that browser `Annotate mode` tasks should now follow `handoff.dailyUsage.skill`
+    - recommend the exact `handoff.dailyUsage.prompt`
+    - if `handoff.dailyUsage.requiresMcp` is `true`, say that continuous task pickup still requires separate MCP configuration
 
 ## Fast Path
 
@@ -45,6 +49,7 @@ After this fast path succeeds, the next default action should be:
 
 1. confirm the IDE extension is installed or guide the user through manual installation
 2. only then offer to start the app's `dev` script for validation if it is clearly available
+3. if the onboarding result includes `handoff.dailyUsage`, close by using that exact runtime handoff for daily MCP-driven annotation work
 
 ## Guardrails
 
@@ -58,6 +63,7 @@ After this fast path succeeds, the next default action should be:
 - Use the CLI's `verification` payload as the source of truth for dev-server validation. Do not guess custom start commands.
 - Do not suggest restarting or validating the local dev server until the IDE extension step is complete.
 - Prefer `handoff.patches`, `handoff.pendingSteps`, and `handoff.assistantPrompt` over ad-hoc investigation. Do not start with Next.js or Nuxt documentation searches when the CLI already returned concrete patch targets.
+- If `handoff.dailyUsage` is present, do not end onboarding without mentioning that runtime handoff.
 
 ## Local Debugging
 

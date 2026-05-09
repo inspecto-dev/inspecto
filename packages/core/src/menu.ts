@@ -4,11 +4,10 @@ import type {
   Provider,
   InspectorOptions,
   RuntimeContextEnvelope,
-  ScreenshotContext,
   SourceLocation,
   IntentConfig,
 } from '@inspecto-dev/types'
-import { openFile, fetchIdeInfo } from './http.js'
+import { openFileWithDiagnostics, fetchIdeInfo } from './http.js'
 import { applyIconToggleButtonState, createMenuHeaderDom } from './menu-header.js'
 import { resolveMenuPosition } from './menu-position.js'
 import {
@@ -21,6 +20,7 @@ import {
   isFixUiIntent,
   showError,
 } from './menu-helpers.js'
+import { t } from './i18n.js'
 import { menuClass, loadingSpinnerClass } from './styles.js'
 
 const _DISPLAY_NAMES: Record<Provider, string> = {
@@ -36,9 +36,7 @@ const _DISPLAY_NAMES: Record<Provider, string> = {
 
 type MenuRuntimeContextDeps = {
   getRuntimeContext?: (location: SourceLocation) => RuntimeContextEnvelope | null
-  captureScreenshotContext?: () => Promise<ScreenshotContext | null>
   captureCssContextPrompt?: () => string | null
-  canAttachScreenshotContext?: boolean
   targetLabel?: string
 }
 
@@ -55,10 +53,8 @@ export function showIntentMenu(
   const includeSnippet = options.includeSnippet ?? false
   let canAttachRuntimeContext =
     options.runtimeContext?.enabled === true && typeof deps.getRuntimeContext === 'function'
-  const canAttachScreenshotContext = false
   let runtimeContextPreference: boolean | null = null
   let runtimeContextDefaultMode: 'off' | 'all-on' | 'mixed' = 'off'
-  let screenshotContextEnabled = false
   let cssContextEnabled = false
   const canAttachCssContext = typeof deps.captureCssContextPrompt === 'function'
 
@@ -75,37 +71,13 @@ export function showIntentMenu(
     openButton,
     runtimeToggleButton,
     runtimeToggleBadge,
-    screenshotToggleButton,
     cssToggleButton,
   } = createMenuHeaderDom({
     location,
     ...(deps.targetLabel ? { targetLabel: deps.targetLabel } : {}),
     canAttachRuntimeContext,
-    canAttachScreenshotContext,
     canAttachCssContext,
   })
-
-  const syncScreenshotToggleButton = () => {
-    screenshotToggleButton.hidden = !canAttachScreenshotContext
-
-    if (!canAttachScreenshotContext) {
-      screenshotToggleButton.remove()
-      return
-    }
-
-    if (!headerActions.contains(screenshotToggleButton)) {
-      const referenceNode = headerActions.contains(runtimeToggleButton)
-        ? runtimeToggleButton
-        : headerActions.contains(openButton)
-          ? openButton
-          : null
-      if (referenceNode) {
-        headerActions.insertBefore(screenshotToggleButton, referenceNode)
-      } else {
-        headerActions.appendChild(screenshotToggleButton)
-      }
-    }
-  }
 
   const syncCssToggleButton = () => {
     cssToggleButton.hidden = !canAttachCssContext
@@ -149,12 +121,11 @@ export function showIntentMenu(
     applyIconToggleButtonState(
       cssToggleButton,
       cssContextEnabled,
-      'CSS context enabled',
-      'Attach CSS context',
+      t('menu.cssEnabled'),
+      t('menu.attachCss'),
     )
   }
 
-  syncScreenshotToggleButton()
   syncCssToggleButton()
   syncRuntimeToggleButton()
   applyCssToggleButtonState()
@@ -385,15 +356,15 @@ export function showIntentMenu(
     runtimeToggleButton.title =
       ariaPressed === 'true'
         ? runtimeSummary
-          ? `Runtime context enabled • ${runtimeSummary}`
-          : 'Runtime context enabled'
+          ? `${t('menu.runtimeEnabled')} • ${runtimeSummary}`
+          : t('menu.runtimeEnabled')
         : ariaPressed === 'mixed'
           ? runtimeSummary
-            ? `Runtime context defaults to fix actions only • ${runtimeSummary}`
-            : 'Runtime context defaults to fix actions only until you choose otherwise'
+            ? `${t('menu.runtimeFixOnly')} • ${runtimeSummary}`
+            : t('menu.runtimeFixOnly')
           : runtimeSummary
-            ? `Attach runtime context • ${runtimeSummary}`
-            : 'Attach runtime context'
+            ? `${t('menu.attachRuntime')} • ${runtimeSummary}`
+            : t('menu.attachRuntime')
 
     if (ariaPressed !== 'true') {
       runtimeContextSection.hidden = true
@@ -417,30 +388,12 @@ export function showIntentMenu(
     renderRuntimeContextUi()
   })
 
-  screenshotToggleButton.addEventListener('click', event => {
-    event.preventDefault()
-    event.stopPropagation()
-    screenshotContextEnabled = !screenshotContextEnabled
-    screenshotToggleButton.setAttribute('aria-pressed', screenshotContextEnabled ? 'true' : 'false')
-    screenshotToggleButton.dataset.visualState = screenshotContextEnabled ? 'active' : 'inactive'
-  })
-
   cssToggleButton.addEventListener('click', event => {
     event.preventDefault()
     event.stopPropagation()
     cssContextEnabled = !cssContextEnabled
     applyCssToggleButtonState()
   })
-
-  const resolveScreenshotContext = async (): Promise<ScreenshotContext | null> => {
-    if (!screenshotContextEnabled) return null
-
-    try {
-      return (await deps.captureScreenshotContext?.()) ?? null
-    } catch {
-      return null
-    }
-  }
 
   const resolveCssContextPrompt = (intent?: Pick<IntentConfig, 'id'>): string | null => {
     const shouldAttachCssContext = cssContextEnabled || Boolean(intent && isFixUiIntent(intent))
@@ -460,7 +413,6 @@ export function showIntentMenu(
 
     try {
       const requestRuntimeContext = resolveRuntimeContext()
-      const requestScreenshotContext = await resolveScreenshotContext()
       const requestCssContextPrompt = resolveCssContextPrompt()
       const built = await buildCustomInspectPrompt({
         location,
@@ -469,7 +421,6 @@ export function showIntentMenu(
         includeSnippet,
         maxSnippetLines,
         runtimeContext: requestRuntimeContext,
-        screenshotContext: requestScreenshotContext,
         cssContextPrompt: requestCssContextPrompt,
       })
       await openAndSendInspectPrompt({
@@ -477,7 +428,6 @@ export function showIntentMenu(
         promptText: built.prompt,
         snippetText: built.snippetText,
         runtimeContext: requestRuntimeContext,
-        screenshotContext: requestScreenshotContext,
         onSuccess: cleanup,
         onRestore: () => {
           input.disabled = false
@@ -502,6 +452,13 @@ export function showIntentMenu(
     .then(ideInfo => {
       loadingEl.remove()
 
+      if (!ideInfo) {
+        input.placeholder = t('menu.ask.placeholder.setup')
+        showError(menu, 'Client config unavailable', 'CLIENT_CONFIG_UNAVAILABLE')
+        updatePosition()
+        return
+      }
+
       if (
         ideInfo?.runtimeContext?.enabled === true &&
         typeof deps.getRuntimeContext === 'function'
@@ -509,13 +466,12 @@ export function showIntentMenu(
         canAttachRuntimeContext = true
         syncRuntimeToggleButton()
       }
-
       const intents = ideInfo?.prompts || []
       if (!options.askPlaceholder) {
         input.placeholder =
           intents.length > 0
-            ? 'Add a custom ask or extra instruction...'
-            : 'Ask anything about this component...'
+            ? t('menu.ask.placeholder.default')
+            : t('menu.ask.placeholder.fallback')
       }
       const aiIntents = intents
       const hasFixIntent = aiIntents.some(isFixIntent)
@@ -528,7 +484,6 @@ export function showIntentMenu(
         includeSnippet,
         maxSnippetLines,
         resolveRuntimeContext,
-        resolveScreenshotContext,
         resolveCssContextPrompt,
         onSend: async payload => {
           await openAndSendInspectPrompt({
@@ -536,7 +491,6 @@ export function showIntentMenu(
             promptText: payload.prompt,
             snippetText: payload.snippetText,
             runtimeContext: payload.runtimeContext,
-            screenshotContext: payload.screenshotContext,
             onSuccess: cleanup,
             onRestore: () => {
               payload.button.disabled = false
@@ -551,13 +505,13 @@ export function showIntentMenu(
       openButton.addEventListener('click', async e => {
         e.stopPropagation()
         openButton.disabled = true
-        const opened = await openFile(location)
-        if (opened) {
+        const openResult = await openFileWithDiagnostics(location)
+        if (openResult.success) {
           cleanup()
           return
         }
         openButton.disabled = false
-        showError(menu, 'Unable to open file in the IDE.', 'IDE_UNAVAILABLE')
+        showError(menu, t('menu.error.openIde'), openResult.errorCode ?? 'IDE_UNAVAILABLE')
       })
 
       for (const action of aiActions) {

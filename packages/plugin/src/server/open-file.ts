@@ -65,7 +65,7 @@ export function handleOpenFileRequest(
   else if (rawEditorHint === 'trae-cn' || rawEditorHint === 'trae') editorHint = 'trae'
 
   serverLogger.debug(
-    `IDE_OPEN: activeIde=${activeIde}, activeIdeScheme=${activeIdeScheme}, configuredIde=${configuredIde} -> rawEditorHint=${rawEditorHint}, finalEditorHint=${editorHint}`,
+    `SOURCE_OPEN: activeIde=${activeIde}, activeIdeScheme=${activeIdeScheme}, configuredIde=${configuredIde} -> rawEditorHint=${rawEditorHint}, finalEditorHint=${editorHint}`,
   )
 
   if (VSCODE_FAMILY_SCHEMES.includes(rawEditorHint)) {
@@ -75,7 +75,7 @@ export function handleOpenFileRequest(
     }
     const encodedPath = encodeURI(normalizedPath)
     const uri = `${rawEditorHint}://file${encodedPath}:${body.line}:${body.column}`
-    serverLogger.debug(`IDE_OPEN: Bypassing launchIDE, using URI scheme directly: ${uri}`)
+    serverLogger.debug(`SOURCE_OPEN: Bypassing launchIDE, using URI scheme directly: ${uri}`)
 
     try {
       if (process.platform === 'darwin') {
@@ -86,7 +86,7 @@ export function handleOpenFileRequest(
         execFileSync('xdg-open', [uri])
       }
     } catch (e) {
-      serverLogger.error(`Failed to launch URI for IDE_OPEN (${uri}):`, e)
+      serverLogger.error(`Failed to launch URI for SOURCE_OPEN (${uri}):`, e)
       launchIDE({
         file: absolutePath,
         line: body.line,

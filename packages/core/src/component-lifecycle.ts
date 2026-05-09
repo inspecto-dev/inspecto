@@ -2,6 +2,7 @@ import { createOverlay } from './overlay.js'
 import { fetchIdeInfo } from './http.js'
 import { inspectorStyles } from './styles.js'
 import { setBaseUrl } from './http.js'
+import { configureI18n } from './i18n.js'
 import type { HotKeys, InspectorOptions } from '@inspecto-dev/types'
 
 type InspectoOptions = InspectorOptions & { mode?: 'inspect' | 'annotate' }
@@ -24,9 +25,9 @@ type LifecycleContext = {
   annotateCapturePaused: boolean
   annotateQuickCaptureEnabled: boolean
   annotateRuntimeContextEnabled: boolean
-  annotateScreenshotContextEnabled: boolean
   annotateCssContextEnabled: boolean
-  annotationResponseMode: 'unified' | 'per-annotation'
+  annotateDeliveryMode: 'ide' | 'agent' | 'both'
+  stopLatestAnnotateSessionStream(): void
   setAttribute(name: string, value: string): void
   removeAttribute(name: string): void
   attachShadow(options: ShadowRootInit): ShadowRoot
@@ -58,8 +59,28 @@ function resetAnnotateState(state: LifecycleContext): void {
   state.annotateCapturePaused = false
   state.annotateQuickCaptureEnabled = false
   state.annotateRuntimeContextEnabled = false
-  state.annotateScreenshotContextEnabled = false
   state.annotateCssContextEnabled = false
+  state.stopLatestAnnotateSessionStream()
+}
+
+function buildI18nConfig(input: {
+  locale?: InspectoOptions['locale']
+  messages?: InspectoOptions['messages']
+}): {
+  locale?: NonNullable<InspectoOptions['locale']>
+  messages?: NonNullable<InspectoOptions['messages']>
+} {
+  const config: {
+    locale?: NonNullable<InspectoOptions['locale']>
+    messages?: NonNullable<InspectoOptions['messages']>
+  } = {}
+  if (input.locale !== undefined) {
+    config.locale = input.locale
+  }
+  if (input.messages !== undefined) {
+    config.messages = input.messages
+  }
+  return config
 }
 
 export function connect(
@@ -67,6 +88,7 @@ export function connect(
   createAnnotateOverlay: (root: ShadowRoot) => LifecycleContext['annotateOverlay'],
 ): void {
   const state = asLifecycleContext(ctx)
+  configureI18n(buildI18nConfig(state.options))
   const host = state as unknown as HTMLElement
   host.style.position = 'fixed'
   host.style.inset = '0'
@@ -101,6 +123,7 @@ export function disconnect(ctx: unknown): void {
   state.annotateSidebar = null
   state.annotateElements.clear()
   state.annotateDrafts.clear()
+  state.stopLatestAnnotateSessionStream()
   state.cleanupRuntimeContextCapture?.()
   state.cleanupRuntimeContextCapture = null
   state.runtimeContextCollector.clear()
@@ -110,6 +133,7 @@ export function disconnect(ctx: unknown): void {
 export function configure(ctx: unknown, options: InspectoOptions): void {
   const state = asLifecycleContext(ctx)
   state.options = options
+  configureI18n(buildI18nConfig(options))
   if (options.mode !== undefined) {
     const previousMode = state.mode
     state.mode = options.mode
@@ -132,6 +156,9 @@ export function configure(ctx: unknown, options: InspectoOptions): void {
       if (info?.theme !== undefined) {
         applyTheme(state, info.theme)
       }
+      if (info?.annotateDeliveryMode !== undefined) {
+        state.annotateDeliveryMode = info.annotateDeliveryMode
+      }
       if (info?.includeSnippet !== undefined) {
         state.options.includeSnippet = info.includeSnippet
       }
@@ -141,16 +168,6 @@ export function configure(ctx: unknown, options: InspectoOptions): void {
           ...info.runtimeContext,
         }
         state.syncRuntimeContextCapture()
-      }
-      if (info?.screenshotContext !== undefined) {
-        state.options.screenshotContext = {
-          ...state.options.screenshotContext,
-          ...info.screenshotContext,
-        }
-      }
-      if (info?.annotationResponseMode !== undefined) {
-        state.options.annotationResponseMode = info.annotationResponseMode
-        state.annotationResponseMode = info.annotationResponseMode
       }
     })
     .catch(() => {})

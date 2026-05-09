@@ -57,6 +57,7 @@ function buildAssistantHandoff(
     ...(result.pendingSteps ? { pendingSteps: result.pendingSteps } : {}),
     ...(result.assistantPrompt ? { assistantPrompt: result.assistantPrompt } : {}),
     ...(result.patches ? { patches: result.patches } : {}),
+    ...(result.dailyUsage ? { dailyUsage: result.dailyUsage } : {}),
   }
 }
 
@@ -110,6 +111,9 @@ function printOnboardResult(result: OnboardCommandResult): void {
   if (normalized.handoff?.assistantPrompt) {
     log.hint(normalized.handoff.assistantPrompt)
   }
+  if (normalized.handoff?.dailyUsage?.prompt) {
+    log.hint(normalized.handoff.dailyUsage.prompt)
+  }
   if (normalized.confirmation.required && normalized.confirmation.question) {
     log.warn(normalized.confirmation.question)
   }
@@ -139,7 +143,7 @@ export async function onboard(options: OnboardCommandOptions = {}): Promise<Onbo
     session.status === 'needs_confirmation'
   ) {
     return writeCommandOutput(
-      normalizeOnboardResult(buildDeferredOnboardResult(session)),
+      normalizeOnboardResult(await buildDeferredOnboardResult(session)),
       options.json ?? false,
       printOnboardResult,
     )

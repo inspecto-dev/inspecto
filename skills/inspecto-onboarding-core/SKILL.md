@@ -27,6 +27,11 @@ Use this workflow when an assistant skill needs to set up Inspecto in the curren
 7. Only after the IDE extension step is complete, use the onboarding result's `verification` payload. If `verification.available` is `true` and `verification.devCommand` is present, offer to start that exact command for validation. Otherwise, tell the user to run their usual dev command manually using `verification.message`.
 8. If the result includes `handoff.patches`, treat them as the primary source of truth for any remaining manual work. Apply the generated patches directly before exploring framework docs or unrelated project files.
 9. Only do broader documentation or repo exploration when a returned patch is clearly insufficient or conflicts with the local project structure.
+10. If the onboarding result includes `handoff.dailyUsage`, use that payload as the source of truth for post-onboarding runtime guidance:
+
+- tell the user that daily Annotate-mode MCP usage should follow `handoff.dailyUsage.skill`
+- recommend the exact `handoff.dailyUsage.prompt`
+- if `handoff.dailyUsage.requiresMcp` is `true`, say the runtime workflow still depends on separate MCP configuration
 
 ## Guardrails
 
@@ -40,6 +45,7 @@ Use this workflow when an assistant skill needs to set up Inspecto in the curren
 - Use the CLI's `verification` payload as the source of truth for dev-server validation.
 - Do not suggest restarting or validating the local dev server until the IDE extension step is complete.
 - Prefer `handoff.patches`, `handoff.pendingSteps`, and `handoff.assistantPrompt` over ad-hoc investigation. Do not start with Next.js or Nuxt documentation searches when the CLI already returned concrete patch targets.
+- Do not stop at "Inspecto is installed" for MCP-oriented setups. When `handoff.dailyUsage` is present, include it as part of the successful onboarding close-out.
 
 ## Command Runner
 

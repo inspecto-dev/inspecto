@@ -2,20 +2,20 @@
 
 Inspecto 负责连接你的浏览器和 AI 助手。根据你的 AI 工具架构的不同，它支持多种交互模式。
 
-当你使用结构化的 onboarding 流程或 `inspecto init` 时，CLI 目前会自动探测两个安装面：CLI 工具和 IDE 插件。内置型 IDE 目标（Built-in IDE targets）在运行时仍受支持，但目前暂不会被 CLI 的 onboarding 探测功能自动识别。
+当你使用结构化的 onboarding 流程或 `npx @inspecto-dev/cli init` 时，CLI 目前会自动探测两个安装面：CLI 工具和 IDE 插件。内置型 IDE 目标（Built-in IDE targets）在运行时仍受支持，但目前暂不会被 CLI 的 onboarding 探测功能自动识别。
 
 ## 接入向导 (Onboarding)
 
 对于大多数用户，默认路径是**由助手引导的接入流程 (assistant-first onboarding)**：
 
-1. 在目标项目根目录运行 `inspecto integrations install <assistant> --host-ide <ide>`。
+1. 在目标项目根目录运行 `npx @inspecto-dev/cli integrations install <assistant> --host-ide <ide>`。
 2. 跟随 CLI 拉起的 onboarding 流程，并敲击回车键发送自动填充的提示词。
 3. 如果 onboarding 流程没有自动打开，请开启一个新的 assistant 会话并要求其在这个项目中设置 Inspecto。
-4. 仅当你想在运行安装之前检查阻止项，或者需要排查问题时，才使用 `inspecto integrations doctor <assistant> --host-ide <ide> --compact`。
+4. 仅当你想在运行安装之前检查阻止项，或者需要排查问题时，才使用 `npx @inspecto-dev/cli integrations doctor <assistant> --host-ide <ide> --compact`。
 
-然后在浏览器中打开应用，使用 launcher 体验 `Inspect mode`（检查模式）或 `Annotate mode`（标注模式），也可以随时使用 `Alt` + `点击` 来触发 `Quick jump`（快速跳转）。
+然后在浏览器中打开应用，使用 launcher 体验「检查模式」或「标注模式」，也可以随时使用 `Alt` + `点击` 来触发「快速跳转」。
 
-如果你是在终端里手动设置 Inspecto，请使用 `inspecto init` 作为引导回退方案。
+如果你是在终端里手动设置 Inspecto，请使用 `npx @inspecto-dev/cli init` 作为引导回退方案。
 
 如果你在开发自己的 agent/runtime 集成，请直接使用结构化的 onboarding 流程：
 
@@ -74,12 +74,35 @@ AI 工具完全在终端内运行。Inspecto 将在你的 IDE 中打开一个新
 }
 ```
 
-## 添加自定义 CLI 参数
+## 独立运行 / 剪贴板模式支持
 
-如果你正在使用 CLI 模式，并希望在启动时向你的 AI 工具传递特定参数（例如，向 Claude 传递特定 flag），你可以通过 settings 文件进行配置：
+如果你不想使用任何 IDE 插件或 CLI 终端，你可以将 Inspecto 配置为独立运行模式：
 
 ```json
 {
-  "provider.claude-code.cli.args": ["--dangerously-skip-permissions"]
+  "ide": "none"
 }
 ```
+
+## 支持的 AI 工具概览
+
+Inspecto 连接浏览器和本地 AI 助手。在设置期间，CLI 会探测 CLI 工具与 IDE 扩展；内置型 IDE 目标仍可在运行时使用，也可以通过手动配置启用：
+
+- **插件模式 (IDE 扩展)**: GitHub Copilot, Claude Code Extension, Gemini Plugin, CodeX.
+- **CLI 模式 (终端)**: Claude CLI (`claude`), Coco CLI (`coco`), CodeX CLI, Gemini CLI.
+- **内置模式 (原生 IDE)**: Trae, Cursor, CodeBuddy (无需额外安装扩展的原生 AI 集成).
+
+## 独立模式 / 剪贴板模式支持
+
+如果你不想使用 IDE 扩展或 CLI 终端，可以将 Inspecto 配置为独立模式：
+
+```json
+{
+  "ide": "none"
+}
+```
+
+在这种模式下，Inspecto 依赖以下方式：
+
+1. **MCP (Model Context Protocol)**：用于将标注会话交付给正在运行的 agent（请参阅 [MCP 集成](./mcp.md)）
+2. **剪贴板集成 (Clipboard)**：UI 上会提供一个“复制上下文”按钮，它可以将格式化好的 Markdown 直接写入剪贴板，方便你粘贴到任何地方。

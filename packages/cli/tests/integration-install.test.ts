@@ -126,6 +126,14 @@ describe('integration install', () => {
       '/Users/tester/.agents/skills/inspecto-onboarding-codex/scripts/run-inspecto.sh',
       '# mock asset',
     )
+    expect(writeFileMock).toHaveBeenCalledWith(
+      '/Users/tester/.agents/skills/inspecto-agent-codex/SKILL.md',
+      '# mock asset',
+    )
+    expect(writeFileMock).toHaveBeenCalledWith(
+      '/Users/tester/.agents/skills/inspecto-agent-codex/agents/openai.yaml',
+      '# mock asset',
+    )
     expect(chmodMock).toHaveBeenCalledWith(
       '/Users/tester/.agents/skills/inspecto-onboarding-codex/scripts/run-inspecto.sh',
       0o755,
@@ -133,6 +141,9 @@ describe('integration install', () => {
     expect(logMock.success).toHaveBeenCalledWith('Step 1/6: Installed Codex integration assets')
     expect(logMock.hint).toHaveBeenCalledWith(
       '/Users/tester/.agents/skills/inspecto-onboarding-codex/SKILL.md',
+    )
+    expect(logMock.hint).toHaveBeenCalledWith(
+      '/Users/tester/.agents/skills/inspecto-agent-codex/SKILL.md',
     )
     expect(runIntegrationAutomationMock).not.toHaveBeenCalled()
     expect(logMock.ready).toHaveBeenCalledWith(
@@ -199,6 +210,7 @@ describe('integration install', () => {
     expect(writeJSONMock).toHaveBeenCalledWith('/repo/.inspecto/settings.local.json', {
       ide: 'trae-cn',
       'provider.default': 'gemini.extension',
+      'annotate.deliveryMode': 'both',
     })
   })
 
@@ -216,6 +228,7 @@ describe('integration install', () => {
     expect(writeJSONMock).toHaveBeenCalledWith('/repo/.inspecto/settings.local.json', {
       ide: 'trae-cn',
       'provider.default': 'gemini.extension',
+      'annotate.deliveryMode': 'both',
       'prompt.autoSend': true,
     })
   })
@@ -228,6 +241,7 @@ describe('integration install', () => {
     expect(writeJSONMock).toHaveBeenCalledWith('/repo/.inspecto/settings.local.json', {
       ide: 'cursor',
       'provider.default': 'codex.extension',
+      'annotate.deliveryMode': 'both',
     })
   })
 
@@ -540,6 +554,8 @@ describe('integration install', () => {
         '/Users/tester/.agents/skills/inspecto-onboarding-codex/SKILL.md',
         '/Users/tester/.agents/skills/inspecto-onboarding-codex/agents/openai.yaml',
         '/Users/tester/.agents/skills/inspecto-onboarding-codex/scripts/run-inspecto.sh',
+        '/Users/tester/.agents/skills/inspecto-agent-codex/SKILL.md',
+        '/Users/tester/.agents/skills/inspecto-agent-codex/agents/openai.yaml',
       ],
       preferredInstall:
         'npx @inspecto-dev/cli integrations install codex --host-ide <vscode|cursor|trae|trae-cn|codebuddy|codebuddy-cn>',

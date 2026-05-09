@@ -2,7 +2,7 @@
 
 Runtime behaviors, hotkeys, AI targets, and other preferences are configured using JSON settings files. These files allow you to customize how the browser inspector behaves and which AI tools it communicates with, without touching your build configuration.
 
-Most first-time setups do not require editing this file manually. Start with assistant-first onboarding or `inspecto init`, then come back to this page only when you want to customize runtime behavior.
+Most first-time setups do not require editing this file manually. Start with assistant-first onboarding or `npx @inspecto-dev/cli init`, then come back to this page only when you want to customize runtime behavior.
 
 ## File Resolution
 
@@ -25,9 +25,9 @@ Inspecto looks for configuration files in your project directory in the followin
 ```json
 {
   "inspector.hotKey": "alt",
-  "inspector.theme": "auto",
   "ide": "vscode",
   "provider.default": "copilot.extension",
+  "annotate.deliveryMode": "both",
   "prompt.includeSnippet": false,
   "prompt.autoSend": false,
   "provider.claude-code.cli.bin": "claude",
@@ -43,12 +43,6 @@ Inspecto looks for configuration files in your project directory in the followin
 - **Default:** `"alt"`
 - **Description:** Activation hotkeys. Can be combinations like `"cmd+shift"`, `"ctrl"`, `"metaKey"`. Set to `false` to disable hotkey activation.
 
-### `inspector.theme`
-
-- **Type:** `"light" | "dark" | "auto"`
-- **Default:** `"auto"`
-- **Description:** Theme for the inspector panel in the browser. `"auto"` follows system preferences.
-
 ### `ide`
 
 - **Type:** `"vscode" | "cursor" | "trae" | "trae-cn" | "codebuddy" | "codebuddy-cn"`
@@ -60,6 +54,12 @@ Inspecto looks for configuration files in your project directory in the followin
 - **Type:** `string`
 - **Example:** `"copilot.extension"`, `"claude-code.cli"`, `"trae.builtin"`, `"codebuddy.builtin"`
 - **Description:** The default AI tool and mode to dispatch the code context to. Assistant-first onboarding can often resolve this automatically, so most users do not need to set it before first use.
+
+### `annotate.deliveryMode`
+
+- **Type:** `"ide" | "agent" | "both"`
+- **Default:** `"both"`
+- **Description:** Controls which action Inspecto emphasizes in `Annotate mode`. `"agent"` makes `Create Task` the primary action and is the canonical setting for hands-free MCP workflows. `"ide"` makes `Ask AI` the primary action for immediate IDE handoff flows. `"both"` will show both buttons.
 
 ### `prompt.includeSnippet`
 

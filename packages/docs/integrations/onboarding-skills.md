@@ -70,18 +70,24 @@ Depending on the assistant, the integration is installed either globally for you
 
 Here is a full list of supported assistants and where their integrations are installed.
 
-| Assistant   | Type         | Install Target                           | Notes                                            |
-| :---------- | :----------- | :--------------------------------------- | :----------------------------------------------- |
-| Codex       | Native skill | `.agents/skills/` or `~/.agents/skills/` | User-level or Project-level.                     |
-| Claude Code | Native skill | `.claude/skills/` or `~/.claude/skills/` | User-level or Project-level.                     |
-| Copilot     | Native skill | `.github/skills/inspecto-onboarding/`    | Project-level. Run from the target project root. |
-| Cursor      | Native skill | `.cursor/skills/inspecto-onboarding/`    | Project-level. Run from the target project root. |
-| Gemini      | Native skill | `.gemini/skills/inspecto-onboarding/`    | Project-level. Run from the target project root. |
-| Trae        | Native skill | `.trae/skills/inspecto-onboarding/`      | Project-level. Run from the target project root. |
-| Coco        | Native skill | `.trae/skills/inspecto-onboarding/`      | Project-level. Run from the target project root. |
-| CodeBuddy   | Native skill | `.codebuddy/skills/inspecto-onboarding/` | Project-level. Run from the target project root. |
+| Assistant   | Type         | Install Target                           | Notes                                                                                         |
+| :---------- | :----------- | :--------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| Codex       | Native skill | `.agents/skills/` or `~/.agents/skills/` | User-level or Project-level. Installs both an onboarding skill and an agent skill by default. |
+| Claude Code | Native skill | `.claude/skills/` or `~/.claude/skills/` | User-level or Project-level.                                                                  |
+| Copilot     | Native skill | `.github/skills/inspecto-onboarding/`    | Project-level. Run from the target project root.                                              |
+| Cursor      | Native skill | `.cursor/skills/inspecto-onboarding/`    | Project-level. Run from the target project root.                                              |
+| Gemini      | Native skill | `.gemini/skills/inspecto-onboarding/`    | Project-level. Run from the target project root.                                              |
+| Trae        | Native skill | `.trae/skills/inspecto-onboarding/`      | Project-level. Run from the target project root.                                              |
+| Coco        | Native skill | `.trae/skills/inspecto-onboarding/`      | Project-level. Run from the target project root.                                              |
+| CodeBuddy   | Native skill | `.codebuddy/skills/inspecto-onboarding/` | Project-level. Run from the target project root.                                              |
 
 All onboarding integrations will by default write configuration into local-only files (`.inspecto/settings.local.json` and `.inspecto/prompts.local.json`), keeping your repository clean.
+
+For Codex installs, the CLI installs both the onboarding skill and the `inspecto-agent` skill. MCP server configuration still needs to be added separately, so the daily `Annotate mode` workflow will not switch to task-first until MCP is configured. Once MCP is connected and `.inspecto/settings.local.json` uses `"annotate.deliveryMode": "agent"`, the default follow-up is:
+
+```text
+Use $inspecto-agent to claim Inspecto tasks continuously
+```
 
 Common install examples:
 
@@ -125,7 +131,7 @@ npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 
 :::
 
-Use `inspecto integrations doctor <assistant> --host-ide <ide> --compact` only when you want to check blockers before install, or when you need to troubleshoot.
+Use `npx @inspecto-dev/cli integrations doctor <assistant> --host-ide <ide> --compact` only when you want to check blockers before install, or when you need to troubleshoot.
 
 ## How It Works Under the Hood
 
@@ -134,11 +140,11 @@ The integrations work by exposing Inspecto's structured CLI onboarding contract 
 1. `onboard --json`: Analyzes the project and returns a structured plan.
 2. `onboard --json --target <candidateId>`: Reruns if target selection is needed. This step chooses which local development build target should receive Inspecto and should use one of the explicit candidate ids returned by the previous response. The CLI also accepts a returned `configPath` as a compatibility fallback.
 3. `onboard --json --yes`: Applies the code mutations after your confirmation.
-4. Guides you through installing the IDE extension (a required step).
+4. Guides you through installing the IDE extension (if using IDE mode).
 5. Confirms the dev server start command.
+
+When onboarding configures `annotate.deliveryMode: "agent"`, the structured onboarding result can also include a `handoff.dailyUsage` payload. Assistant integrations should prefer that field over hard-coded follow-up wording when pointing users to the installed `inspecto-agent` skill for daily MCP-driven annotation work.
 
 This guarantees that the actual file modifications are always safely performed by the Inspecto CLI parser, rather than relying on the assistant to hand-edit your configuration files.
 
-> For JSON field semantics and automation rules, see the [Onboarding Contract](./onboarding-contract.md).
->
 > For `inspecto integrations doctor --json` field semantics and exit codes, see `packages/cli/README.md`.

@@ -2,8 +2,11 @@ import { showIntentMenu } from './menu.js'
 import { openFile } from './http.js'
 import { findInspectable, getInspectableLocation } from './component-utils.js'
 import { createRuntimeContextEnvelope, selectRuntimeEvidence } from './runtime-context.js'
-import { captureElementScreenshot } from './screenshot-context.js'
-import type { SourceLocation } from '@inspecto-dev/types'
+import type { InspectorOptions, SourceLocation } from '@inspecto-dev/types'
+
+type InteractionOptions = InspectorOptions & {
+  mode?: 'inspect' | 'annotate'
+}
 
 type InteractionContext = {
   lastPointerX: number
@@ -18,9 +21,7 @@ type InteractionContext = {
   shadowRootEl: ShadowRoot
   style: CSSStyleDeclaration
   cleanupMenu: (() => void) | null
-  options: {
-    screenshotContext?: { enabled?: boolean }
-  }
+  options: InteractionOptions
   runtimeContextCollector: {
     snapshot(): { records: unknown[] }
   }
@@ -203,9 +204,7 @@ export function openInspectMenu(
             state.getRuntimeContextLimits(),
           ),
         ),
-      captureScreenshotContext: () => captureElementScreenshot(targetElement),
       captureCssContextPrompt: () => state.captureCssContextPromptForElement(targetElement, loc),
-      canAttachScreenshotContext: state.options.screenshotContext?.enabled === true,
     },
   )
 }

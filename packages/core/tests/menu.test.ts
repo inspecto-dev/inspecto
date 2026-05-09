@@ -26,6 +26,7 @@ vi.mock('../src/http.js', () => ({
   fetchSnippet: vi.fn(),
   sendToAi: vi.fn(),
   openFile: vi.fn(),
+  openFileWithDiagnostics: vi.fn(),
   fetchIdeInfo: vi.fn(),
 }))
 
@@ -40,12 +41,6 @@ vi.mock('../src/fix-bug-prompt.js', () => ({
   ),
   appendRuntimeContextToPrompt: vi.fn((prompt: string, records: unknown[]) =>
     records.length ? `${prompt}\n\nRUNTIME ${records.length}` : prompt,
-  ),
-  appendScreenshotContextToPrompt: vi.fn(
-    (prompt: string, screenshotContext?: { mimeType?: string } | null) =>
-      screenshotContext?.mimeType
-        ? `${prompt}\n\nSCREENSHOT ${screenshotContext.mimeType}`
-        : prompt,
   ),
   selectFixBugEvidence: vi.fn((records: unknown[]) => records),
 }))
@@ -72,6 +67,7 @@ describe('Intent Menu DOM Interaction', () => {
     onCloseMock = vi.fn()
 
     vi.mocked(http.openFile).mockResolvedValue(true)
+    vi.mocked(http.openFileWithDiagnostics).mockResolvedValue({ success: true })
     vi.mocked(http.sendToAi).mockResolvedValue({ success: true })
     vi.mocked(promptModule.buildPromptForIntent).mockImplementation(
       (
@@ -84,12 +80,6 @@ describe('Intent Menu DOM Interaction', () => {
     vi.mocked(promptModule.appendRuntimeContextToPrompt).mockImplementation(
       (prompt: string, records: unknown[]) =>
         records.length ? `${prompt}\n\nRUNTIME ${records.length}` : prompt,
-    )
-    vi.mocked(promptModule.appendScreenshotContextToPrompt).mockImplementation(
-      (prompt: string, screenshotContext?: { mimeType?: string } | null) =>
-        screenshotContext?.mimeType
-          ? `${prompt}\n\nSCREENSHOT ${screenshotContext.mimeType}`
-          : prompt,
     )
   })
 
@@ -253,6 +243,26 @@ describe('Intent Menu DOM Interaction', () => {
     expect(input.placeholder).toBe('Ask anything about this component...')
   })
 
+  it('shows setup diagnostics when client config cannot be loaded', async () => {
+    vi.mocked(http.fetchIdeInfo).mockResolvedValueOnce(null)
+
+    showIntentMenu(
+      shadowRoot,
+      { file: '/src/App.tsx', line: 10, column: 5 },
+      100,
+      100,
+      {},
+      onCloseMock,
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const error = shadowRoot.querySelector(`.${errorMsgClass}`) as HTMLElement
+    expect(error).not.toBeNull()
+    expect(error.textContent).toContain('Inspecto is not connected to the local dev server')
+    expect(error.textContent).toContain('inspecto doctor')
+  })
+
   it('styles the header open icon consistently with annotate composer actions', async () => {
     showIntentMenu(
       shadowRoot,
@@ -330,194 +340,6 @@ describe('Intent Menu DOM Interaction', () => {
     expect(menu.style.maxWidth).toBe('calc(100vw - 16px)')
   })
 
-  it('keeps the inspect header actions aligned after hiding screenshot entry points', async () => {
-    vi.mocked(http.fetchIdeInfo).mockResolvedValueOnce({
-      ide: 'vscode',
-      prompts: [{ id: 'fix-bug', label: 'Fix Bug', aiIntent: 'fix', prompt: 'Fix this' }],
-      screenshotContext: { enabled: true },
-    } as any)
-
-    showIntentMenu(
-      shadowRoot,
-      { file: '/src/App.tsx', line: 10, column: 5 },
-      100,
-      100,
-      { runtimeContext: { enabled: true }, screenshotContext: { enabled: true } } as any,
-      onCloseMock,
-      {
-        getRuntimeContext: vi.fn(() => null),
-        captureScreenshotContext: vi.fn().mockResolvedValue(null),
-      },
-    )
-
-    await new Promise(resolve => setTimeout(resolve, 0))
-
-    const labels = Array.from(shadowRoot.querySelectorAll(`.${menuClass} button`)).map(
-      button => button.getAttribute('aria-label') ?? button.textContent ?? '',
-    )
-
-    expect(labels.slice(0, 3)).toEqual(['Attach runtime context', 'Open in Editor', 'Fix Bug'])
-    expect(labels).not.toContain('Attach screenshot context')
-  })
-
-  it('keeps screenshot context hidden in inspect even when the server advertises screenshot support', async () => {
-    vi.mocked(http.fetchIdeInfo).mockResolvedValueOnce({
-      ide: 'vscode',
-      prompts: [{ id: 'fix-bug', label: 'Fix Bug', aiIntent: 'fix', prompt: 'Fix this' }],
-      screenshotContext: { enabled: true },
-    } as any)
-
-    showIntentMenu(
-      shadowRoot,
-      { file: '/src/App.tsx', line: 10, column: 5 },
-      100,
-      100,
-      { runtimeContext: { enabled: true }, screenshotContext: { enabled: true } } as any,
-      onCloseMock,
-      {
-        getRuntimeContext: vi.fn(() => null),
-        captureScreenshotContext: vi.fn().mockResolvedValue(null),
-      },
-    )
-
-    await new Promise(resolve => setTimeout(resolve, 0))
-
-    expect(shadowRoot.querySelector('[data-role="screenshot-context-toggle"]')).toBeNull()
-  })
-
-  it('keeps the runtime bug icon state intact without exposing screenshot controls', async () => {
-    vi.mocked(http.fetchIdeInfo).mockResolvedValueOnce({
-      ide: 'vscode',
-      prompts: [{ id: 'fix-bug', label: 'Fix Bug', aiIntent: 'fix', prompt: 'Fix this' }],
-      screenshotContext: { enabled: true },
-    } as any)
-
-    const runtimeContext: RuntimeContextEnvelope = {
-      summary: {
-        runtimeErrorCount: 2,
-        failedRequestCount: 0,
-        includedRecordIds: ['err-1'],
-      },
-      records: [
-        {
-          id: 'err-1',
-          kind: 'runtime-error',
-          timestamp: 100,
-          message: 'boom',
-          occurrenceCount: 2,
-          relevanceScore: 0.9,
-          relevanceLevel: 'high',
-          relevanceReasons: ['stack references target file'],
-        },
-      ],
-    }
-
-    showIntentMenu(
-      shadowRoot,
-      { file: '/src/App.tsx', line: 10, column: 5 },
-      100,
-      100,
-      { runtimeContext: { enabled: true }, screenshotContext: { enabled: true } } as any,
-      onCloseMock,
-      {
-        getRuntimeContext: vi.fn(() => runtimeContext),
-        captureScreenshotContext: vi.fn().mockResolvedValue(null),
-      },
-    )
-
-    await new Promise(resolve => setTimeout(resolve, 0))
-
-    const runtimeToggle = shadowRoot.querySelector(
-      'button[aria-label="Attach runtime context"]',
-    ) as HTMLButtonElement
-    const badge = runtimeToggle.querySelector(`.${runtimeToggleBadgeClass}`) as HTMLElement
-
-    expect(shadowRoot.querySelector('button[aria-label="Attach screenshot context"]')).toBeNull()
-    expect(runtimeToggle.getAttribute('aria-pressed')).toBe('true')
-    expect(runtimeToggle.getAttribute('data-visual-state')).toBe('active')
-    expect(badge.hidden).toBe(false)
-  })
-
-  it('preserves the mixed runtime bug icon state without screenshot controls', async () => {
-    vi.mocked(http.fetchIdeInfo).mockResolvedValueOnce({
-      ide: 'vscode',
-      prompts: [
-        { id: 'fix-bug', label: 'Fix Bug', aiIntent: 'fix', prompt: 'Fix this' },
-        { id: 'explain', label: 'Explain Code', aiIntent: 'ask', prompt: 'Explain this' },
-      ],
-      screenshotContext: { enabled: true },
-    } as any)
-
-    const runtimeContext: RuntimeContextEnvelope = {
-      summary: {
-        runtimeErrorCount: 1,
-        failedRequestCount: 0,
-        includedRecordIds: ['err-1'],
-      },
-      records: [
-        {
-          id: 'err-1',
-          kind: 'runtime-error',
-          timestamp: 100,
-          message: 'boom',
-          occurrenceCount: 1,
-          relevanceScore: 0.9,
-          relevanceLevel: 'high',
-          relevanceReasons: ['stack references target file'],
-        },
-      ],
-    }
-
-    showIntentMenu(
-      shadowRoot,
-      { file: '/src/App.tsx', line: 10, column: 5 },
-      100,
-      100,
-      { runtimeContext: { enabled: true }, screenshotContext: { enabled: true } } as any,
-      onCloseMock,
-      {
-        getRuntimeContext: vi.fn(() => runtimeContext),
-        captureScreenshotContext: vi.fn().mockResolvedValue(null),
-      },
-    )
-
-    await new Promise(resolve => setTimeout(resolve, 0))
-
-    const runtimeToggle = shadowRoot.querySelector(
-      'button[aria-label="Attach runtime context"]',
-    ) as HTMLButtonElement
-    const badge = runtimeToggle.querySelector(`.${runtimeToggleBadgeClass}`) as HTMLElement
-
-    expect(shadowRoot.querySelector('button[aria-label="Attach screenshot context"]')).toBeNull()
-    expect(runtimeToggle.getAttribute('aria-pressed')).toBe('mixed')
-    expect(runtimeToggle.getAttribute('data-visual-state')).toBe('mixed')
-    expect(badge.hidden).toBe(true)
-  })
-
-  it('does not expose the screenshot toggle after server config finishes loading', async () => {
-    vi.mocked(http.fetchIdeInfo).mockResolvedValueOnce({
-      ide: 'vscode',
-      prompts: [{ id: 'fix-bug', label: 'Fix Bug', aiIntent: 'fix', prompt: 'Fix this' }],
-      screenshotContext: { enabled: true },
-    } as any)
-
-    showIntentMenu(
-      shadowRoot,
-      { file: '/src/App.tsx', line: 10, column: 5 },
-      100,
-      100,
-      {},
-      onCloseMock,
-      { captureScreenshotContext: vi.fn().mockResolvedValue(null) },
-    )
-
-    expect(shadowRoot.querySelector('[data-role="screenshot-context-toggle"]')).toBeNull()
-
-    await new Promise(resolve => setTimeout(resolve, 0))
-
-    expect(shadowRoot.querySelector('[data-role="screenshot-context-toggle"]')).toBeNull()
-  })
-
   it('shows the runtime bug icon once server config finishes loading even if menu options were not preloaded', async () => {
     vi.mocked(http.fetchIdeInfo).mockResolvedValueOnce({
       ide: 'vscode',
@@ -540,45 +362,6 @@ describe('Intent Menu DOM Interaction', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(shadowRoot.querySelector('button[aria-label="Attach runtime context"]')).not.toBeNull()
-  })
-
-  it('does not attach screenshot context in inspect sends because the screenshot entry is hidden', async () => {
-    vi.mocked(http.fetchIdeInfo).mockResolvedValueOnce({
-      ide: 'vscode',
-      prompts: [{ id: 'fix-bug', label: 'Fix Bug', aiIntent: 'fix', prompt: 'Fix this' }],
-      screenshotContext: { enabled: true },
-    } as any)
-
-    const captureScreenshotContext = vi.fn().mockResolvedValue({
-      enabled: true,
-      capturedAt: '2026-04-04T12:00:00.000Z',
-      mimeType: 'image/png',
-      imageDataUrl: 'data:image/png;base64,AAA=',
-    })
-
-    showIntentMenu(
-      shadowRoot,
-      { file: '/src/App.tsx', line: 10, column: 5 },
-      100,
-      100,
-      { runtimeContext: { enabled: true }, screenshotContext: { enabled: true } } as any,
-      onCloseMock,
-      { captureScreenshotContext },
-    )
-
-    await new Promise(resolve => setTimeout(resolve, 0))
-
-    const fixBugBtn = Array.from(shadowRoot.querySelectorAll('button')).find(
-      button => button.textContent === 'Fix Bug',
-    )
-    fixBugBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    await new Promise(resolve => setTimeout(resolve, 130))
-
-    expect(shadowRoot.querySelector('[data-role="screenshot-context-toggle"]')).toBeNull()
-    expect(captureScreenshotContext).not.toHaveBeenCalled()
-    expect(vi.mocked(http.sendToAi)).toHaveBeenCalledWith(
-      expect.not.objectContaining({ screenshotContext: expect.anything() }),
-    )
   })
 
   it('normalizes the CSS header icon size to match sibling header actions', async () => {
@@ -683,7 +466,11 @@ describe('Intent Menu DOM Interaction', () => {
 
     await new Promise(resolve => setTimeout(resolve, 0))
 
-    expect(http.openFile).toHaveBeenCalledWith({ file: '/src/App.tsx', line: 10, column: 5 })
+    expect(http.openFileWithDiagnostics).toHaveBeenCalledWith({
+      file: '/src/App.tsx',
+      line: 10,
+      column: 5,
+    })
     expect(onCloseMock).toHaveBeenCalled()
   })
 
@@ -711,7 +498,11 @@ describe('Intent Menu DOM Interaction', () => {
 
     await new Promise(resolve => setTimeout(resolve, 0))
 
-    expect(http.openFile).toHaveBeenCalledWith({ file: '/src/App.tsx', line: 10, column: 5 })
+    expect(http.openFileWithDiagnostics).toHaveBeenCalledWith({
+      file: '/src/App.tsx',
+      line: 10,
+      column: 5,
+    })
     expect(onCloseMock).toHaveBeenCalled()
   })
 
@@ -1380,9 +1171,7 @@ describe('Intent Menu DOM Interaction', () => {
               expect.objectContaining({ message: expect.stringContaining('console boom') }),
             ]),
           }),
-          prompt: expect.stringMatching(
-            /Relevant runtime context:|High-confidence runtime evidence:/,
-          ),
+          prompt: expect.stringMatching(/Relevant runtime context:|Runtime evidence:/),
         }),
       )
     } finally {
@@ -1477,7 +1266,7 @@ describe('Intent Menu DOM Interaction', () => {
               }),
             ]),
           }),
-          prompt: expect.stringContaining('High-confidence runtime evidence:'),
+          prompt: expect.stringContaining('Runtime evidence:'),
         }),
       )
     } finally {
@@ -1552,7 +1341,7 @@ describe('Intent Menu DOM Interaction', () => {
             }),
           ]),
         }),
-        prompt: expect.stringContaining('High-confidence runtime evidence:'),
+        prompt: expect.stringContaining('Runtime evidence:'),
       }),
     )
   })
@@ -1650,7 +1439,10 @@ describe('Intent Menu DOM Interaction', () => {
   })
 
   it('shows error when open in editor fails', async () => {
-    vi.mocked(http.openFile).mockResolvedValueOnce(false)
+    vi.mocked(http.openFileWithDiagnostics).mockResolvedValueOnce({
+      success: false,
+      errorCode: 'IDE_UNAVAILABLE',
+    })
 
     showIntentMenu(
       shadowRoot,
@@ -1671,7 +1463,68 @@ describe('Intent Menu DOM Interaction', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
 
     const errorEl = shadowRoot.querySelector(`.${errorMsgClass}`)
-    expect(errorEl?.textContent).toContain('Unable to open file in the IDE.')
+    expect(errorEl?.textContent).toContain('Unable to open the source file in your editor.')
+    expect(onCloseMock).not.toHaveBeenCalled()
+  })
+
+  it('shows a dev server unavailable message when opening in editor cannot reach the server', async () => {
+    vi.mocked(http.openFileWithDiagnostics).mockResolvedValueOnce({
+      success: false,
+      errorCode: 'SERVER_UNAVAILABLE',
+    })
+
+    showIntentMenu(
+      shadowRoot,
+      { file: '/src/App.tsx', line: 10, column: 5 },
+      100,
+      100,
+      {},
+      onCloseMock,
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const buttons = shadowRoot.querySelectorAll('button')
+    const openBtn = Array.from(buttons).find(b => b.getAttribute('aria-label') === 'Open in Editor')
+
+    openBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const errorEl = shadowRoot.querySelector(`.${errorMsgClass}`)
+    expect(errorEl?.textContent).toContain('Inspecto could not reach the local dev server')
+    expect(errorEl?.textContent).toContain('inspecto doctor')
+    expect(onCloseMock).not.toHaveBeenCalled()
+  })
+
+  it('shows a dev server unavailable message when AI dispatch cannot reach the server', async () => {
+    vi.mocked(http.sendToAi).mockResolvedValueOnce({
+      success: false,
+      error: 'Local dev server unavailable',
+      errorCode: 'SERVER_UNAVAILABLE',
+    })
+
+    showIntentMenu(
+      shadowRoot,
+      { file: '/src/App.tsx', line: 10, column: 5 },
+      100,
+      100,
+      {},
+      onCloseMock,
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const explainButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Explain Code',
+    ) as HTMLButtonElement
+    explainButton.click()
+
+    await new Promise(resolve => setTimeout(resolve, 120))
+
+    const errorEl = shadowRoot.querySelector(`.${errorMsgClass}`)
+    expect(errorEl?.textContent).toContain('Inspecto could not reach the local dev server')
+    expect(errorEl?.textContent).toContain('inspecto doctor')
     expect(onCloseMock).not.toHaveBeenCalled()
   })
 
@@ -1866,7 +1719,11 @@ describe('Intent Menu DOM Interaction', () => {
     openButton?.click()
     await new Promise(resolve => setTimeout(resolve, 0))
 
-    expect(http.openFile).toHaveBeenCalledWith({ file: '/src/App.tsx', line: 10, column: 5 })
+    expect(http.openFileWithDiagnostics).toHaveBeenCalledWith({
+      file: '/src/App.tsx',
+      line: 10,
+      column: 5,
+    })
   })
 
   it('opens the inspect menu on click by default when mounted through the public API', async () => {

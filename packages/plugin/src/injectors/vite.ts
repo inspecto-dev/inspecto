@@ -3,7 +3,7 @@ export function getViteVirtualModuleScript(serverPort: number) {
 import { mountInspector } from '@inspecto-dev/core';
 window.__AI_INSPECTOR_PORT__ = ${serverPort};
 mountInspector({
-  serverUrl: 'http://127.0.0.1:' + window.__AI_INSPECTOR_PORT__,
+  serverUrl: 'http://0.0.0.0:' + window.__AI_INSPECTOR_PORT__,
 });
 `
 }

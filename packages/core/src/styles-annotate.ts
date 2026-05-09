@@ -29,38 +29,39 @@ import {
 export const annotateStyles = `
   .${annotateSidebarClass} {
     position: fixed;
-    top: 16px;
-    right: 16px;
+    top: 18px;
+    right: 18px;
     z-index: 2147483647;
-    width: min(380px, calc(100vw - 32px));
-    min-height: 220px;
-    max-height: calc(100vh - 32px);
+    width: min(408px, calc(100vw - 28px));
+    min-height: 240px;
+    max-height: calc(100vh - 36px);
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
     box-sizing: border-box;
-    padding: 15px 15px 16px;
+    padding: 18px 18px 18px;
     overflow: visible;
     color: var(--inspecto-text-primary);
     background:
-      radial-gradient(circle at top right, rgba(93, 82, 243, 0.12), transparent 34%),
-      linear-gradient(180deg, rgba(32, 32, 36, 0.96) 0%, rgba(21, 21, 24, 0.96) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 22px;
-    box-shadow: 0 22px 42px rgba(0, 0, 0, 0.24);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 36%),
+      radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 28%),
+      linear-gradient(180deg, rgba(13, 20, 31, 0.985) 0%, rgba(8, 14, 24, 0.985) 100%);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 28px;
+    box-shadow: var(--inspecto-shadow-floating);
+    font-family: 'SF Pro Display', 'Segoe UI', 'Inter', sans-serif;
     pointer-events: auto;
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
   }
 
   .${annotateSidebarHeaderClass} {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    gap: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
   }
 
   .${annotateSidebarLabelClass} {
@@ -72,25 +73,25 @@ export const annotateStyles = `
   }
 
   .${annotateSidebarLabelClass} [data-inspecto-annotate-title="true"] {
-    font-size: 15px;
-    line-height: 1.2;
-    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.15;
+    font-weight: 760;
     color: var(--inspecto-text-primary);
-    letter-spacing: 0;
+    letter-spacing: -0.02em;
   }
 
   .${annotateSidebarLabelClass} [data-inspecto-annotate-header-status="true"] {
     display: inline-flex;
     align-items: center;
     align-self: flex-start;
-    min-height: 24px;
-    padding: 0 9px;
+    min-height: 26px;
+    padding: 0 10px;
     border-radius: var(--inspecto-radius-pill);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(148, 163, 184, 0.1);
+    border: 1px solid rgba(148, 163, 184, 0.14);
     font-size: 11px;
     line-height: 1.2;
-    font-weight: 600;
+    font-weight: 650;
     color: var(--inspecto-text-secondary);
   }
 
@@ -106,18 +107,26 @@ export const annotateStyles = `
   .${annotateSidebarSectionClass} {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     min-height: 0;
-    padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 18px;
-    background: rgba(255, 255, 255, 0.022);
+    padding: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(148, 163, 184, 0.04) 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   }
 
-  .${annotateSidebarSectionClass}[data-variant="modes"] { gap: 8px; padding: 8px 10px; }
+  .${annotateSidebarSectionClass}[data-variant="modes"] { gap: 8px; padding: 10px 12px; }
   .${annotateSidebarSectionClass}[data-variant="draft"] { gap: 0; padding: 0; border: none; background: transparent; }
-  .${annotateSidebarSectionClass}[data-variant="chip-preview"] { gap: 8px; padding: 10px; background: rgba(255, 255, 255, 0.03); }
-  .${annotateSidebarSectionClass}[data-variant="records"] { padding: 0; overflow: hidden; background: rgba(255, 255, 255, 0.028); border-color: rgba(255, 255, 255, 0.08); }
+  .${annotateSidebarSectionClass}[data-variant="chip-preview"] { gap: 8px; padding: 12px; background: rgba(255, 255, 255, 0.045); }
+  .${annotateSidebarSectionClass}[data-variant="records"] { padding: 0; overflow: hidden; background: rgba(255, 255, 255, 0.038); border-color: rgba(148, 163, 184, 0.16); }
+  .${annotateSidebarSectionClass}[data-variant="latest-session"] {
+    padding: 14px;
+    background:
+      radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 34%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(148, 163, 184, 0.05) 100%);
+    border-color: rgba(14, 165, 233, 0.18);
+  }
   .${annotateSidebarSectionClass}[data-variant="full-prompt"] { padding: 0; gap: 0; background: transparent; border: none; border-radius: 0; opacity: 0.72; }
 
   .${annotateSidebarSectionClass} h3 {
@@ -131,25 +140,25 @@ export const annotateStyles = `
   .${annotateSidebarSectionClass}[data-variant="empty-state"] {
     flex: 1 1 auto;
     justify-content: center;
-    gap: 10px;
-    padding: 10px 2px 0;
+    gap: 12px;
+    padding: 20px 6px 8px;
     background: transparent;
     border-color: transparent;
   }
 
   .${annotateSidebarSectionClass}[data-variant="empty-state"] [data-inspecto-annotate-empty-title="true"] {
-    font-size: 17px;
-    line-height: 1.25;
-    font-weight: 700;
+    font-size: 18px;
+    line-height: 1.18;
+    font-weight: 760;
     color: var(--inspecto-text-primary);
-    max-width: 22ch;
+    max-width: 20ch;
+    letter-spacing: -0.03em;
   }
 
   .${annotateSidebarSectionClass}[data-variant="empty-state"] [data-inspecto-annotate-empty-body="true"] {
-    max-width: 29ch;
-    color: rgba(255, 255, 255, 0.56);
+    color: var(--inspecto-text-secondary);
     font-size: 12px;
-    line-height: 1.55;
+    line-height: 1.62;
   }
 
   .${annotateSidebarInputClass},
@@ -166,10 +175,10 @@ export const annotateStyles = `
   }
 
   .${annotateSidebarInputClass} {
-    min-height: 104px;
-    padding: 12px 13px;
+    min-height: 112px;
+    padding: 14px 15px;
     resize: vertical;
-    line-height: 1.5;
+    line-height: 1.55;
   }
 
   .${annotateSidebarHintClass} {
@@ -182,11 +191,11 @@ export const annotateStyles = `
 
   .${annotateSidebarChipClass} {
     appearance: none;
-    border: 1px solid rgba(93, 82, 243, 0.24);
-    background: rgba(93, 82, 243, 0.12);
-    color: #d7d3ff;
+    border: 1px solid rgba(14, 165, 233, 0.24);
+    background: rgba(14, 165, 233, 0.14);
+    color: #d7f4ff;
     border-radius: var(--inspecto-radius-pill);
-    padding: 5px 8px 5px 10px;
+    padding: 6px 9px 6px 11px;
     font: inherit;
     font-size: 11px;
     font-weight: 600;
@@ -205,8 +214,8 @@ export const annotateStyles = `
   .${annotateSidebarChipClass}:hover,
   .${annotateSidebarChipClass}:focus-visible {
     outline: none;
-    background: rgba(93, 82, 243, 0.2);
-    border-color: rgba(93, 82, 243, 0.42);
+    background: rgba(14, 165, 233, 0.22);
+    border-color: rgba(14, 165, 233, 0.42);
     color: #ffffff;
     transform: translateY(-1px);
   }
@@ -250,33 +259,50 @@ export const annotateStyles = `
   .${annotateTargetListClass}, .${annotateQueueListClass} {
     display: flex;
     flex-direction: column;
-    gap: 0;
-    max-height: 180px;
+    gap: 2px;
+    max-height: 220px;
     overflow: auto;
-    padding: 0 10px 10px;
+    padding: 6px 10px 12px;
   }
 
   .${annotateSidebarTargetItemClass}, .${annotateSidebarQueueItemClass} {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 10px 10px;
-    margin: 4px 6px;
-    border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
-    background: transparent;
+    gap: 5px;
+    padding: 12px 12px;
+    margin: 0;
+    border: 1px solid transparent;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.022);
     cursor: pointer;
     box-sizing: border-box;
-    transition: background 0.15s ease, color 0.15s ease, margin 0.15s ease, padding 0.15s ease, border-color 0.15s ease;
+    transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
   }
 
-  .${annotateSidebarQueueItemClass}:hover { background: rgba(255, 255, 255, 0.04); }
-  .${annotateSidebarQueueItemClass}:focus-visible { outline: none; background: rgba(255, 255, 255, 0.03); box-shadow: inset 0 0 0 1px var(--inspecto-border-focus); }
-  .${annotateSidebarQueueItemClass}[data-selected="true"] { background: rgba(93, 82, 243, 0.1); box-shadow: inset 3px 0 0 rgba(93, 82, 243, 0.85); border-bottom-color: transparent; }
-  .${annotateSidebarQueueItemClass} > :not(.${annotateSidebarActionsClass}):first-child { font-size: 12px; line-height: 1.4; color: var(--inspecto-text-primary); word-break: break-word; }
-  .${annotateSidebarQueueItemClass} > .${annotateSidebarQueueMetaClass} { order: 2; font-size: 10px; line-height: 1.35; color: var(--inspecto-text-tertiary); }
-  .${annotateQueueListClass} > .${annotateSidebarQueueItemClass}:last-child { border-bottom: none; padding-bottom: 2px; }
+  .${annotateSidebarQueueItemClass}:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(148, 163, 184, 0.16);
+    transform: translateY(-1px);
+  }
+  .${annotateSidebarQueueItemClass}:focus-visible {
+    outline: none;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--inspecto-border-focus);
+    box-shadow: 0 0 0 1px var(--inspecto-border-focus);
+  }
+  .${annotateSidebarQueueItemClass}[data-selected="true"] {
+    background: linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0.07) 100%);
+    border-color: rgba(14, 165, 233, 0.28);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 24px rgba(8, 14, 24, 0.16);
+  }
+  .${annotateSidebarQueueItemClass} > :not(.${annotateSidebarActionsClass}):first-child {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--inspecto-text-primary);
+    word-break: break-word;
+    font-weight: 620;
+  }
+  .${annotateSidebarQueueItemClass} > .${annotateSidebarQueueMetaClass} { order: 2; font-size: 10px; line-height: 1.4; color: var(--inspecto-text-tertiary); }
 
   .${annotateSidebarTargetItemClass} {
     display: grid;
@@ -284,14 +310,12 @@ export const annotateStyles = `
     grid-template-areas: "label action";
     column-gap: 10px;
     align-items: center;
-    padding: 6px 0;
-    border: none;
-    border-radius: 0;
-    border-bottom: 1px solid rgba(127, 127, 127, 0.16);
-    background: transparent;
+    padding: 10px 12px;
+    border-color: rgba(148, 163, 184, 0.12);
+    background: rgba(255, 255, 255, 0.02);
   }
 
-  .${annotateTargetListClass} > .${annotateSidebarTargetItemClass}:last-child { border-bottom: none; padding-bottom: 0; }
+  .${annotateTargetListClass} > .${annotateSidebarTargetItemClass}:last-child { margin-bottom: 0; }
 
   .${annotateBadgeClass} {
     grid-area: label;
@@ -316,22 +340,22 @@ export const annotateStyles = `
     line-height: 1.5;
   }
 
-  .${annotateSidebarFooterClass} { display: flex; flex-direction: column; gap: 8px; padding-top: 2px; }
-  .${annotateSidebarFooterClass} .${annotateSidebarActionsClass} { justify-content: flex-end; align-items: stretch; }
-  .${annotateSidebarActionsClass} { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .${annotateSidebarFooterClass} { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+  .${annotateSidebarFooterClass} .${annotateSidebarActionsClass} { justify-content: flex-end; align-items: stretch; gap: 10px; }
+  .${annotateSidebarActionsClass} { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; justify-content: flex-end; }
 
   .${annotateSidebarButtonClass} {
     appearance: none;
     border: 1px solid var(--inspecto-border-subtle);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.05);
     color: var(--inspecto-text-primary);
     border-radius: var(--inspecto-radius-pill);
-    padding: 7px 10px;
+    padding: 8px 12px;
     font: inherit;
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
   }
 
   .${annotateSidebarButtonClass}[data-role="mode"][data-selected="true"] { background: rgba(255, 255, 255, 0.1); color: #ffffff; border-color: transparent; }
@@ -340,11 +364,55 @@ export const annotateStyles = `
   .${annotateSidebarHeaderClass} .${annotateSidebarButtonClass} { width: 30px; height: 30px; padding: 0; border-radius: var(--inspecto-radius-pill); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1; flex: 0 0 auto; }
   .${annotateSidebarHeaderClass} .${runtimeToggleClass} { overflow: visible; }
   .${annotateSidebarHeaderClass} [data-inspecto-annotate-header-actions="true"] { padding: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.05); gap: 4px; flex-wrap: nowrap; flex: 0 0 auto; margin-top: 1px; }
-  .${annotateSidebarButtonClass}:hover { background: var(--inspecto-surface-hover); color: #ffffff; border-color: transparent; transform: translateY(-1px); }
+  .${annotateSidebarButtonClass}:hover { background: var(--inspecto-surface-hover); color: #ffffff; border-color: rgba(148, 163, 184, 0.12); transform: translateY(-1px); }
   .${annotateSidebarButtonClass}:disabled { opacity: 0.5; cursor: not-allowed; }
-  .${annotateSidebarClass} .${annotateSidebarButtonClass}.primary { background: linear-gradient(180deg, var(--inspecto-accent-primary) 0%, var(--inspecto-accent-primary-strong) 100%); color: #ffffff; border-color: transparent; box-shadow: var(--inspecto-shadow-accent); }
-  .${annotateSidebarFooterClass} .${annotateSidebarButtonClass} { min-height: 36px; padding: 0 12px; font-size: 11px; font-weight: 600; border-radius: var(--inspecto-radius-pill); }
-  .${annotateSidebarFooterClass} .${annotateSidebarButtonClass}[data-role="raw-preview"] { min-width: 48px; justify-content: center; color: var(--inspecto-text-secondary); background: rgba(255, 255, 255, 0.045); }
+  .${annotateSidebarClass} .${annotateSidebarButtonClass}.primary {
+    background: linear-gradient(180deg, var(--inspecto-accent-primary) 0%, var(--inspecto-accent-primary-strong) 100%);
+    color: #ffffff;
+    border-color: rgba(14, 165, 233, 0.22);
+    box-shadow: var(--inspecto-shadow-accent);
+  }
+  .${annotateSidebarFooterClass} .${annotateSidebarButtonClass} {
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 11px;
+    font-weight: 650;
+    border-radius: var(--inspecto-radius-pill);
+    justify-content: center;
+    display: inline-flex;
+    align-items: center;
+  }
+  .${annotateSidebarFooterClass} .${annotateSidebarButtonClass}[data-emphasis="secondary"] {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--inspecto-text-secondary);
+    border-color: rgba(148, 163, 184, 0.12);
+    box-shadow: none;
+    opacity: 0.92;
+    white-space: nowrap;
+  }
+  .${annotateSidebarFooterClass} .${annotateSidebarButtonClass}[data-role="quick-ask"][data-emphasis="secondary"] {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--inspecto-text-secondary);
+    border-color: rgba(148, 163, 184, 0.12);
+    text-decoration: none;
+    min-height: 40px;
+    padding: 0 14px;
+    box-shadow: none;
+    white-space: nowrap;
+  }
+  .${annotateSidebarFooterClass} .${annotateSidebarButtonClass}[data-emphasis="secondary"]:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+  }
+  .${annotateSidebarFooterClass} .${annotateSidebarButtonClass}[data-role="quick-ask"][data-emphasis="secondary"]:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    transform: translateY(-1px);
+  }
+  .${annotateSidebarFooterClass} .${annotateSidebarButtonClass}[data-role="raw-preview"] { min-width: 48px; justify-content: center; color: var(--inspecto-text-secondary); background: rgba(255, 255, 255, 0.045); padding: 0 10px; }
   .${annotateSidebarFooterClass} .${annotateSidebarButtonClass}[data-role="raw-preview"][data-selected="true"] { background: rgba(93, 82, 243, 0.16); border-color: rgba(93, 82, 243, 0.32); color: #e5e2ff; }
   .${annotateSidebarFooterClass} .${annotateSidebarButtonClass}[data-role="send-all"] { min-width: 76px; }
 

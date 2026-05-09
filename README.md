@@ -39,63 +39,41 @@ English | [简体中文](./README.zh-CN.md)
 
 ## Quick Start
 
-The fastest way to get started is:
-
-1. **Navigate to your project root**.
-2. **Copy and run the matching install command**:
-
-   `--host-ide` values: `vscode`, `cursor`, `trae`, `trae-cn`.
-
-   ```bash
-   # VS Code + Copilot
-   npx @inspecto-dev/cli integrations install copilot --host-ide vscode
-
-   # VS Code + Codex
-   npx @inspecto-dev/cli integrations install codex --host-ide vscode
-
-   # VS Code + Claude Code
-   npx @inspecto-dev/cli integrations install claude-code --scope project --host-ide vscode
-
-   # Cursor builtin
-   npx @inspecto-dev/cli integrations install cursor --host-ide cursor
-
-   # VS Code + Gemini
-   npx @inspecto-dev/cli integrations install gemini --host-ide vscode
-
-   # Trae CN + Trae
-   npx @inspecto-dev/cli integrations install trae --host-ide trae-cn
-
-   # Trae CN + Coco
-   npx @inspecto-dev/cli integrations install coco --host-ide trae-cn
-   ```
-
-   Prefer another package manager? Replace `npx` with `pnpm dlx`, `yarn dlx`, or `bunx`.
-
-3. **Watch the result in your IDE**:
-   - If onboarding opens automatically, continue there.
-   - If it does not open, start a chat session and send the fallback prompt below.
-
-When you already know your host IDE, always prefer passing `--host-ide` explicitly. It avoids ambiguous IDE detection in plain terminal sessions.
-
-### Manual Fallback
-
-If onboarding does not open automatically, open a chat session with your assistant and say:
-
-```text
-Set up Inspecto in this project
-```
-
-Need other assistants, scopes, or file locations? See [Onboarding Integrations](https://inspecto-dev.github.io/inspecto/integrations/onboarding-skills).
-
-### Terminal Fallback
-
-If you are not using an assistant integration:
+To install Inspecto and connect it to your AI assistant, navigate to your project root and run **one** of the commands below based on your setup:
 
 ```bash
-npx @inspecto-dev/cli@latest init
+# VS Code + Copilot
+npx @inspecto-dev/cli integrations install copilot --host-ide vscode
+
+# VS Code + Claude Code
+npx @inspecto-dev/cli integrations install claude-code --scope project --host-ide vscode
+
+# Cursor builtin
+npx @inspecto-dev/cli integrations install cursor --host-ide cursor
+
+# Trae CN + Trae
+npx @inspecto-dev/cli integrations install trae --host-ide trae-cn
+
+# VS Code + Codex
+npx @inspecto-dev/cli integrations install codex --host-ide vscode
+
+# VS Code + Gemini
+npx @inspecto-dev/cli integrations install gemini --host-ide vscode
+
+# Trae CN + Coco
+npx @inspecto-dev/cli integrations install coco --host-ide trae-cn
+
+# CodeBuddy
+npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 ```
 
-Use `pnpm dlx`, `yarn dlx`, or `bunx` if you prefer those package managers.
+_(Prefer `pnpm dlx`, `yarn dlx`, or `bunx` instead of `npx` if you use them)._
+
+Once run, Inspecto will attempt to open an onboarding session in your IDE. **If it doesn't open automatically**, open a chat with your AI assistant and say:
+
+> _"Set up Inspecto in this project"_
+
+Need manual installation? Check out the [Installation Guide](https://inspecto-dev.github.io/inspecto/guide/manual-installation).
 
 ## Use It
 
@@ -109,7 +87,7 @@ Success looks like this:
 - `Inspect mode` opens the Inspecto menu
 - `Quick jump` opens the source location
 
-If highlighting works but nothing reaches your editor, install or enable the Inspecto IDE extension first.
+If highlighting works but nothing reaches your editor, verify your IDE configuration or use the "Copy Context" action. If using MCP or Standalone mode (`ide: "none"`), the IDE extension is not required, see [MCP Integration](https://inspecto-dev.github.io/inspecto/integrations/mcp).
 
 ---
 

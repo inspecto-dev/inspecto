@@ -8,11 +8,12 @@ import {
 import { closeIconSvg, inspectFilledIconSvg } from './icons.js'
 import type { PromptChipRecord } from './annotate-sidebar-helpers.js'
 import type { AnnotateSidebarOptions } from './annotate-sidebar.js'
+import { t } from './i18n.js'
 
 type PromptChipElement = HTMLSpanElement & {
   dataset: DOMStringMap & {
     annotateChipId?: string
-    state?: 'draft' | 'saved'
+    state?: 'draft' | 'saved' | 'completed'
   }
 }
 
@@ -126,7 +127,7 @@ export function createAnnotateSidebarRenderers({
     elementValue.style.wordBreak = 'break-word'
     elementValue.textContent = chip.label
     activeTooltip.appendChild(createSection('ELEMENT', elementValue))
-    activeTooltip.appendChild(createSection('NOTE', chip.note.trim() || 'No note provided'))
+    activeTooltip.appendChild(createSection('NOTE', chip.note.trim() || t('annotate.note.none')))
 
     if (chip.selector) {
       activeTooltip.appendChild(createSection('PATH', chip.selector))
@@ -294,7 +295,7 @@ export function createAnnotateSidebarRenderers({
     if (records.length === 0) {
       const empty = document.createElement('div')
       empty.className = annotateSidebarEmptyClass
-      empty.textContent = 'No records included yet.'
+      empty.textContent = t('annotate.records.none')
       recordsList.appendChild(empty)
       return
     }
@@ -314,11 +315,12 @@ export function createAnnotateSidebarRenderers({
       })
 
       const label = document.createElement('div')
-      label.textContent = record.target.label || 'Unknown target'
+      label.textContent = record.target.label || t('annotate.target.unknown')
 
       const meta = document.createElement('div')
       meta.className = annotateSidebarQueueMetaClass
-      meta.textContent = record.note.trim().length > 0 ? record.note : 'Optional note left empty.'
+      meta.textContent =
+        record.note.trim().length > 0 ? record.note : t('annotate.note.optionalEmpty')
 
       item.append(label, meta)
       recordsList.appendChild(item)

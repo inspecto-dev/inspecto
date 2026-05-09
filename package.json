@@ -37,7 +37,7 @@
     "verify": "pnpm build && pnpm lint && pnpm test && pnpm typecheck",
     "verify:fast": "pnpm lint && pnpm test && pnpm typecheck",
     "changeset": "changeset",
-    "release": "turbo run build && changeset publish",
+    "release": "pnpm build && changeset publish",
     "clean": "turbo run clean",
     "prepare": "husky"
   },
@@ -70,6 +70,7 @@
   },
   "pnpm": {
     "overrides": {
+      "esbuild": "0.27.4",
       "typescript": "^5.4.0",
       "undici": "5.28.4"
     }

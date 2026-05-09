@@ -5,6 +5,11 @@ import os from 'node:os'
 import crypto from 'node:crypto'
 import portfinder from 'portfinder'
 import type {
+  AnnotationSessionEvent,
+  AnnotationSessionStatus,
+  AnnotationSessionClaimRequest,
+  AnnotationSessionReplyRequest,
+  AnnotationSessionResolveRequest,
   ServerState,
   OpenFileRequest,
   SendToAiRequest,
@@ -21,10 +26,13 @@ import { assertPathWithinProject, resolveWorkspacePath } from './path-guards.js'
 import { buildClientConfig } from './client-config.js'
 import { handleOpenFileRequest } from './open-file.js'
 import { resolveProjectRoot } from './project-root.js'
+import { annotationSessionStore, hasAgentReply } from './session-store.js'
 import { watchConfig, unwatchConfig, getGlobalLogLevel } from '../config.js'
 import { createLogger } from '../utils/logger.js'
 
 const serverLogger = createLogger('inspecto:server', { logLevel: getGlobalLogLevel() })
+const PORT_FILE_NAME = 'inspecto.port.json'
+const LEGACY_PORT_FILE_NAME = 'inspecto.port'
 
 export const serverState: ServerState = {
   port: null,
@@ -35,6 +43,51 @@ export const serverState: ServerState = {
 }
 
 let serverInstance: http.Server | null = null
+
+function getPortFilePath(): string {
+  return path.join(os.tmpdir(), PORT_FILE_NAME)
+}
+
+function getProjectRootHash(): string | null {
+  if (!serverState.projectRoot) return null
+  return crypto.createHash('md5').update(serverState.projectRoot).digest('hex')
+}
+
+function readPortData(portFile: string): Record<string, number> {
+  if (!fs.existsSync(portFile)) return {}
+  try {
+    return JSON.parse(fs.readFileSync(portFile, 'utf-8')) as Record<string, number>
+  } catch {
+    return {}
+  }
+}
+
+function writeProjectPort(port: number): void {
+  const rootHash = getProjectRootHash()
+  if (!rootHash) return
+
+  const portFile = getPortFilePath()
+  const portData = readPortData(portFile)
+  portData[rootHash] = port
+  fs.writeFileSync(portFile, JSON.stringify(portData, null, 2), 'utf-8')
+}
+
+function removeProjectPort(): void {
+  const rootHash = getProjectRootHash()
+  if (!rootHash) return
+
+  const portFile = getPortFilePath()
+  if (!fs.existsSync(portFile)) return
+
+  const portData = readPortData(portFile)
+  delete portData[rootHash]
+
+  if (Object.keys(portData).length === 0) {
+    fs.unlinkSync(portFile)
+  } else {
+    fs.writeFileSync(portFile, JSON.stringify(portData, null, 2), 'utf-8')
+  }
+}
 
 export async function startServer(): Promise<number> {
   if (serverState.running && serverState.port !== null) {
@@ -79,7 +132,7 @@ export async function startServer(): Promise<number> {
   })
 
   await new Promise<void>((resolve, reject) => {
-    serverInstance!.listen(port, '127.0.0.1', () => {
+    serverInstance!.listen(port, '0.0.0.0', () => {
       serverInstance!.unref() // Allow process to exit
       resolve()
     })
@@ -95,20 +148,8 @@ export async function startServer(): Promise<number> {
   serverState.running = true
 
   // Write port file so the IDE extension can discover the server without scanning ports
-  const portFile = path.join(os.tmpdir(), 'inspecto.port.json')
   try {
-    let portData: Record<string, number> = {}
-    if (fs.existsSync(portFile)) {
-      try {
-        portData = JSON.parse(fs.readFileSync(portFile, 'utf-8'))
-      } catch (_e) {
-        // Invalid JSON, start fresh
-      }
-    }
-    // Hash the project root to avoid invalid keys or paths in JSON
-    const rootHash = crypto.createHash('md5').update(serverState.projectRoot).digest('hex')
-    portData[rootHash] = port
-    fs.writeFileSync(portFile, JSON.stringify(portData, null, 2), 'utf-8')
+    writeProjectPort(port)
   } catch (_e) {
     serverLogger.warn('Failed to write port file:', _e)
     /* non-fatal — extension will fall back to scanning */
@@ -116,22 +157,13 @@ export async function startServer(): Promise<number> {
   // Clean up on process exit (Vite terminates the process, not stopServer)
   process.once('exit', () => {
     try {
-      if (fs.existsSync(portFile)) {
-        const portData = JSON.parse(fs.readFileSync(portFile, 'utf-8'))
-        const rootHash = crypto.createHash('md5').update(serverState.projectRoot).digest('hex')
-        delete portData[rootHash]
-        if (Object.keys(portData).length === 0) {
-          fs.unlinkSync(portFile)
-        } else {
-          fs.writeFileSync(portFile, JSON.stringify(portData, null, 2), 'utf-8')
-        }
-      }
+      removeProjectPort()
     } catch {
       /* ignore */
     }
   })
 
-  serverLogger.info(`server running at http://127.0.0.1:${port}`)
+  serverLogger.info(`server running at http://0.0.0.0:${port}`)
 
   return port
 }
@@ -145,7 +177,12 @@ export function stopServer(): void {
   serverState.running = false
   serverState.port = null
   try {
-    fs.unlinkSync(path.join(os.tmpdir(), 'inspecto.port'))
+    removeProjectPort()
+  } catch {
+    /* ignore */
+  }
+  try {
+    fs.unlinkSync(path.join(os.tmpdir(), LEGACY_PORT_FILE_NAME))
   } catch {
     /* ignore */
   }
@@ -225,7 +262,10 @@ export async function handleRequest(
     return
   }
 
-  if (pathname === INSPECTO_API_PATHS.IDE_OPEN && req.method === 'POST') {
+  if (
+    (pathname === INSPECTO_API_PATHS.SOURCE_OPEN || pathname === INSPECTO_API_PATHS.IDE_OPEN) &&
+    req.method === 'POST'
+  ) {
     let body: OpenFileRequest
     try {
       body = JSON.parse(await readBody(req)) as OpenFileRequest
@@ -239,7 +279,7 @@ export async function handleRequest(
       handleOpenFileRequest(body, serverState)
     } catch (err: any) {
       serverLogger.warn(
-        `Security: Blocked path traversal attempt in IDE_OPEN: ${body.file}. Reason: ${err.message}`,
+        `Security: Blocked path traversal attempt in SOURCE_OPEN: ${body.file}. Reason: ${err.message}`,
       )
       res.writeHead(403, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: 'Access denied: File is outside of project workspace' }))
@@ -322,6 +362,256 @@ export async function handleRequest(
     return
   }
 
+  if (pathname === INSPECTO_API_PATHS.SESSION_CLAIM_NEXT && req.method === 'POST') {
+    try {
+      const rawBody = await readBody(req)
+      const body = rawBody ? (JSON.parse(rawBody) as AnnotationSessionClaimRequest) : {}
+      const timeoutMs = normalizeSessionClaimTimeout(
+        body.timeoutMs === undefined ? null : String(body.timeoutMs),
+      )
+      const result = await annotationSessionStore.claimNextSession({
+        ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+      })
+
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(
+        JSON.stringify({
+          success: true,
+          timedOut: result.timedOut,
+          matchedExisting: result.matchedExisting,
+          ...(result.event ? { event: result.event } : {}),
+          ...(result.session ? { session: result.session } : {}),
+        }),
+      )
+    } catch (e) {
+      serverLogger.error(`Error parsing session claim request:`, e)
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }))
+    }
+    return
+  }
+
+  if (pathname === INSPECTO_API_PATHS.SESSION_EVENTS && req.method === 'GET') {
+    const statusParam = url.searchParams.getAll('status')
+    const statuses = statusParam.length ? new Set(statusParam as AnnotationSessionStatus[]) : null
+    const sessionId = url.searchParams.get('sessionId')?.trim() || null
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    })
+    res.write(`event: ready\ndata: ${JSON.stringify({ ok: true })}\n\n`)
+
+    const unsubscribe = annotationSessionStore.subscribe(event => {
+      if (sessionId && event.session.id !== sessionId) {
+        return
+      }
+      if (statuses && !statuses.has(event.session.status)) {
+        return
+      }
+      res.write(formatSessionSseEvent(event))
+    })
+
+    req.on('close', () => {
+      unsubscribe()
+      res.end()
+    })
+    return
+  }
+
+  if (pathname === INSPECTO_API_PATHS.SESSIONS && req.method === 'GET') {
+    const statusParam = url.searchParams.getAll('status')
+    const sessions = annotationSessionStore.listSessions(
+      statusParam.length
+        ? {
+            status: statusParam as AnnotationSessionStatus[],
+          }
+        : undefined,
+    )
+
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ success: true, sessions }))
+    return
+  }
+
+  if (pathname.startsWith(`${INSPECTO_API_PATHS.SESSIONS}/`) && req.method === 'GET') {
+    const sessionId = pathname.substring(INSPECTO_API_PATHS.SESSIONS.length + 1)
+    const session = annotationSessionStore.getSession(sessionId)
+
+    if (!session) {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ success: false, error: 'Session not found' }))
+      return
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ success: true, session }))
+    return
+  }
+
+  if (
+    pathname.startsWith(`${INSPECTO_API_PATHS.SESSIONS}/`) &&
+    pathname.endsWith(INSPECTO_API_PATHS.SESSION_REPLY_SUFFIX) &&
+    req.method === 'POST'
+  ) {
+    const sessionId = pathname.slice(
+      INSPECTO_API_PATHS.SESSIONS.length + 1,
+      -INSPECTO_API_PATHS.SESSION_REPLY_SUFFIX.length,
+    )
+
+    try {
+      const rawBody = await readBody(req)
+      const body = JSON.parse(rawBody) as AnnotationSessionReplyRequest
+
+      if (!isAnnotationThreadRole(body.role)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ success: false, error: 'Reply role is invalid.' }))
+        return
+      }
+
+      if (!body.text?.trim()) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ success: false, error: 'Reply text is required.' }))
+        return
+      }
+
+      const session = annotationSessionStore.appendMessage(sessionId, {
+        role: body.role,
+        text: body.text.trim(),
+      })
+
+      if (!session) {
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ success: false, error: 'Session not found' }))
+        return
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ success: true, session }))
+    } catch (e) {
+      serverLogger.error(`Error parsing session reply request:`, e)
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }))
+    }
+    return
+  }
+
+  if (
+    pathname.startsWith(`${INSPECTO_API_PATHS.SESSIONS}/`) &&
+    pathname.endsWith(INSPECTO_API_PATHS.SESSION_RESOLVE_SUFFIX) &&
+    req.method === 'POST'
+  ) {
+    const sessionId = pathname.slice(
+      INSPECTO_API_PATHS.SESSIONS.length + 1,
+      -INSPECTO_API_PATHS.SESSION_RESOLVE_SUFFIX.length,
+    )
+
+    try {
+      const rawBody = await readBody(req)
+      const body = rawBody ? (JSON.parse(rawBody) as AnnotationSessionResolveRequest) : {}
+      const message = body.message?.trim()
+      const existingSession = annotationSessionStore.getSession(sessionId)
+
+      if (!existingSession) {
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ success: false, error: 'Session not found' }))
+        return
+      }
+
+      if (!message && !hasAgentReply(existingSession)) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(
+          JSON.stringify({
+            success: false,
+            error: 'Resolve message is required until an agent reply is recorded.',
+          }),
+        )
+        return
+      }
+
+      if (message) {
+        const repliedSession = annotationSessionStore.appendMessage(sessionId, {
+          role: 'agent',
+          text: message,
+        })
+        if (!repliedSession) {
+          res.writeHead(404, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ success: false, error: 'Session not found' }))
+          return
+        }
+      }
+
+      const session = annotationSessionStore.updateStatus(sessionId, 'resolved')
+
+      if (!session) {
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ success: false, error: 'Session not found' }))
+        return
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ success: true, session }))
+    } catch (e) {
+      serverLogger.error(`Error parsing session resolve request:`, e)
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }))
+    }
+    return
+  }
+
+  if (
+    pathname.startsWith(`${INSPECTO_API_PATHS.SESSIONS}/`) &&
+    pathname.endsWith(INSPECTO_API_PATHS.SESSION_DISMISS_SUFFIX) &&
+    req.method === 'POST'
+  ) {
+    const sessionId = pathname.slice(
+      INSPECTO_API_PATHS.SESSIONS.length + 1,
+      -INSPECTO_API_PATHS.SESSION_DISMISS_SUFFIX.length,
+    )
+
+    try {
+      const rawBody = await readBody(req)
+      const body = rawBody ? (JSON.parse(rawBody) as AnnotationSessionResolveRequest) : {}
+      const message = body.message?.trim()
+      const existingSession = annotationSessionStore.getSession(sessionId)
+
+      if (!existingSession) {
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ success: false, error: 'Session not found' }))
+        return
+      }
+
+      if (message) {
+        const repliedSession = annotationSessionStore.appendMessage(sessionId, {
+          role: 'agent',
+          text: message,
+        })
+        if (!repliedSession) {
+          res.writeHead(404, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ success: false, error: 'Session not found' }))
+          return
+        }
+      }
+
+      const session = annotationSessionStore.updateStatus(sessionId, 'dismissed')
+
+      if (!session) {
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ success: false, error: 'Session not found' }))
+        return
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ success: true, session }))
+    } catch (e) {
+      serverLogger.error(`Error parsing session dismiss request:`, e)
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ success: false, error: 'Invalid JSON body' }))
+    }
+    return
+  }
+
   // Handle IDE payload ticket retrieval
   if (pathname.startsWith(`${INSPECTO_API_PATHS.AI_TICKET}/`) && req.method === 'GET') {
     const ticketId = pathname.substring(INSPECTO_API_PATHS.AI_TICKET.length + 1)
@@ -345,7 +635,7 @@ export async function handleRequest(
 async function dispatchToAi(
   req: SendToAiRequest,
 ): Promise<SendToAiResponse & { fallbackPayload?: { prompt: string; file: string } }> {
-  const { location, snippet, prompt, screenshotContext } = req
+  const { location, snippet, prompt } = req
 
   const formattedPrompt =
     prompt ??
@@ -357,7 +647,6 @@ async function dispatchToAi(
     line: location.line,
     column: location.column,
     snippet,
-    ...(screenshotContext ? { screenshotContext } : {}),
   }) as SendToAiResponse & { fallbackPayload?: { prompt: string; file: string } }
 }
 
@@ -369,4 +658,21 @@ function getBatchDispatchStatusCode(
   if (errorCode === 'INVALID_REQUEST') return 400
   if (errorCode === 'FORBIDDEN_PATH') return 403
   return 500
+}
+
+function isAnnotationThreadRole(
+  value: string | undefined,
+): value is AnnotationSessionReplyRequest['role'] {
+  return value === 'user' || value === 'agent' || value === 'system'
+}
+
+function formatSessionSseEvent(event: AnnotationSessionEvent): string {
+  return `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`
+}
+
+function normalizeSessionClaimTimeout(value: string | null): number | undefined {
+  if (!value?.trim()) return 30000
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed)) return 30000
+  return Math.max(0, Math.min(parsed, 300000))
 }

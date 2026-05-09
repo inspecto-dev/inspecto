@@ -1,13 +1,13 @@
 export function getWebpackHtmlScript(serverPort: number) {
   return `
 window.__AI_INSPECTOR_PORT__ = ${serverPort};
-window.addEventListener('load', () => {
-  if (window.InspectoClient) {
-    window.InspectoClient.mountInspector({
-      serverUrl: 'http://127.0.0.1:' + window.__AI_INSPECTOR_PORT__,
-    });
-  }
-});
+  window.addEventListener('load', () => {
+    if (window.InspectoClient) {
+      window.InspectoClient.mountInspector({
+        serverUrl: 'http://0.0.0.0:' + window.__AI_INSPECTOR_PORT__,
+      });
+    }
+  });
 `
 }
 
@@ -18,7 +18,7 @@ if (typeof window !== 'undefined') {
   const _initInspecto = () => {
     if (window.InspectoClient) {
       window.InspectoClient.mountInspector({
-        serverUrl: 'http://127.0.0.1:' + window.__AI_INSPECTOR_PORT__,
+        serverUrl: 'http://0.0.0.0:' + window.__AI_INSPECTOR_PORT__,
       });
     } else {
       setTimeout(_initInspecto, 100);

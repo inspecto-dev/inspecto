@@ -39,68 +39,41 @@
 
 ## 快速开始
 
-最快的使用方式是为你喜欢的 AI 助手安装对应的引导集成。
-
-1. **进入你的项目根目录**。
-2. **复制并运行匹配的安装命令**：
-
-   `--host-ide` 的可选值包括：`vscode`, `cursor`, `trae`, `trae-cn`。
-
-   ```bash
-   # VS Code + Copilot
-   npx @inspecto-dev/cli integrations install copilot --host-ide vscode
-
-   # VS Code + Codex
-   npx @inspecto-dev/cli integrations install codex --host-ide vscode
-
-   # VS Code + Claude Code
-   npx @inspecto-dev/cli integrations install claude-code --scope project --host-ide vscode
-
-   # Cursor builtin
-   npx @inspecto-dev/cli integrations install cursor --host-ide cursor
-
-   # VS Code + Gemini
-   npx @inspecto-dev/cli integrations install gemini --host-ide vscode
-
-   # Trae CN + Trae
-   npx @inspecto-dev/cli integrations install trae --host-ide trae-cn
-
-   # Trae CN + Coco
-   npx @inspecto-dev/cli integrations install coco --host-ide trae-cn
-   ```
-
-   如果你不用 npm，可以把 `npx` 替换成 `pnpm dlx`、`yarn dlx` 或 `bunx`。
-
-3. **在你的 IDE 中查看结果**：
-   - 如果 onboarding 流程自动打开，请在那里继续。
-   - 如果它没有打开，请开启一个聊天会话并发送下方的回退提示词。
-
-完成后在浏览器中打开你的应用并使用 `Inspect mode`, `Annotate mode`, 或 `Quick jump`。
-
-如果你只需要记住两条规则，请记住：
-
-- 请在目标项目根目录运行项目级的安装命令
-- 当你不是在目标 IDE 的终端里执行命令时，显式传递 `--host-ide` 参数
-
-### 手动回退方案
-
-如果 onboarding 流程没有自动打开，请开启一个新的 assistant 会话，并对它说：
-
-```text
-Set up Inspecto in this project
-```
-
-如果你需要其他助手、作用域或文件位置信息，请查看 [Onboarding 集成](https://inspecto-dev.github.io/inspecto/zh/integrations/onboarding-skills)。
-
-### 终端回退
-
-如果你不走 assistant 集成：
+要安装 Inspecto 并将其连接到你的 AI 助手，请进入项目根目录，根据你的环境运行**其中一条**命令：
 
 ```bash
-npx @inspecto-dev/cli@latest init
+# VS Code + Copilot
+npx @inspecto-dev/cli integrations install copilot --host-ide vscode
+
+# VS Code + Claude Code
+npx @inspecto-dev/cli integrations install claude-code --scope project --host-ide vscode
+
+# Cursor builtin
+npx @inspecto-dev/cli integrations install cursor --host-ide cursor
+
+# Trae CN + Trae
+npx @inspecto-dev/cli integrations install trae --host-ide trae-cn
+
+# VS Code + Codex
+npx @inspecto-dev/cli integrations install codex --host-ide vscode
+
+# VS Code + Gemini
+npx @inspecto-dev/cli integrations install gemini --host-ide vscode
+
+# Trae CN + Coco
+npx @inspecto-dev/cli integrations install coco --host-ide trae-cn
+
+# CodeBuddy
+npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 ```
 
-如果你不用 npm，也可以使用 `pnpm dlx`、`yarn dlx` 或 `bunx`。
+_(如果你使用其他包管理器，可以用 `pnpm dlx`、`yarn dlx` 或 `bunx` 代替 `npx`)。_
+
+命令执行后，Inspecto 会尝试在你的 IDE 中打开 onboarding 会话。**如果没有自动打开**，请开启一个 AI 助手聊天并发送：
+
+> _"Set up Inspecto in this project"_
+
+需要手动安装？请查看[安装指南](https://inspecto-dev.github.io/inspecto/zh/guide/manual-installation)。
 
 ## 开始使用
 
@@ -114,7 +87,7 @@ npx @inspecto-dev/cli@latest init
 - `Inspect mode` 能打开 Inspecto 菜单
 - `Quick jump` 可以打开源码位置
 
-如果页面已经能高亮，但 IDE 里没有收到代码，先安装或启用 Inspecto IDE 插件。
+如果高亮正常，但编辑器中没有收到任何信息，请检查您的 IDE 配置或使用“复制上下文”操作。如果您正在使用 MCP 或独立模式 (`ide: "none"`)，则不需要安装 IDE 插件，详情请查看 [MCP 集成](https://inspecto-dev.github.io/inspecto/zh/integrations/mcp)。
 
 ---
 

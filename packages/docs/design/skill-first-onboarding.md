@@ -44,12 +44,12 @@ Legacy `detect --json` / `plan --json` / `apply --json` remain low-level debug p
 
 After onboarding reports success, integrations must follow this order:
 
-1. Complete IDE extension installation (required)
+1. Complete IDE extension installation (if using IDE mode)
 2. If auto-install fails, guide with official install command/links
 3. Only then restart dev server automatically (when command is clear) or prompt user to run it
 4. Validate the browser flow through the launcher, `Inspect` / `Annotate`, and quick jump
 
-This prevents false-positive “setup success” when extension setup is missing.
+This prevents false-positive “setup success” when extension setup is missing (unless explicitly in standalone mode).
 
 ## Responsibility Split
 
@@ -57,7 +57,7 @@ This prevents false-positive “setup success” when extension setup is missing
 
 - Trigger `onboard --json` and route status-based retries.
 - Confirm planned changes before rerunning with `--yes`.
-- Enforce IDE extension completion before verification.
+- Guide IDE extension completion (if using IDE mode) before verification.
 - Start/restart dev server only when command inference is reliable.
 
 ### CLI

@@ -312,7 +312,6 @@ describe('Overlay DOM Interaction', () => {
     overlay.render([{ id: 'current', element: target, order: 1 }], {
       targetLabel: 'button',
       note: '',
-      canAttachScreenshotContext: true,
       canAttachCssContext: true,
       canAttachRuntimeContext: true,
     })
@@ -321,12 +320,7 @@ describe('Overlay DOM Interaction', () => {
       shadowRoot.querySelectorAll('[data-inspecto-annotate-composer-header] button'),
     ).map(button => button.getAttribute('aria-label') ?? button.textContent ?? '')
 
-    expect(labels).toEqual([
-      'Attach screenshot context',
-      'Attach CSS context',
-      'Attach runtime context',
-      'Open in Editor',
-    ])
+    expect(labels).toEqual(['Attach CSS context', 'Attach runtime context', 'Open in Editor'])
   })
 
   it('places the composer to the left of the target when the right edge is constrained', () => {

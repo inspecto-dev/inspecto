@@ -11,6 +11,8 @@ import { getInspectoOutputChannel } from './output-channel'
 
 const MAX_RETRIES = 5
 const RETRY_BASE_MS = 1000
+const PUSH_IDE_INFO_ACTION = 'Push IDE Info'
+const OPEN_OUTPUT_ACTION = 'Open Output'
 
 export function activate(context: vscode.ExtensionContext): void {
   const outputChannel = getInspectoOutputChannel()
@@ -34,6 +36,28 @@ export function activate(context: vscode.ExtensionContext): void {
   )
 
   let retryTimeoutId: NodeJS.Timeout | undefined
+  let connectionWarningVisible = false
+
+  const showDevServerConnectionWarning = async (): Promise<void> => {
+    if (connectionWarningVisible) return
+    connectionWarningVisible = true
+    try {
+      const selected = await vscode.window.showWarningMessage(
+        'Inspecto could not reach the local dev server. Start or restart your dev server, then push IDE info again.',
+        PUSH_IDE_INFO_ACTION,
+        OPEN_OUTPUT_ACTION,
+      )
+
+      if (selected === PUSH_IDE_INFO_ACTION) {
+        if (retryTimeoutId) clearTimeout(retryTimeoutId)
+        void pushInfoWithRetry(1)
+      } else if (selected === OPEN_OUTPUT_ACTION) {
+        outputChannel.show(true)
+      }
+    } finally {
+      connectionWarningVisible = false
+    }
+  }
 
   const pushInfoWithRetry = async (attempt = 1): Promise<boolean> => {
     const workspaceRoot = getPreferredWorkspaceRoot()
@@ -93,6 +117,7 @@ export function activate(context: vscode.ExtensionContext): void {
       outputChannel.appendLine(
         '[inspecto] Could not reach dev server after 5 attempts. Start your dev server and run "Inspecto: Push IDE Info" to retry.',
       )
+      void showDevServerConnectionWarning()
     }
 
     return false
@@ -148,7 +173,7 @@ async function pushIdeInfoToServer(info: IdeInfo): Promise<boolean> {
   const ports = resolveServerPorts()
   for (const port of ports) {
     try {
-      const res = await fetch(`http://127.0.0.1:${port}${INSPECTO_API_PATHS.IDE_INFO}`, {
+      const res = await fetch(`http://0.0.0.0:${port}${INSPECTO_API_PATHS.IDE_INFO}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(info),

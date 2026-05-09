@@ -185,9 +185,25 @@ export const launcherStyles = `
 
   .${badgeClass}-panel-header {
     display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 2px 4px 4px;
+  }
+
+  .${badgeClass}-panel-header-copy {
+    display: flex;
     flex-direction: column;
     gap: 3px;
-    padding: 2px 4px 4px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .${badgeClass}-panel-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
   }
 
   .${badgeClass}-panel-header [data-inspecto-launcher-panel-title="true"] {
@@ -212,6 +228,7 @@ export const launcherStyles = `
   .${badgeClass}-panel-group[data-inspecto-launcher-utility-group="true"] {
     padding-top: 6px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
+    gap: 6px;
   }
 
   .${badgeClass}-panel-button {
@@ -275,27 +292,47 @@ export const launcherStyles = `
 
   .${badgeClass}-panel-button:disabled { cursor: not-allowed; opacity: 0.5; }
 
-  .${badgeClass}-panel-button.secondary {
+  .${badgeClass}-panel-toggle-button {
+    appearance: none;
+    width: 28px;
+    height: 28px;
     padding: 0;
-    background: transparent;
+    border: 1px solid var(--inspecto-border-subtle);
+    border-radius: var(--inspecto-radius-pill);
+    background: var(--inspecto-surface-subtle);
     color: var(--inspecto-text-secondary);
-    border-color: transparent;
-    display: flex;
-    align-items: flex-start;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    gap: 4px;
-    box-shadow: none;
-    min-height: 0;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
   }
 
-  .${badgeClass}-panel-button.secondary [data-inspecto-launcher-title="true"] {
-    font-weight: 600;
-    font-size: 11px;
+  .${badgeClass}-panel-toggle-button svg {
+    width: 14px;
+    height: 14px;
+    display: block;
   }
 
-  .${badgeClass}-panel-button.secondary [data-inspecto-launcher-description="true"] {
+  .${badgeClass}-panel-toggle-button[aria-pressed="true"] {
+    background: linear-gradient(180deg, var(--inspecto-accent-primary) 0%, var(--inspecto-accent-primary-strong) 100%);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 10px 18px rgba(70, 57, 215, 0.24);
+  }
+
+  .${badgeClass}-panel-toggle-button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .${badgeClass}-panel-status-text {
     font-size: 10px;
-    max-width: none;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--inspecto-text-secondary);
+    white-space: nowrap;
+    text-align: right;
   }
 
   .${badgeClass}-panel-hint {

@@ -1,5 +1,6 @@
 import type { SourceLocation } from '@inspecto-dev/types'
-import { bugIconSvg, cssIconSvg, screenshotIconSvg } from './icons.js'
+import { bugIconSvg, cssIconSvg } from './icons.js'
+import { t } from './i18n.js'
 import { formatSourceAnchor } from './menu-helpers.js'
 import {
   applyHeaderIconButtonStyles,
@@ -14,7 +15,6 @@ export function createMenuHeaderDom(input: {
   location: SourceLocation
   targetLabel?: string
   canAttachRuntimeContext: boolean
-  canAttachScreenshotContext: boolean
   canAttachCssContext: boolean
 }) {
   const header = document.createElement('div')
@@ -49,8 +49,8 @@ export function createMenuHeaderDom(input: {
   const openButton = document.createElement('button')
   openButton.type = 'button'
   openButton.dataset.role = 'open-icon'
-  openButton.setAttribute('aria-label', 'Open in Editor')
-  openButton.title = 'Open in Editor'
+  openButton.setAttribute('aria-label', t('menu.openInEditor'))
+  openButton.title = t('menu.openInEditor')
   openButton.textContent = '↗'
   applyHeaderIconButtonStyles(openButton)
 
@@ -58,8 +58,8 @@ export function createMenuHeaderDom(input: {
   runtimeToggleButton.type = 'button'
   runtimeToggleButton.className = runtimeToggleClass
   runtimeToggleButton.dataset.role = 'runtime-context-toggle'
-  runtimeToggleButton.setAttribute('aria-label', 'Attach runtime context')
-  runtimeToggleButton.title = 'Attach runtime context'
+  runtimeToggleButton.setAttribute('aria-label', t('menu.attachRuntime'))
+  runtimeToggleButton.title = t('menu.attachRuntime')
   runtimeToggleButton.hidden = !input.canAttachRuntimeContext
   applyHeaderIconButtonStyles(runtimeToggleButton)
   const runtimeToggleIcon = document.createElement('span')
@@ -71,27 +71,12 @@ export function createMenuHeaderDom(input: {
   runtimeToggleBadge.hidden = true
   runtimeToggleButton.append(runtimeToggleIcon, runtimeToggleBadge)
 
-  const screenshotToggleButton = document.createElement('button')
-  screenshotToggleButton.type = 'button'
-  screenshotToggleButton.className = runtimeToggleClass
-  screenshotToggleButton.dataset.role = 'screenshot-context-toggle'
-  screenshotToggleButton.setAttribute('aria-label', 'Attach screenshot context')
-  screenshotToggleButton.title = 'Attach screenshot context'
-  screenshotToggleButton.hidden = !input.canAttachScreenshotContext
-  screenshotToggleButton.setAttribute('aria-pressed', 'false')
-  screenshotToggleButton.dataset.visualState = 'inactive'
-  applyHeaderIconButtonStyles(screenshotToggleButton)
-  const screenshotToggleIcon = document.createElement('span')
-  screenshotToggleIcon.className = runtimeToggleIconClass
-  screenshotToggleIcon.innerHTML = screenshotIconSvg
-  screenshotToggleButton.append(screenshotToggleIcon)
-
   const cssToggleButton = document.createElement('button')
   cssToggleButton.type = 'button'
   cssToggleButton.className = runtimeToggleClass
   cssToggleButton.dataset.role = 'css-context-toggle'
-  cssToggleButton.setAttribute('aria-label', 'Attach CSS context')
-  cssToggleButton.title = 'Attach CSS context'
+  cssToggleButton.setAttribute('aria-label', t('menu.attachCss'))
+  cssToggleButton.title = t('menu.attachCss')
   cssToggleButton.hidden = !input.canAttachCssContext
   cssToggleButton.setAttribute('aria-pressed', 'false')
   cssToggleButton.dataset.visualState = 'inactive'
@@ -116,7 +101,6 @@ export function createMenuHeaderDom(input: {
     openButton,
     runtimeToggleButton,
     runtimeToggleBadge,
-    screenshotToggleButton,
     cssToggleButton,
   }
 }

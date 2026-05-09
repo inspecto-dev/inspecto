@@ -30,7 +30,7 @@ Skip the manual searching in your editor. Simply hold `Alt` (or `Option` on Mac)
 
 Instead of bouncing between the browser, DevTools, your editor, and AI chat, Inspecto keeps the handoff tight. You stay on the page, target the component you care about, and move to code or AI with the right context already attached.
 
-For setup, Inspecto now supports automated onboarding integrations. In environments such as Codex, Claude Code, Coco, Copilot, Cursor, Gemini, or Trae, the fastest path is to install the matching onboarding integration from your terminal. Inspecto will open the setup instructions right inside your IDE, let the assistant complete the setup, and apply the configuration for you.
+For setup, Inspecto supports automated onboarding integrations for popular AI assistants. The fastest path is to install the matching onboarding integration from your terminal. Inspecto will open the setup instructions right inside your IDE, let the assistant complete the setup, and apply the configuration for you.
 
 ## Why Inspecto?
 

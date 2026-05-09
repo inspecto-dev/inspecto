@@ -8,12 +8,15 @@ import {
 vi.mock('node:child_process', () => ({
   execSync: vi.fn(() => `${process.cwd()}\n`),
   execFileSync: vi.fn(),
+  spawn: vi.fn(() => ({
+    once: vi.fn(),
+    unref: vi.fn(),
+  })),
 }))
 
 vi.mock('../src/config.js', () => ({
   loadUserConfigSync: vi.fn(() => ({
     ide: 'vscode',
-    'provider.default': 'codex.cli',
     'prompt.autoSend': false,
   })),
   loadPromptsConfig: vi.fn(async () => []),
@@ -42,7 +45,6 @@ describe('annotation batch dispatch', () => {
 
     const prompt = buildAnnotationBatchPrompt({
       instruction: '',
-      responseMode: 'unified',
       annotations: [
         {
           index: 1,
@@ -92,7 +94,6 @@ describe('annotation batch dispatch', () => {
 
     const prompt = buildAnnotationBatchPrompt({
       instruction: '',
-      responseMode: 'unified',
       annotations: [
         {
           index: 1,
@@ -128,12 +129,11 @@ describe('annotation batch dispatch', () => {
     expect(prompt).not.toContain('Targets:')
   })
 
-  it('ignores response mode boilerplate and keeps the prompt minimal', async () => {
+  it('keeps single-annotation prompts minimal', async () => {
     const { buildAnnotationBatchPrompt } = await import('../src/server/annotation-dispatch.js')
 
     const prompt = buildAnnotationBatchPrompt({
       instruction: '',
-      responseMode: 'per-annotation',
       annotations: [
         {
           index: 1,
@@ -179,7 +179,6 @@ describe('annotation batch dispatch', () => {
             ],
           },
         ],
-        responseMode: 'unified',
       },
       serverState,
     )
@@ -187,6 +186,7 @@ describe('annotation batch dispatch', () => {
     expect(result.success).toBe(false)
     expect(result.errorCode).toBe('FORBIDDEN_PATH')
     expect(result.error).toContain('outside of project workspace')
+    expect(result.session).toBeUndefined()
   })
 
   it('prepends the provided instruction to minimal prompts', async () => {
@@ -194,7 +194,6 @@ describe('annotation batch dispatch', () => {
 
     const prompt = buildAnnotationBatchPrompt({
       instruction: 'Review these notes with a layout-consistency lens.',
-      responseMode: 'unified',
       annotations: [
         {
           index: 1,
@@ -229,7 +228,7 @@ describe('annotation batch dispatch', () => {
     expect(prompt).toContain('\n\nSelected elements:\n')
   })
 
-  it('preserves runtime and screenshot context during annotation normalization and prompt assembly', async () => {
+  it('preserves runtime context during annotation normalization and prompt assembly', async () => {
     const { normalizeAnnotationBatch } = await import('../src/server/annotation-dispatch.js')
     const { buildAnnotationBatchPrompt } = await import('../src/server/annotation-dispatch.js')
 
@@ -262,19 +261,6 @@ describe('annotation batch dispatch', () => {
           },
         ],
       },
-      screenshotContext: {
-        enabled: true,
-        capturedAt: '2026-04-04T12:00:00.000Z',
-        mimeType: 'image/png',
-        imageDataUrl: 'data:image/png;base64,AAA=',
-      },
-    })
-
-    expect(batch.screenshotContext).toEqual({
-      enabled: true,
-      capturedAt: '2026-04-04T12:00:00.000Z',
-      mimeType: 'image/png',
-      imageDataUrl: 'data:image/png;base64,AAA=',
     })
 
     expect(batch.runtimeContext).toEqual({
@@ -303,10 +289,6 @@ describe('annotation batch dispatch', () => {
     expect(prompt).toContain('[runtime-error] Button style token was undefined')
     expect(prompt).toContain('relevance=high (stack references target file)')
     expect(prompt).toContain('occurrences=2')
-    expect(prompt).toContain('Visual screenshot context attached:')
-    expect(prompt.indexOf('Relevant runtime context:')).toBeLessThan(
-      prompt.indexOf('Visual screenshot context attached:'),
-    )
   })
 
   it('appends CSS context to annotation prompts when provided', async () => {
@@ -314,7 +296,6 @@ describe('annotation batch dispatch', () => {
 
     const prompt = buildAnnotationBatchPrompt({
       instruction: 'Review the button styling.',
-      responseMode: 'unified',
       annotations: [
         {
           index: 1,
@@ -341,61 +322,6 @@ describe('annotation batch dispatch', () => {
     expect(prompt).not.toContain('selector=')
   })
 
-  it('appends screenshot evidence to annotation prompts when screenshot context is provided', async () => {
-    const { buildAnnotationBatchPrompt } = await import('../src/server/annotation-dispatch.js')
-
-    const prompt = buildAnnotationBatchPrompt({
-      instruction: '',
-      responseMode: 'unified',
-      annotations: [
-        {
-          index: 1,
-          note: 'Review the button treatment.',
-          intent: 'review',
-          targets: [{ file: '/repo/Button.tsx', line: 12, column: 3, label: 'button.primary' }],
-        },
-      ],
-      screenshotContext: {
-        enabled: true,
-        capturedAt: '2026-04-04T12:00:00.000Z',
-        mimeType: 'image/png',
-        imageDataUrl: 'data:image/png;base64,AAA=',
-      },
-    })
-
-    expect(prompt).toContain('Visual screenshot context attached:')
-    expect(prompt).toContain('capturedAt=2026-04-04T12:00:00.000Z')
-    expect(prompt).toContain('mimeType=image/png')
-  })
-
-  it('appends screenshot evidence to annotation prompts when only an asset id is provided', async () => {
-    const { buildAnnotationBatchPrompt } = await import('../src/server/annotation-dispatch.js')
-
-    const prompt = buildAnnotationBatchPrompt({
-      instruction: '',
-      responseMode: 'unified',
-      annotations: [
-        {
-          index: 1,
-          note: 'Review the button treatment.',
-          intent: 'review',
-          targets: [{ file: '/repo/Button.tsx', line: 12, column: 3, label: 'button.primary' }],
-        },
-      ],
-      screenshotContext: {
-        enabled: true,
-        capturedAt: '2026-04-04T12:00:00.000Z',
-        mimeType: 'image/png',
-        imageAssetId: 'asset_123',
-      },
-    })
-
-    expect(prompt).toContain('Visual screenshot context attached:')
-    expect(prompt).toContain('capturedAt=2026-04-04T12:00:00.000Z')
-    expect(prompt).toContain('mimeType=image/png')
-    expect(prompt).toContain('imageAssetId=asset_123')
-  })
-
   it('rejects empty annotation batches as invalid requests', async () => {
     const { dispatchAnnotationsToAi } = await import('../src/server/annotation-dispatch.js')
     const { serverState } = await import('../src/server/index.js')
@@ -406,7 +332,6 @@ describe('annotation batch dispatch', () => {
     const result = await dispatchAnnotationsToAi(
       {
         annotations: [],
-        responseMode: 'unified',
       },
       serverState,
     )
@@ -414,10 +339,54 @@ describe('annotation batch dispatch', () => {
     expect(result.success).toBe(false)
     expect(result.errorCode).toBe('INVALID_REQUEST')
     expect(result.error).toContain('At least one annotation is required.')
+    expect(result.session).toBeUndefined()
+  })
+
+  it('creates a pending session while preserving the existing dispatch fallback', async () => {
+    const { dispatchAnnotationsToAi } = await import('../src/server/annotation-dispatch.js')
+    const { serverState } = await import('../src/server/index.js')
+    const { annotationSessionStore } = await import('../src/server/session-store.js')
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const file = `${process.cwd()}/packages/plugin/src/index.ts`
+    const result = await dispatchAnnotationsToAi(
+      {
+        instruction: 'Review this batch with a stability lens.',
+        annotations: [
+          {
+            note: 'Review the plugin bootstrap flow.',
+            intent: 'review',
+            targets: [
+              {
+                location: { file, line: 1, column: 1 },
+                label: 'InspectoPlugin',
+                selector: 'module',
+              },
+            ],
+          },
+        ],
+      },
+      serverState,
+    )
+
+    expect(result.success).toBe(true)
+    expect(result.session?.id).toBeTruthy()
+    expect(result.session?.status).toBe('pending')
+    expect(result.fallbackPayload?.prompt).toContain('Review this batch with a stability lens.')
+    expect(annotationSessionStore.listSessions()).toHaveLength(1)
+    expect(annotationSessionStore.listSessions()[0]?.instruction).toBe(
+      'Review this batch with a stability lens.',
+    )
+    expect(annotationSessionStore.listSessions()[0]?.annotations[0]?.targets[0]?.selector).toBe(
+      'module',
+    )
   })
 
   it('serves the batch dispatch route through the server handler', async () => {
     const { handleRequest, serverState } = await import('../src/server/index.js')
+    const { annotationSessionStore } = await import('../src/server/session-store.js')
     const { execFileSync } = await import('node:child_process')
     serverState.projectRoot = process.cwd()
     serverState.cwd = process.cwd()
@@ -437,18 +406,11 @@ describe('annotation batch dispatch', () => {
           ],
         },
       ],
-      responseMode: 'unified',
-      screenshotContext: {
-        enabled: true,
-        capturedAt: '2026-04-04T12:00:00.000Z',
-        mimeType: 'image/png',
-        imageDataUrl: 'data:image/png;base64,AAA=',
-      },
     }
 
     const request = createJsonRequest('POST', JSON.stringify(req))
     const response = createMockResponse()
-    const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_BATCH_DISPATCH}`)
+    const url = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.AI_BATCH_DISPATCH}`)
 
     const pending = handleRequest(url, request as any, response as any)
     request.start()
@@ -456,8 +418,15 @@ describe('annotation batch dispatch', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.jsonBody.success).toBe(true)
+    expect(response.jsonBody.session?.id).toBeTruthy()
+    expect(response.jsonBody.session?.status).toBe('pending')
     expect(response.jsonBody.fallbackPayload?.prompt).toContain('Review the plugin bootstrap flow.')
     expect(execFileSync).toHaveBeenCalled()
+    expect(annotationSessionStore.listSessions()).toHaveLength(1)
+    expect(annotationSessionStore.listSessions()[0]?.instruction).toBe('')
+    expect(annotationSessionStore.listSessions()[0]?.annotations[0]?.note).toBe(
+      'Review the plugin bootstrap flow.',
+    )
 
     const uri = vi.mocked(execFileSync).mock.calls[0]?.[1]?.[0] as string
     const launchedUrl = new URL(uri)
@@ -467,7 +436,7 @@ describe('annotation batch dispatch', () => {
 
     const ticketRequest = createJsonRequest('GET', '')
     const ticketResponse = createMockResponse()
-    const ticketUrl = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_TICKET}/${ticket}`)
+    const ticketUrl = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.AI_TICKET}/${ticket}`)
 
     const pendingTicket = handleRequest(ticketUrl, ticketRequest as any, ticketResponse as any)
     ticketRequest.start()
@@ -475,16 +444,433 @@ describe('annotation batch dispatch', () => {
 
     expect(ticketResponse.statusCode).toBe(200)
     expect(ticketResponse.jsonBody.prompt).toContain('Review the plugin bootstrap flow.')
-    expect(ticketResponse.jsonBody.prompt).toContain('Visual screenshot context attached:')
-    expect(ticketResponse.jsonBody.screenshotContext).toEqual({
-      enabled: true,
-      capturedAt: '2026-04-04T12:00:00.000Z',
-      mimeType: 'image/png',
-      imageDataUrl: 'data:image/png;base64,AAA=',
-    })
   })
 
-  it('preserves screenshot context in inspect dispatch tickets', async () => {
+  it('serves created annotation sessions through the session routes', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const file = `${process.cwd()}/packages/plugin/src/index.ts`
+    const createReq: SendAnnotationsToAiRequest = {
+      annotations: [
+        {
+          note: 'Review the created session payload.',
+          intent: 'review',
+          targets: [
+            {
+              location: { file, line: 1, column: 1 },
+              label: 'InspectoPlugin',
+            },
+          ],
+        },
+      ],
+    }
+
+    const createRequest = createJsonRequest('POST', JSON.stringify(createReq))
+    const createResponse = createMockResponse()
+    const createUrl = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.AI_BATCH_DISPATCH}`)
+
+    const pendingCreate = handleRequest(createUrl, createRequest as any, createResponse as any)
+    createRequest.start()
+    await pendingCreate
+
+    const sessionId = createResponse.jsonBody.session?.id as string
+    expect(sessionId).toBeTruthy()
+
+    const listRequest = createJsonRequest('GET', '')
+    const listResponse = createMockResponse()
+    const listUrl = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.SESSIONS}`)
+
+    const pendingList = handleRequest(listUrl, listRequest as any, listResponse as any)
+    listRequest.start()
+    await pendingList
+
+    expect(listResponse.statusCode).toBe(200)
+    expect(listResponse.jsonBody.success).toBe(true)
+    expect(listResponse.jsonBody.sessions).toHaveLength(1)
+    expect(listResponse.jsonBody.sessions[0]?.id).toBe(sessionId)
+
+    const detailRequest = createJsonRequest('GET', '')
+    const detailResponse = createMockResponse()
+    const detailUrl = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.SESSIONS}/${sessionId}`)
+
+    const pendingDetail = handleRequest(detailUrl, detailRequest as any, detailResponse as any)
+    detailRequest.start()
+    await pendingDetail
+
+    expect(detailResponse.statusCode).toBe(200)
+    expect(detailResponse.jsonBody.success).toBe(true)
+    expect(detailResponse.jsonBody.session.id).toBe(sessionId)
+    expect(detailResponse.jsonBody.session.annotations[0]?.note).toBe(
+      'Review the created session payload.',
+    )
+  })
+
+  it('appends agent replies and promotes the session to in_progress', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const file = `${process.cwd()}/packages/plugin/src/index.ts`
+    const createReq: SendAnnotationsToAiRequest = {
+      annotations: [
+        {
+          note: 'Review the reply flow.',
+          intent: 'review',
+          targets: [{ location: { file, line: 1, column: 1 }, label: 'InspectoPlugin' }],
+        },
+      ],
+    }
+
+    const createRequest = createJsonRequest('POST', JSON.stringify(createReq))
+    const createResponse = createMockResponse()
+    const createUrl = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_BATCH_DISPATCH}`)
+
+    const pendingCreate = handleRequest(createUrl, createRequest as any, createResponse as any)
+    createRequest.start()
+    await pendingCreate
+
+    const sessionId = createResponse.jsonBody.session?.id as string
+    const replyRequest = createJsonRequest(
+      'POST',
+      JSON.stringify({ role: 'agent', text: 'I am investigating this now.' }),
+    )
+    const replyResponse = createMockResponse()
+    const replyUrl = new URL(
+      `http://0.0.0.0:5678${INSPECTO_API_PATHS.SESSIONS}/${sessionId}${INSPECTO_API_PATHS.SESSION_REPLY_SUFFIX}`,
+    )
+
+    const pendingReply = handleRequest(replyUrl, replyRequest as any, replyResponse as any)
+    replyRequest.start()
+    await pendingReply
+
+    expect(replyResponse.statusCode).toBe(200)
+    expect(replyResponse.jsonBody.success).toBe(true)
+    expect(replyResponse.jsonBody.session.status).toBe('in_progress')
+    expect(replyResponse.jsonBody.session.messages).toHaveLength(1)
+    expect(replyResponse.jsonBody.session.messages[0]?.text).toBe('I am investigating this now.')
+  })
+
+  it('resolves a session and optionally appends a final summary message', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const file = `${process.cwd()}/packages/plugin/src/index.ts`
+    const createReq: SendAnnotationsToAiRequest = {
+      annotations: [
+        {
+          note: 'Review the resolve flow.',
+          intent: 'fix',
+          targets: [{ location: { file, line: 1, column: 1 }, label: 'InspectoPlugin' }],
+        },
+      ],
+    }
+
+    const createRequest = createJsonRequest('POST', JSON.stringify(createReq))
+    const createResponse = createMockResponse()
+    const createUrl = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_BATCH_DISPATCH}`)
+
+    const pendingCreate = handleRequest(createUrl, createRequest as any, createResponse as any)
+    createRequest.start()
+    await pendingCreate
+
+    const sessionId = createResponse.jsonBody.session?.id as string
+    const resolveRequest = createJsonRequest(
+      'POST',
+      JSON.stringify({ message: 'Implemented the fix and verified the flow.' }),
+    )
+    const resolveResponse = createMockResponse()
+    const resolveUrl = new URL(
+      `http://0.0.0.0:5678${INSPECTO_API_PATHS.SESSIONS}/${sessionId}${INSPECTO_API_PATHS.SESSION_RESOLVE_SUFFIX}`,
+    )
+
+    const pendingResolve = handleRequest(resolveUrl, resolveRequest as any, resolveResponse as any)
+    resolveRequest.start()
+    await pendingResolve
+
+    expect(resolveResponse.statusCode).toBe(200)
+    expect(resolveResponse.jsonBody.success).toBe(true)
+    expect(resolveResponse.jsonBody.session.status).toBe('resolved')
+    expect(resolveResponse.jsonBody.session.resolvedAt).toBeTruthy()
+    const finalMessage =
+      resolveResponse.jsonBody.session.messages[
+        resolveResponse.jsonBody.session.messages.length - 1
+      ]
+    expect(finalMessage?.text).toBe('Implemented the fix and verified the flow.')
+  })
+
+  it('rejects invalid reply payloads and missing sessions', async () => {
+    const { handleRequest } = await import('../src/server/index.js')
+
+    const invalidRoleRequest = createJsonRequest(
+      'POST',
+      JSON.stringify({ role: 'unknown', text: 'hello' }),
+    )
+    const invalidRoleResponse = createMockResponse()
+    const invalidRoleUrl = new URL(
+      `http://0.0.0.0:5678${INSPECTO_API_PATHS.SESSIONS}/missing${INSPECTO_API_PATHS.SESSION_REPLY_SUFFIX}`,
+    )
+
+    const pendingInvalidRole = handleRequest(
+      invalidRoleUrl,
+      invalidRoleRequest as any,
+      invalidRoleResponse as any,
+    )
+    invalidRoleRequest.start()
+    await pendingInvalidRole
+
+    expect(invalidRoleResponse.statusCode).toBe(400)
+    expect(invalidRoleResponse.jsonBody.success).toBe(false)
+
+    const invalidReplyRequest = createJsonRequest(
+      'POST',
+      JSON.stringify({ role: 'agent', text: '' }),
+    )
+    const invalidReplyResponse = createMockResponse()
+    const invalidReplyUrl = new URL(
+      `http://127.0.0.1:5678${INSPECTO_API_PATHS.SESSIONS}/missing${INSPECTO_API_PATHS.SESSION_REPLY_SUFFIX}`,
+    )
+
+    const pendingInvalidReply = handleRequest(
+      invalidReplyUrl,
+      invalidReplyRequest as any,
+      invalidReplyResponse as any,
+    )
+    invalidReplyRequest.start()
+    await pendingInvalidReply
+
+    expect(invalidReplyResponse.statusCode).toBe(400)
+    expect(invalidReplyResponse.jsonBody.success).toBe(false)
+
+    const missingResolveRequest = createJsonRequest('POST', JSON.stringify({ message: 'done' }))
+    const missingResolveResponse = createMockResponse()
+    const missingResolveUrl = new URL(
+      `http://0.0.0.0:5678${INSPECTO_API_PATHS.SESSIONS}/missing${INSPECTO_API_PATHS.SESSION_RESOLVE_SUFFIX}`,
+    )
+
+    const pendingMissingResolve = handleRequest(
+      missingResolveUrl,
+      missingResolveRequest as any,
+      missingResolveResponse as any,
+    )
+    missingResolveRequest.start()
+    await pendingMissingResolve
+
+    expect(missingResolveResponse.statusCode).toBe(404)
+    expect(missingResolveResponse.jsonBody.success).toBe(false)
+  })
+
+  it('streams session events over SSE and supports status filtering', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const streamRequest = createJsonRequest('GET', '')
+    const streamResponse = createStreamingResponse()
+    const streamUrl = new URL(
+      `http://0.0.0.0:5678${INSPECTO_API_PATHS.SESSION_EVENTS}?status=pending`,
+    )
+
+    await handleRequest(streamUrl, streamRequest as any, streamResponse as any)
+
+    expect(streamResponse.statusCode).toBe(200)
+    expect(streamResponse.headers['Content-Type']).toBe('text/event-stream')
+    expect(streamResponse.writes[0]).toContain('event: ready')
+
+    const file = `${process.cwd()}/packages/plugin/src/index.ts`
+    const createReq: SendAnnotationsToAiRequest = {
+      annotations: [
+        {
+          note: 'Review the SSE flow.',
+          intent: 'review',
+          targets: [{ location: { file, line: 1, column: 1 }, label: 'InspectoPlugin' }],
+        },
+      ],
+    }
+
+    const createRequest = createJsonRequest('POST', JSON.stringify(createReq))
+    const createResponse = createMockResponse()
+    const createUrl = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_BATCH_DISPATCH}`)
+
+    const pendingCreate = handleRequest(createUrl, createRequest as any, createResponse as any)
+    createRequest.start()
+    await pendingCreate
+
+    const sessionId = createResponse.jsonBody.session?.id as string
+    const replyRequest = createJsonRequest(
+      'POST',
+      JSON.stringify({ role: 'agent', text: 'Moving this into progress.' }),
+    )
+    const replyResponse = createMockResponse()
+    const replyUrl = new URL(
+      `http://127.0.0.1:5678${INSPECTO_API_PATHS.SESSIONS}/${sessionId}${INSPECTO_API_PATHS.SESSION_REPLY_SUFFIX}`,
+    )
+
+    const pendingReply = handleRequest(replyUrl, replyRequest as any, replyResponse as any)
+    replyRequest.start()
+    await pendingReply
+
+    expect(replyResponse.statusCode).toBe(200)
+    expect(streamResponse.writes.some(chunk => chunk.includes('event: session-created'))).toBe(true)
+    expect(
+      streamResponse.writes.some(chunk => chunk.includes('event: session-message-appended')),
+    ).toBe(false)
+
+    streamRequest.emit('close')
+    expect(streamResponse.ended).toBe(true)
+  })
+
+  it('claims the next pending session over the claim endpoint', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+    const { annotationSessionStore } = await import('../src/server/session-store.js')
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const claimRequest = createJsonRequest('POST', JSON.stringify({ timeoutMs: 1000 }))
+    const claimResponse = createMockResponse()
+    const claimUrl = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.SESSION_CLAIM_NEXT}`)
+
+    const pendingClaim = handleRequest(claimUrl, claimRequest as any, claimResponse as any)
+    claimRequest.start()
+
+    const file = `${process.cwd()}/packages/plugin/src/index.ts`
+    const createReq: SendAnnotationsToAiRequest = {
+      deliveryMode: 'agent',
+      annotations: [
+        {
+          note: 'Review the claim flow.',
+          intent: 'review',
+          targets: [{ location: { file, line: 1, column: 1 }, label: 'InspectoPlugin' }],
+        },
+      ],
+    }
+
+    const createRequest = createJsonRequest('POST', JSON.stringify(createReq))
+    const createResponse = createMockResponse()
+    const createUrl = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_BATCH_DISPATCH}`)
+
+    const pendingCreate = handleRequest(createUrl, createRequest as any, createResponse as any)
+    createRequest.start()
+    await pendingCreate
+    await pendingClaim
+
+    expect(claimResponse.statusCode).toBe(200)
+    expect(claimResponse.jsonBody.success).toBe(true)
+    expect(claimResponse.jsonBody.timedOut).toBe(false)
+    expect(claimResponse.jsonBody.event).toBe('session-created')
+    expect(claimResponse.jsonBody.session?.id).toBe(createResponse.jsonBody.session?.id)
+    expect(claimResponse.jsonBody.session?.status).toBe('acknowledged')
+    expect(annotationSessionStore.getSession(claimResponse.jsonBody.session.id)?.status).toBe(
+      'acknowledged',
+    )
+  })
+
+  it('streams events for a single session id across status changes', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const file = `${process.cwd()}/packages/plugin/src/index.ts`
+    const createReq: SendAnnotationsToAiRequest = {
+      annotations: [
+        {
+          note: 'Review the targeted SSE flow.',
+          intent: 'review',
+          targets: [{ location: { file, line: 1, column: 1 }, label: 'InspectoPlugin' }],
+        },
+      ],
+    }
+
+    const createRequest = createJsonRequest('POST', JSON.stringify(createReq))
+    const createResponse = createMockResponse()
+    const createUrl = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_BATCH_DISPATCH}`)
+
+    const pendingCreate = handleRequest(createUrl, createRequest as any, createResponse as any)
+    createRequest.start()
+    await pendingCreate
+
+    const sessionId = createResponse.jsonBody.session?.id as string
+    const streamRequest = createJsonRequest('GET', '')
+    const streamResponse = createStreamingResponse()
+    const streamUrl = new URL(
+      `http://0.0.0.0:5678${INSPECTO_API_PATHS.SESSION_EVENTS}?sessionId=${sessionId}`,
+    )
+
+    await handleRequest(streamUrl, streamRequest as any, streamResponse as any)
+
+    const replyRequest = createJsonRequest(
+      'POST',
+      JSON.stringify({ role: 'agent', text: 'Moving this into progress.' }),
+    )
+    const replyResponse = createMockResponse()
+    const replyUrl = new URL(
+      `http://127.0.0.1:5678${INSPECTO_API_PATHS.SESSIONS}/${sessionId}${INSPECTO_API_PATHS.SESSION_REPLY_SUFFIX}`,
+    )
+
+    const pendingReply = handleRequest(replyUrl, replyRequest as any, replyResponse as any)
+    replyRequest.start()
+    await pendingReply
+
+    expect(replyResponse.statusCode).toBe(200)
+    expect(
+      streamResponse.writes.some(chunk => chunk.includes('event: session-message-appended')),
+    ).toBe(true)
+
+    streamRequest.emit('close')
+    expect(streamResponse.ended).toBe(true)
+  })
+
+  it('rejects resolving a session before any agent reply is recorded', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const file = `${process.cwd()}/packages/plugin/src/index.ts`
+    const createReq: SendAnnotationsToAiRequest = {
+      annotations: [
+        {
+          note: 'Review resolve safety.',
+          intent: 'review',
+          targets: [{ location: { file, line: 1, column: 1 }, label: 'InspectoPlugin' }],
+        },
+      ],
+    }
+
+    const createRequest = createJsonRequest('POST', JSON.stringify(createReq))
+    const createResponse = createMockResponse()
+    const createUrl = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_BATCH_DISPATCH}`)
+
+    const pendingCreate = handleRequest(createUrl, createRequest as any, createResponse as any)
+    createRequest.start()
+    await pendingCreate
+
+    const sessionId = createResponse.jsonBody.session?.id as string
+    const resolveRequest = createJsonRequest('POST', JSON.stringify({}))
+    const resolveResponse = createMockResponse()
+    const resolveUrl = new URL(
+      `http://127.0.0.1:5678${INSPECTO_API_PATHS.SESSIONS}/${sessionId}${INSPECTO_API_PATHS.SESSION_RESOLVE_SUFFIX}`,
+    )
+
+    const pendingResolve = handleRequest(resolveUrl, resolveRequest as any, resolveResponse as any)
+    resolveRequest.start()
+    await pendingResolve
+
+    expect(resolveResponse.statusCode).toBe(400)
+    expect(resolveResponse.jsonBody.error).toBe(
+      'Resolve message is required until an agent reply is recorded.',
+    )
+  })
+
+  it('serves inspect dispatch tickets with the prompt payload', async () => {
     const { handleRequest, serverState } = await import('../src/server/index.js')
     const { execFileSync } = await import('node:child_process')
 
@@ -496,17 +882,11 @@ describe('annotation batch dispatch', () => {
       location: { file, line: 1, column: 1 },
       snippet: 'export {}',
       prompt: 'Review this inspect prompt.',
-      screenshotContext: {
-        enabled: true,
-        capturedAt: '2026-04-04T12:00:00.000Z',
-        mimeType: 'image/png',
-        imageDataUrl: 'data:image/png;base64,AAA=',
-      },
     }
 
     const request = createJsonRequest('POST', JSON.stringify(req))
     const response = createMockResponse()
-    const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_DISPATCH}`)
+    const url = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.AI_DISPATCH}`)
 
     const pending = handleRequest(url, request as any, response as any)
     request.start()
@@ -531,12 +911,6 @@ describe('annotation batch dispatch', () => {
 
     expect(ticketResponse.statusCode).toBe(200)
     expect(ticketResponse.jsonBody.prompt).toBe('Review this inspect prompt.')
-    expect(ticketResponse.jsonBody.screenshotContext).toEqual({
-      enabled: true,
-      capturedAt: '2026-04-04T12:00:00.000Z',
-      mimeType: 'image/png',
-      imageDataUrl: 'data:image/png;base64,AAA=',
-    })
   })
 
   it('uses the active CodeBuddy CN scheme for AI dispatch when config uses codebuddy-cn', async () => {
@@ -566,7 +940,7 @@ describe('annotation batch dispatch', () => {
 
       const request = createJsonRequest('POST', JSON.stringify(req))
       const response = createMockResponse()
-      const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_DISPATCH}`)
+      const url = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.AI_DISPATCH}`)
 
       const pending = handleRequest(url, request as any, response as any)
       request.start()
@@ -599,7 +973,6 @@ describe('annotation batch dispatch', () => {
           ],
         },
       ],
-      responseMode: 'unified',
     }
 
     const request = createJsonRequest('POST', JSON.stringify(req))
@@ -615,6 +988,99 @@ describe('annotation batch dispatch', () => {
     expect(response.jsonBody.errorCode).toBe('FORBIDDEN_PATH')
   })
 
+  it('creates a durable session without IDE fallback payload when batch delivery mode is agent', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+    const { execFileSync, spawn } = await import('node:child_process')
+    const { annotationSessionStore } = await import('../src/server/session-store.js')
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const req: SendAnnotationsToAiRequest = {
+      instruction: 'Create an agent task for these notes.',
+      deliveryMode: 'agent',
+      annotations: [
+        {
+          note: 'Review this onboarding surface.',
+          intent: 'review',
+          targets: [
+            {
+              location: {
+                file: `${process.cwd()}/packages/plugin/src/index.ts`,
+                line: 10,
+                column: 2,
+              },
+              label: 'Onboarding panel',
+            },
+          ],
+        },
+      ],
+    }
+
+    const request = createJsonRequest('POST', JSON.stringify(req))
+    const response = createMockResponse()
+    const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_BATCH_DISPATCH}`)
+
+    const pending = handleRequest(url, request as any, response as any)
+    request.start()
+    await pending
+
+    expect(response.statusCode).toBe(200)
+    expect(response.jsonBody.success).toBe(true)
+    expect(response.jsonBody.session?.id).toBeTruthy()
+    expect(response.jsonBody.session?.status).toBe('pending')
+    expect(response.jsonBody.fallbackPayload).toBeUndefined()
+    expect(execFileSync).not.toHaveBeenCalled()
+    expect(spawn).not.toHaveBeenCalled()
+    expect(annotationSessionStore.getSession(response.jsonBody.session.id)?.status).toBe('pending')
+    expect(annotationSessionStore.getSession(response.jsonBody.session.id)?.deliveryMode).toBe(
+      'agent',
+    )
+    expect(annotationSessionStore.getSession(response.jsonBody.session.id)?.messages).toEqual([])
+  })
+
+  it('does not auto-launch a background worker for agent sessions', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+    const { spawn } = await import('node:child_process')
+    const { annotationSessionStore } = await import('../src/server/session-store.js')
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const req: SendAnnotationsToAiRequest = {
+      instruction: 'Create an agent task for these notes.',
+      deliveryMode: 'agent',
+      annotations: [
+        {
+          note: 'Review this onboarding surface.',
+          intent: 'review',
+          targets: [
+            {
+              location: {
+                file: `${process.cwd()}/packages/plugin/src/index.ts`,
+                line: 10,
+                column: 2,
+              },
+              label: 'Onboarding panel',
+            },
+          ],
+        },
+      ],
+    }
+
+    const request = createJsonRequest('POST', JSON.stringify(req))
+    const response = createMockResponse()
+    const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_BATCH_DISPATCH}`)
+
+    const pending = handleRequest(url, request as any, response as any)
+    request.start()
+    await pending
+
+    expect(response.statusCode).toBe(200)
+    expect(response.jsonBody.success).toBe(true)
+    expect(response.jsonBody.session?.id).toBeTruthy()
+    expect(annotationSessionStore.getSession(response.jsonBody.session.id)?.status).toBe('pending')
+    expect(spawn).not.toHaveBeenCalled()
+  })
+
   it('includes built-in runtime context settings in client config responses', async () => {
     const { handleRequest, serverState } = await import('../src/server/index.js')
     const { loadUserConfigSync } = await import('../src/config.js')
@@ -623,6 +1089,7 @@ describe('annotation batch dispatch', () => {
       ide: 'vscode',
       'provider.default': 'codex.cli',
       'prompt.autoSend': false,
+      'annotate.deliveryMode': 'both',
     })
 
     serverState.projectRoot = process.cwd()
@@ -630,13 +1097,14 @@ describe('annotation batch dispatch', () => {
 
     const request = createJsonRequest('GET', '')
     const response = createMockResponse()
-    const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.CLIENT_CONFIG}`)
+    const url = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.CLIENT_CONFIG}`)
 
     const pending = handleRequest(url, request as any, response as any)
     request.start()
     await pending
 
     expect(response.statusCode).toBe(200)
+    expect(response.jsonBody.annotateDeliveryMode).toBe('both')
     expect(response.jsonBody.runtimeContext).toEqual({
       enabled: true,
       preview: true,
@@ -645,7 +1113,7 @@ describe('annotation batch dispatch', () => {
     })
   })
 
-  it('disables screenshot context controls by default in client config responses', async () => {
+  it('serves client config responses without deprecated capability fields', async () => {
     const { handleRequest, serverState } = await import('../src/server/index.js')
     const { loadUserConfigSync } = await import('../src/config.js')
 
@@ -667,9 +1135,7 @@ describe('annotation batch dispatch', () => {
     await pending
 
     expect(response.statusCode).toBe(200)
-    expect(response.jsonBody.screenshotContext).toEqual({
-      enabled: false,
-    })
+    expect(Object.hasOwn(response.jsonBody, 'screenshotContext')).toBe(false)
   })
 
   it('opens files through VS Code family URI schemes on macOS', async () => {
@@ -693,7 +1159,7 @@ describe('annotation batch dispatch', () => {
       const file = `${process.cwd()}/packages/plugin/src/index.ts`
       const request = createJsonRequest('POST', JSON.stringify({ file, line: 12, column: 3 }))
       const response = createMockResponse()
-      const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.IDE_OPEN}`)
+      const url = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.SOURCE_OPEN}`)
 
       const pending = handleRequest(url, request as any, response as any)
       request.start()
@@ -729,7 +1195,7 @@ describe('annotation batch dispatch', () => {
       const file = `${process.cwd()}/packages/plugin/src/index.ts`
       const request = createJsonRequest('POST', JSON.stringify({ file, line: 15, column: 7 }))
       const response = createMockResponse()
-      const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.IDE_OPEN}`)
+      const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.SOURCE_OPEN}`)
 
       const pending = handleRequest(url, request as any, response as any)
       request.start()
@@ -767,7 +1233,7 @@ describe('annotation batch dispatch', () => {
         JSON.stringify({ file: 'C:\\repo\\src\\App.tsx', line: 42, column: 7 }),
       )
       const response = createMockResponse()
-      const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.IDE_OPEN}`)
+      const url = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.SOURCE_OPEN}`)
 
       const pending = handleRequest(url, request as any, response as any)
       request.start()
@@ -827,6 +1293,31 @@ function createMockResponse() {
     end(payload = '') {
       this.body = payload
       this.jsonBody = payload ? JSON.parse(payload) : {}
+    },
+  }
+}
+
+function createStreamingResponse() {
+  return {
+    statusCode: 200,
+    headers: {} as Record<string, string>,
+    writes: [] as string[],
+    ended: false,
+    setHeader(name: string, value: string) {
+      this.headers[name] = value
+    },
+    writeHead(statusCode: number, headers?: Record<string, string>) {
+      this.statusCode = statusCode
+      Object.assign(this.headers, headers)
+    },
+    write(payload: string) {
+      this.writes.push(payload)
+    },
+    end(payload = '') {
+      if (payload) {
+        this.writes.push(payload)
+      }
+      this.ended = true
     },
   }
 }

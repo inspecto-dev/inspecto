@@ -11,6 +11,7 @@ export const darkVars = `
   --inspecto-text-tertiary: rgba(255, 255, 255, 0.46);
   --inspecto-accent-primary: #5d52f3;
   --inspecto-accent-primary-strong: #4639d7;
+  --inspecto-success-color: #10b981;
   --inspecto-shadow-floating: 0 20px 48px rgba(0, 0, 0, 0.28);
   --inspecto-shadow-accent: 0 8px 18px rgba(79, 70, 229, 0.28);
   --inspecto-radius-pill: 999px;
@@ -59,6 +60,7 @@ export const themeStyles = `
     --inspecto-text-tertiary: rgba(255, 255, 255, 0.46);
     --inspecto-accent-primary: #5d52f3;
     --inspecto-accent-primary-strong: #4639d7;
+    --inspecto-success-color: #10b981;
     --inspecto-shadow-floating: 0 20px 48px rgba(0, 0, 0, 0.28);
     --inspecto-shadow-accent: 0 8px 18px rgba(79, 70, 229, 0.28);
     --inspecto-radius-pill: 999px;

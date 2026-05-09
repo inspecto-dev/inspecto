@@ -2,7 +2,7 @@
 
 While the `@inspecto-dev/cli` handles most setups automatically, you might need to configure Inspecto manually if you are using a complex custom build setup or an unsupported meta-framework.
 
-Use this guide as a fallback, not as the default first step. In the common case, the clearest setup path is still assistant-first onboarding or `inspecto init`.
+Use this guide as a fallback, not as the default first step. In the common case, the clearest setup path is still assistant-first onboarding or `npx @inspecto-dev/cli init`.
 
 Before following this page, first try:
 
@@ -20,20 +20,20 @@ This page does not cover assistant onboarding automation. It will not:
 
 ## 1. Install the Plugin
 
-First, install the plugin as a development dependency:
+First, install the plugin and the core client as development dependencies:
 
 ::: code-group
 
 ```bash [npm]
-npm install -D @inspecto-dev/plugin
+npm install -D @inspecto-dev/plugin @inspecto-dev/core
 ```
 
 ```bash [pnpm]
-pnpm add -D @inspecto-dev/plugin
+pnpm add -D @inspecto-dev/plugin @inspecto-dev/core
 ```
 
 ```bash [yarn]
-yarn add -D @inspecto-dev/plugin
+yarn add -D @inspecto-dev/plugin @inspecto-dev/core
 ```
 
 :::
@@ -123,24 +123,31 @@ export default {
 }
 ```
 
-## 3. Install IDE Extension (Required)
+## 3. Install IDE Extension (Optional)
 
-Unlike assistant-first onboarding or `inspecto init`, manual installation does not manage the IDE plugin for you. **You must install the Inspecto companion extension for your editor yourself.** Without this extension, the browser will not be able to send code to your IDE.
+If you want the browser to send code directly to your IDE via URI schemes, install the Inspecto companion extension for your editor. Without this extension, you can still use MCP or the "Copy Context" button.
 
 Please refer to the [IDE Extensions Guide](../integrations/ide.md) for instructions on installing the plugin in VS Code, Cursor, Trae, or CodeBuddy.
+
+> **If you are using Standalone mode and do not rely on IDE plugins, you can skip this step**. Please refer to the [MCP Integration Guide](../integrations/mcp.md) to learn how to connect your agent directly to Inspecto without installing any IDE extensions.
 
 ## 4. Configure Project Settings
 
 Because you skipped the automated `init` CLI, Inspecto does not know which AI assistant or IDE you are using. You need to create a configuration file manually in your project root.
 
-Create a file named `.inspecto/settings.local.json` and add the following config (adjust the `ide` and `provider.default` fields to match your actual environment):
+Create a file named `.inspecto/settings.local.json` and add the following config (adjust the fields to match your actual environment):
 
 ```json
 {
   "ide": "vscode",
-  "provider.default": "copilot.extension"
+  "provider.default": "copilot.extension",
+  "annotate.deliveryMode": "agent"
 }
 ```
+
+- `ide`: your editor (`vscode`, `cursor`, `trae`, `trae-cn`, `codebuddy`, `codebuddy-cn`, or `none` for standalone/MCP mode)
+- `provider.default`: your AI assistant (e.g. `copilot.extension`, `claude-code.extension`, `cursor.builtin`)
+- `annotate.deliveryMode`: set to `"agent"` or `"both"` if using MCP; omit or use `"ide"` for IDE-only dispatch
 
 > **Important**: After making these changes, remember to **restart your development server** so that the Inspecto plugin can pick up your custom settings.
 
@@ -161,9 +168,8 @@ import { webpackPlugin as inspecto } from '@inspecto-dev/plugin'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   webpack: (config, { dev, isServer }) => {
-    // Keep the plugin active in both server and client development compilers
-    // so App Router server components also receive Inspecto transforms.
-    if (dev) {
+    // Inject only during client-side development
+    if (dev && !isServer) {
       config.plugins.push(inspecto())
     }
     return config
@@ -189,13 +195,7 @@ export default defineNuxtConfig({
 })
 ```
 
-**2. Install Core Client**
-
-```bash
-npm install -D @inspecto-dev/core
-```
-
-**3. Create Client Plugin** (e.g., `plugins/inspecto.client.ts`):
+**2. Create Client Plugin** (e.g., `plugins/inspecto.client.ts`):
 
 ```typescript
 export default defineNuxtPlugin(() => {
@@ -213,7 +213,7 @@ export default defineNuxtPlugin(() => {
 
 If you are using pure bundlers like **Rollup** or **esbuild**, they do not have built-in dev servers to automatically inject the client script. You must manually import and initialize `@inspecto-dev/core`.
 
-**1. Install Core**
+**1. Install the core client**
 
 ```bash
 npm install -D @inspecto-dev/core
@@ -226,7 +226,7 @@ import { mountInspector } from '@inspecto-dev/core'
 
 if (process.env.NODE_ENV !== 'production') {
   mountInspector({
-    serverUrl: 'http://127.0.0.1:5678', // Default local server port
+    serverUrl: 'http://0.0.0.0:5678', // Default local server port
   })
 }
 ```

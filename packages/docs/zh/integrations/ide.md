@@ -10,12 +10,13 @@
 - **Trae CN**: 完全支持。(`ide: "trae-cn"`)
 - **CodeBuddy**: 完全支持。(`ide: "codebuddy"`)
 - **CodeBuddy CN**: 完全支持。(`ide: "codebuddy-cn"`)
+- **None (独立运行 / MCP)**: 完全支持。(`ide: "none"`)
 
-_注意：目前暂不支持将 AI payload 直接注入到 JetBrains IDE 以及其他编辑器中。_
+_注意：目前暂不支持将 AI payload 直接注入到 JetBrains IDE 以及其他编辑器中，但你依然可以使用 `none` 选项通过剪贴板和 MCP 来使用 Inspecto。_
 
 ## 安装
 
-当你使用助手引导的 onboarding (assistant-first onboarding) 或运行 `inspecto init` 时，只要平台支持，Inspecto 就会尝试在探测到的 IDE 中为你自动安装插件。
+当你使用助手引导的 onboarding (assistant-first onboarding) 或运行 `npx @inspecto-dev/cli init` 时，只要平台支持，Inspecto 就会尝试在探测到的 IDE 中为你自动安装插件。
 
 如果需要手动安装：
 
@@ -70,4 +71,14 @@ codebuddy-cn --install-extension inspecto.inspecto
 2. 接收包含文件路径、代码片段和目标 AI 工具的 payload。
 3. 自动执行正确的内部 IDE 命令来打开文件，并触发对应的 AI 扩展（或在终端中启动 CLI）。
 
-如果没有这个插件，Inspecto 将无法完成正常的 IDE 握手过程。根据选择的 Provider 以及回退机制，它可能会降级为剪贴板复制，而不是直接拉起目标 IDE。
+如果没有这个插件，Inspecto 将无法通过 URI schemes 完成正常的 IDE 握手过程。
+
+### 独立运行 / MCP / 纯浏览器模式 (`ide: "none"`)
+
+如果你正在使用 MCP，或者使用了暂未支持的 IDE，抑或你单纯不想安装 IDE 插件，你可以将 `.inspecto/settings.local.json` 中的 `ide` 设为 `"none"`。
+
+在此模式下：
+
+- **复制上下文**: Inspecto UI 会展示一个显眼的“复制上下文” (Copy Context) 按钮。它可以将选中的元素信息及其对应源码的路径，以 Markdown 格式直接写入你的系统剪贴板。
+- **MCP 集成**: Inspecto 可以直接将上下文交付给正在运行的 MCP 服务器。
+- 浏览器不会尝试唤起 `vscode://` 等 URI schemes，从而避免弹出“找不到应用程序”的系统弹窗。

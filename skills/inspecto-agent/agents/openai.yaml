@@ -1,0 +1,7 @@
+interface:
+  display_name: 'Inspecto Agent'
+  short_description: 'Claim and handle Inspecto annotation sessions through MCP'
+  default_prompt: 'Use $inspecto-agent to claim Inspecto annotation tasks continuously through MCP.'
+
+policy:
+  allow_implicit_invocation: true

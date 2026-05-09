@@ -4,14 +4,8 @@ import {
   createRuntimeContextEnvelope,
   selectRuntimeEvidence,
 } from './runtime-context.js'
-import { captureElementScreenshot } from './screenshot-context.js'
 import { buildCssContextPrompt, captureCssContextEntry } from './css-context.js'
-import type {
-  AnnotationTarget,
-  AnnotationTransport,
-  ScreenshotContext,
-  SourceLocation,
-} from '@inspecto-dev/types'
+import type { AnnotationTarget, AnnotationTransport, SourceLocation } from '@inspecto-dev/types'
 
 type EvidenceContext = {
   options: {
@@ -20,14 +14,12 @@ type EvidenceContext = {
       maxRuntimeErrors?: number
       maxFailedRequests?: number
     }
-    screenshotContext?: { enabled?: boolean }
   }
   mode: 'inspect' | 'annotate'
   disabled: boolean
   cleanupRuntimeContextCapture: (() => void) | null
   runtimeContextCollector: ReturnType<typeof createRuntimeContextCollector>
   annotateRuntimeContextEnabled: boolean
-  annotateScreenshotContextEnabled: boolean
   annotateCssContextEnabled: boolean
   annotateSession: {
     current: {
@@ -46,7 +38,6 @@ type EvidenceContext = {
   findElementForLocation(location: SourceLocation, selector?: string): Element | null
   findElementForAnnotationTarget(target: AnnotationTarget): Element | null
   canAttachRuntimeContext(): boolean
-  canAttachScreenshotContext(): boolean
   canAttachCssContext(): boolean
   getRuntimeContextLimits(): {
     maxRuntimeErrors?: number
@@ -81,10 +72,6 @@ export function syncRuntimeContextCapture(ctx: unknown): void {
 
 export function canAttachRuntimeContext(ctx: unknown): boolean {
   return asEvidenceContext(ctx).options.runtimeContext?.enabled === true
-}
-
-export function canAttachScreenshotContext(ctx: unknown): boolean {
-  return asEvidenceContext(ctx).options.screenshotContext?.enabled === true
 }
 
 export function canAttachCssContext(): boolean {
@@ -250,41 +237,4 @@ export function getCollectedRuntimeErrorCount(ctx: unknown): number {
   return state.runtimeContextCollector
     .snapshot()
     .records.filter(record => record.kind !== 'failed-request').length
-}
-
-export function resolveAnnotateScreenshotElement(
-  ctx: unknown,
-  annotations: AnnotationTransport[],
-  scope: 'current' | 'batch',
-): Element | null {
-  const state = asEvidenceContext(ctx)
-  const currentElement = state.annotateSession.current.target
-    ? (state.annotateElements.get(state.annotateSession.current.id) ??
-      state.findElementForAnnotationTarget(state.annotateSession.current.target))
-    : null
-
-  if (scope === 'current') return currentElement
-
-  for (const annotation of annotations) {
-    for (const target of annotation.targets) {
-      const element = state.findElementForLocation(target.location, target.selector)
-      if (element) return element
-    }
-  }
-
-  return currentElement
-}
-
-export async function captureAnnotateScreenshotContext(
-  ctx: unknown,
-  annotations: AnnotationTransport[],
-  scope: 'current' | 'batch',
-): Promise<ScreenshotContext | null> {
-  const state = asEvidenceContext(ctx)
-  if (!state.canAttachScreenshotContext() || !state.annotateScreenshotContextEnabled) {
-    return null
-  }
-
-  const element = resolveAnnotateScreenshotElement(state, annotations, scope)
-  return element ? captureElementScreenshot(element) : null
 }

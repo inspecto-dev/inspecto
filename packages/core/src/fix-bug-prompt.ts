@@ -3,7 +3,6 @@ import type {
   SnippetResponse,
   RuntimeContextEnvelope,
   RuntimeEvidenceRecord,
-  ScreenshotContext,
   SourceLocation,
 } from '@inspecto-dev/types'
 import { buildPrompt } from './intents.js'
@@ -46,23 +45,16 @@ export function buildFixBugPrompt(input: BuildFixBugPromptInput): string {
   const templateGuidance = normalizeTemplateGuidance(input.template)
 
   return [
-    'You are fixing a bug for the currently inspected UI target.',
+    'Fix the bug for the inspected UI target.',
     buildSourceContextSection(input.location, input.snippet),
     buildEvidenceSection(evidence),
-    'Guardrails:',
-    '- Prioritize evidence-backed conclusions.',
-    '- Separate confirmed evidence from hypotheses.',
-    '- Avoid strong claims when the runtime evidence is weak or unrelated.',
-    '- Ask follow-up questions if the evidence is insufficient for a safe fix.',
-    'Response contract:',
-    '1. Most likely root cause',
-    '2. Confirmed evidence',
-    '3. Hypotheses',
-    '4. Minimal fix',
-    '5. Follow-up questions (only if needed)',
-    templateGuidance
-      ? `Configured intent guidance (reference only):\n${indentBlock(templateGuidance)}`
-      : '',
+    [
+      'Task:',
+      '- Identify the likely root cause.',
+      '- Propose the smallest safe fix.',
+      '- Separate evidence from guesses when needed.',
+    ].join('\n'),
+    templateGuidance ? `Additional guidance:\n${indentBlock(templateGuidance)}` : '',
   ].join('\n\n')
 }
 
@@ -75,7 +67,7 @@ export function buildPromptForIntent(
   const fullPromptTemplate = assembleIntentPromptTemplate(intent)
   if (intent.id === 'fix-bug') {
     return buildFixBugPrompt({
-      template: fullPromptTemplate,
+      template: assembleFixBugAdditionalGuidance(intent),
       location,
       snippet: snippetResult?.snippet || '',
       records: runtimeContext?.records ?? [],
@@ -115,15 +107,20 @@ function assembleIntentPromptTemplate(
   return fullPromptTemplate
 }
 
+function assembleFixBugAdditionalGuidance(
+  intent: Pick<IntentConfig, 'prependPrompt' | 'appendPrompt'>,
+): string {
+  return [intent.prependPrompt, intent.appendPrompt].filter(Boolean).join('\n\n')
+}
+
 function buildEvidenceSection(records: RuntimeEvidenceRecord[]): string {
   if (records.length === 0) {
-    return [
-      'High-confidence runtime evidence:',
-      '- None selected. Do not treat unrelated logs as proof.',
-    ].join('\n')
+    return ['Runtime evidence:', '- None selected. Do not treat unrelated logs as proof.'].join(
+      '\n',
+    )
   }
 
-  return ['High-confidence runtime evidence:', ...records.map(formatEvidenceRecord)].join('\n')
+  return ['Runtime evidence:', ...records.map(formatEvidenceRecord)].join('\n')
 }
 
 export function appendRuntimeContextToPrompt(
@@ -132,24 +129,6 @@ export function appendRuntimeContextToPrompt(
 ): string {
   if (records.length === 0) return prompt
   return `${prompt}\n\n${buildGenericRuntimeContextSection(records)}`
-}
-
-export function appendScreenshotContextToPrompt(
-  prompt: string,
-  screenshotContext: ScreenshotContext | null | undefined,
-): string {
-  if (!screenshotContext || (!screenshotContext.imageDataUrl && !screenshotContext.imageAssetId)) {
-    return prompt
-  }
-
-  const lines = [
-    'Visual screenshot context attached:',
-    `- capturedAt=${screenshotContext.capturedAt}`,
-    `- mimeType=${screenshotContext.mimeType}`,
-    ...(screenshotContext.imageAssetId ? [`- imageAssetId=${screenshotContext.imageAssetId}`] : []),
-  ]
-
-  return `${prompt}\n\n${lines.join('\n')}`
 }
 
 function buildGenericRuntimeContextSection(records: RuntimeEvidenceRecord[]): string {

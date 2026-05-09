@@ -134,6 +134,13 @@ export interface OnboardingVerification {
   message: string
 }
 
+export interface OnboardingDailyUsageHandoff {
+  mode: 'agent'
+  skill: string
+  prompt: string
+  requiresMcp: boolean
+}
+
 export interface OnboardingAssistantHandoff {
   framework?: string
   metaFramework?: string
@@ -142,6 +149,7 @@ export interface OnboardingAssistantHandoff {
   pendingSteps?: string[]
   assistantPrompt?: string
   patches?: OnboardingPatchPlan[]
+  dailyUsage?: OnboardingDailyUsageHandoff
 }
 
 export interface ResolvedOnboardingSession {
@@ -162,6 +170,7 @@ export interface ResolvedOnboardingSession {
   pendingSteps?: string[]
   assistantPrompt?: string
   patches?: OnboardingPatchPlan[]
+  dailyUsage?: OnboardingDailyUsageHandoff
   handoff?: OnboardingAssistantHandoff
 }
 
@@ -181,6 +190,7 @@ export interface OnboardCommandResult {
   pendingSteps?: string[]
   assistantPrompt?: string
   patches?: OnboardingPatchPlan[]
+  dailyUsage?: OnboardingDailyUsageHandoff
   handoff?: OnboardingAssistantHandoff
 }
 

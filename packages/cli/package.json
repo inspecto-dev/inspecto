@@ -1,6 +1,6 @@
 {
   "name": "@inspecto-dev/cli",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "CLI tools for Inspecto onboarding and lifecycle management",
   "keywords": [
     "inspecto",
@@ -20,12 +20,14 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@inspecto-dev/types": "workspace:*",
     "cac": "^6.7.14",
     "magicast": "^0.5.2",
     "ora": "^9.4.0",
     "picocolors": "^1.0.0",
-    "prompts": "^2.4.2"
+    "prompts": "^2.4.2",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/node": "^20.19.39",

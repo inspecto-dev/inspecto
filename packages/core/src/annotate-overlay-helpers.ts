@@ -69,12 +69,23 @@ export function createOverlayBox(tokens: {
 
 export function applyOverlayState(
   box: HTMLDivElement,
-  state: 'current' | 'saved',
-  tokens: { accentPrimary(): string; accentPrimaryStrong(): string },
+  state: 'current' | 'saved' | 'completed',
+  tokens: { accentPrimary(): string; accentPrimaryStrong(): string; successColor(): string },
 ): void {
   const badge = box.querySelector('[data-inspecto-annotate-overlay-order]') as HTMLDivElement
   const accentPrimaryColor = tokens.accentPrimary()
   const accentPrimaryStrongColor = tokens.accentPrimaryStrong()
+  const successColor = tokens.successColor()
+
+  if (state === 'completed') {
+    box.style.border = `2px solid ${successColor}`
+    box.style.background = 'rgba(16, 185, 129, 0.05)'
+    box.style.boxShadow = 'none'
+    badge.style.background = successColor
+    badge.style.opacity = '0.68'
+    return
+  }
+
   if (state === 'saved') {
     box.style.border = `2px solid ${accentPrimaryStrongColor}`
     box.style.background = 'rgba(79, 70, 229, 0.05)'

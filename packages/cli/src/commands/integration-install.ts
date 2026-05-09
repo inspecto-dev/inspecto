@@ -75,6 +75,7 @@ interface InstallPlan {
 interface InspectoSettingsShape {
   ide?: string
   'provider.default'?: string
+  'annotate.deliveryMode'?: 'ide' | 'agent' | 'both'
   [key: string]: unknown
 }
 
@@ -376,19 +377,29 @@ async function persistProjectOnboardingDefaults(
     resolvedHostIde.ide && resolvedHostIde.confidence !== 'low'
       ? await resolveProviderDefaultForAssistant(assistant, resolvedHostIde.ide)
       : undefined
+  const annotateDeliveryMode = resolveAnnotateDefaultDeliveryForAssistant(assistant)
   const mergedSettings =
     existingSettings && typeof existingSettings === 'object'
       ? {
           ...existingSettings,
           ide: options.ide,
           ...(providerDefault ? { 'provider.default': providerDefault } : {}),
+          'annotate.deliveryMode': annotateDeliveryMode,
         }
       : {
           ide: options.ide,
           ...(providerDefault ? { 'provider.default': providerDefault } : {}),
+          'annotate.deliveryMode': annotateDeliveryMode,
         }
 
   await writeJSON(settingsPath, mergedSettings)
+}
+
+function resolveAnnotateDefaultDeliveryForAssistant(
+  assistant: AssistantId,
+): 'ide' | 'agent' | 'both' {
+  void assistant
+  return 'both'
 }
 
 function shouldSkipAutomationForInstall(options: InstallIntegrationOptions): boolean {
@@ -576,6 +587,10 @@ function resolveCodexPlan(options: InstallIntegrationOptions): InstallPlan {
     scope === 'user'
       ? path.join(homedir(), '.agents/skills/inspecto-onboarding-codex')
       : '.agents/skills/inspecto-onboarding-codex'
+  const agentDir =
+    scope === 'user'
+      ? path.join(homedir(), '.agents/skills/inspecto-agent-codex')
+      : '.agents/skills/inspecto-agent-codex'
 
   return {
     assets: [
@@ -595,9 +610,19 @@ function resolveCodexPlan(options: InstallIntegrationOptions): InstallPlan {
         executable: true,
         localSource: 'skills/inspecto-onboarding-codex/scripts/run-inspecto.sh',
       },
+      {
+        source: `${REPO_RAW_BASE}/skills/inspecto-agent-codex/SKILL.md`,
+        target: path.join(agentDir, 'SKILL.md'),
+        localSource: 'skills/inspecto-agent-codex/SKILL.md',
+      },
+      {
+        source: `${REPO_RAW_BASE}/skills/inspecto-agent-codex/agents/openai.yaml`,
+        target: path.join(agentDir, 'agents/openai.yaml'),
+        localSource: 'skills/inspecto-agent-codex/agents/openai.yaml',
+      },
     ],
-    successMessage: `Installed Codex skill to ${baseDir}`,
-    nextStep: 'Restart Codex or start a new Codex session to load the skill.',
+    successMessage: `Installed Codex skills to ${baseDir} and ${agentDir}`,
+    nextStep: 'Restart Codex or start a new Codex session to load the new skills.',
   }
 }
 

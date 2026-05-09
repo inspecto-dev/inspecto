@@ -2,11 +2,13 @@ import { vi } from 'vitest'
 
 const mockExecuteCommand = vi.fn()
 const mockRegisterCommand = vi.fn((_id, callback) => ({ dispose: vi.fn(), callback }))
+const mockRegisterUriHandler = vi.fn(() => ({ dispose: vi.fn() }))
 const mockGetExtension = vi.fn()
 const mockOpenTextDocument = vi.fn()
 const mockShowTextDocument = vi.fn()
 const mockWriteText = vi.fn()
 const mockShowInformationMessage = vi.fn()
+const mockShowWarningMessage = vi.fn()
 const mockShowErrorMessage = vi.fn()
 const mockCreateOutputChannel = vi.fn()
 const mockCreateTerminal = vi.fn()
@@ -35,9 +37,11 @@ export const vscodeMock = {
   },
   window: {
     showInformationMessage: mockShowInformationMessage,
+    showWarningMessage: mockShowWarningMessage,
     showErrorMessage: mockShowErrorMessage,
     createOutputChannel: mockCreateOutputChannel,
     createTerminal: mockCreateTerminal,
+    registerUriHandler: mockRegisterUriHandler,
     showTextDocument: mockShowTextDocument,
     get terminals() {
       return mockTerminals
@@ -92,8 +96,11 @@ export function resetVscodeMocks() {
   mockOpenTextDocument.mockReset()
   mockShowTextDocument.mockReset()
   mockRegisterCommand.mockReset()
+  mockRegisterUriHandler.mockReset()
+  mockRegisterUriHandler.mockReturnValue({ dispose: vi.fn() })
   mockWriteText.mockReset()
   mockShowInformationMessage.mockReset()
+  mockShowWarningMessage.mockReset()
   mockShowErrorMessage.mockReset()
   mockCreateTerminal.mockReset()
   mockSendText.mockReset()

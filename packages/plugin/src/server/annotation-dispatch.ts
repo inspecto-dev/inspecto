@@ -1,15 +1,19 @@
 import type {
+  Annotation,
   AnnotationIntent,
+  AnnotationDeliveryMode,
   AiErrorCode,
+  AnnotationWorkSessionSummary,
   RuntimeContextEnvelope,
   RuntimeEvidenceRecord,
-  ScreenshotContext,
   SendAnnotationsToAiRequest,
   SendAnnotationsToAiResponse,
   ServerState,
 } from '@inspecto-dev/types'
 import { dispatchPromptThroughIde, resolvePromptDispatchRuntime } from './dispatch-runtime.js'
 import { assertPathWithinProject, resolveWorkspacePath } from './path-guards.js'
+import type { AnnotationSessionStore } from './session-store.js'
+import { annotationSessionStore } from './session-store.js'
 
 export interface NormalizedAnnotationTarget {
   file: string
@@ -29,10 +33,8 @@ export interface NormalizedAnnotation {
 
 export interface NormalizedAnnotationBatch {
   instruction: string
-  responseMode: 'unified' | 'per-annotation'
   annotations: NormalizedAnnotation[]
   runtimeContext?: RuntimeContextEnvelope
-  screenshotContext?: ScreenshotContext
   cssContextPrompt?: string
 }
 
@@ -49,27 +51,84 @@ class AnnotationDispatchError extends Error {
 export async function dispatchAnnotationsToAi(
   req: SendAnnotationsToAiRequest,
   state: Pick<ServerState, 'projectRoot' | 'cwd' | 'ideInfo'>,
+  store: AnnotationSessionStore = annotationSessionStore,
 ): Promise<SendAnnotationsToAiResponse> {
   try {
     validateAnnotationDispatchRequest(req, state)
     const batch = normalizeAnnotationBatch(req)
     const prompt = buildAnnotationBatchPrompt(batch)
-    const representativeTarget = batch.annotations[0]?.targets[0]
-    const runtime = resolvePromptDispatchRuntime(state)
-
-    return dispatchPromptThroughIde(runtime, {
-      prompt,
-      ...(representativeTarget?.file ? { filePath: representativeTarget.file } : {}),
-      ...(representativeTarget?.line ? { line: representativeTarget.line } : {}),
-      ...(representativeTarget?.column ? { column: representativeTarget.column } : {}),
-      ...(batch.screenshotContext ? { screenshotContext: batch.screenshotContext } : {}),
+    const deliveryMode = normalizeDeliveryMode(req.deliveryMode)
+    const session = store.createSession({
+      instruction: batch.instruction,
+      annotations: toSessionAnnotations(batch.annotations),
+      deliveryMode,
+      ...(batch.runtimeContext ? { runtimeContext: batch.runtimeContext } : {}),
+      ...(batch.cssContextPrompt ? { cssContextPrompt: batch.cssContextPrompt } : {}),
     })
+    const representativeTarget = batch.annotations[0]?.targets[0]
+    const dispatchResult =
+      deliveryMode === 'ide'
+        ? dispatchPromptThroughIde(resolvePromptDispatchRuntime(state), {
+            prompt,
+            ...(representativeTarget?.file ? { filePath: representativeTarget.file } : {}),
+            ...(representativeTarget?.line ? { line: representativeTarget.line } : {}),
+            ...(representativeTarget?.column ? { column: representativeTarget.column } : {}),
+          })
+        : { success: true as const }
+
+    return {
+      ...dispatchResult,
+      session: toSessionSummary(session),
+    }
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),
       errorCode: getAnnotationDispatchErrorCode(error),
     }
+  }
+}
+
+function normalizeDeliveryMode(input: AnnotationDeliveryMode | undefined): AnnotationDeliveryMode {
+  return input === 'agent' ? 'agent' : 'ide'
+}
+
+function toSessionAnnotations(annotations: NormalizedAnnotation[]): Annotation[] {
+  return annotations.map(annotation => ({
+    id: `annotation-${annotation.index}`,
+    note: annotation.note,
+    intent: annotation.intent,
+    targets: annotation.targets.map((target, targetIndex) => ({
+      id: `annotation-${annotation.index}-target-${targetIndex + 1}`,
+      label: target.label ?? 'Unknown target',
+      location: {
+        file: target.file,
+        line: target.line,
+        column: target.column,
+      },
+      ...(target.selector ? { selector: target.selector } : {}),
+      ...(target.snippet ? { snippet: target.snippet } : {}),
+      rect: {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+      },
+    })),
+  }))
+}
+
+function toSessionSummary(session: {
+  id: string
+  status: AnnotationWorkSessionSummary['status']
+  createdAt: number
+  updatedAt: number
+}): AnnotationWorkSessionSummary {
+  return {
+    id: session.id,
+    status: session.status,
+    createdAt: session.createdAt,
+    updatedAt: session.updatedAt,
   }
 }
 
@@ -101,9 +160,7 @@ export function normalizeAnnotationBatch(
 ): NormalizedAnnotationBatch {
   return {
     instruction: req.instruction?.trim() ?? '',
-    responseMode: req.responseMode ?? 'unified',
     ...(req.runtimeContext ? { runtimeContext: req.runtimeContext } : {}),
-    ...(req.screenshotContext ? { screenshotContext: req.screenshotContext } : {}),
     ...(req.cssContextPrompt?.trim() ? { cssContextPrompt: req.cssContextPrompt.trim() } : {}),
     annotations: req.annotations.map((annotation, index) => ({
       index: index + 1,
@@ -125,12 +182,9 @@ export function buildAnnotationBatchPrompt(batch: NormalizedAnnotationBatch): st
   const body = buildSelectedElementsPrompt(batch.annotations)
   const prompt = batch.instruction ? `${batch.instruction}\n\n${body}` : body
 
-  return appendScreenshotContextSection(
-    appendCssContextSection(
-      appendRuntimeContextSection(prompt, batch.runtimeContext),
-      batch.cssContextPrompt,
-    ),
-    batch.screenshotContext,
+  return appendCssContextSection(
+    appendRuntimeContextSection(prompt, batch.runtimeContext),
+    batch.cssContextPrompt,
   )
 }
 
@@ -159,24 +213,6 @@ function buildSelectedElementsPrompt(annotations: NormalizedAnnotation[]): strin
   }
 
   return lines.join('\n')
-}
-
-function appendScreenshotContextSection(
-  prompt: string,
-  screenshotContext: ScreenshotContext | undefined,
-): string {
-  if (!screenshotContext || (!screenshotContext.imageDataUrl && !screenshotContext.imageAssetId)) {
-    return prompt
-  }
-
-  const lines = [
-    'Visual screenshot context attached:',
-    `- capturedAt=${screenshotContext.capturedAt}`,
-    `- mimeType=${screenshotContext.mimeType}`,
-    ...(screenshotContext.imageAssetId ? [`- imageAssetId=${screenshotContext.imageAssetId}`] : []),
-  ]
-
-  return `${prompt}\n\n${lines.join('\n')}`
 }
 
 function appendRuntimeContextSection(

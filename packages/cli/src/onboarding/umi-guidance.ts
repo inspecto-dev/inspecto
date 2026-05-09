@@ -93,7 +93,7 @@ function buildUmiMountSnippet(): string {
     "    if (process.env.NODE_ENV !== 'production') {",
     "      import('@inspecto-dev/core').then(({ mountInspector }) => {",
     '        mountInspector({',
-    "          serverUrl: 'http://127.0.0.1:' + ((window as any).__AI_INSPECTOR_PORT__ || 5678),",
+    "          serverUrl: 'http://0.0.0.0:' + ((window as { __AI_INSPECTOR_PORT__?: number }).__AI_INSPECTOR_PORT__ || 5678),",
     '        })',
     '      })',
     '    }',
