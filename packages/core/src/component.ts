@@ -1,7 +1,8 @@
 import { createOverlay } from './overlay.js'
 import { createEmptySession } from './annotate-session.js'
 import { createAnnotateSidebar } from './annotate-sidebar.js'
-import type { AnnotateSidebarOptions } from './annotate-sidebar.js'
+import type { AnnotateSidebarOptions, AnnotateWorkflowNotice } from './annotate-sidebar.js'
+import type { AnnotateSendScope } from './annotate-sidebar-helpers.js'
 import { createAnnotateOverlay } from './annotate-overlay.js'
 import {
   addTargetToCurrentAnnotation as addAnnotateTarget,
@@ -128,10 +129,11 @@ class InspectoElement extends BaseElement {
   private annotateErrorMessage = ''
   private annotateRuntimeContextEnabled = false
   private annotateCssContextEnabled = false
-  private annotateDeliveryMode: 'ide' | 'agent' | 'both' = 'both'
+  private annotateChannel: 'ide' | 'mcp' = 'mcp'
+  private annotateWorkflows: import('@inspecto-dev/types').WorkflowSlotOption[] = []
   private annotateSendState: {
     isSending: boolean
-    scope: 'quick-ask' | 'create-task' | null
+    scope: AnnotateSendScope
   } = {
     isSending: false,
     scope: null,
@@ -143,6 +145,7 @@ class InspectoElement extends BaseElement {
     | null = null
   private annotateLatestSessionLoading = false
   private annotateLatestSessionError = ''
+  private annotateWorkflowNotice: AnnotateWorkflowNotice | null = null
   private annotateSuccessScope: 'quick-ask' | 'create-task' | null = null
   private annotateSuccessTimeout: ReturnType<typeof setTimeout> | null = null
   private annotateSuccessOnClear: (() => void) | null = null
@@ -411,7 +414,7 @@ class InspectoElement extends BaseElement {
     annotations: AnnotationTransport[],
     scope: 'quick-ask' | 'create-task',
     instruction: string,
-    deliveryMode: 'ide' | 'agent',
+    deliveryMode: 'ide' | 'mcp',
     onSuccess: () => void,
   ): Promise<void> {
     return sendAnnotateBatch(this, annotations, scope, instruction, deliveryMode, onSuccess)

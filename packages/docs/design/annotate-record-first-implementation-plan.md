@@ -12,7 +12,7 @@ This note records the implementation direction that matches the shipped annotate
 - one clicked target maps to one `FeedbackRecord`
 - the sidebar holds a batch of saved records plus one current draft
 - batch-level intent is expressed through the freeform instruction field
-- the user sends through one action: `Ask AI`
+- the user submits through one primary action determined by `annotate.channel`
 
 ## Explicit Rejections
 
@@ -28,7 +28,7 @@ The current implementation intentionally does **not** use:
 - `packages/core/src/annotate-session.ts`
   Owns current draft and saved-record transitions.
 - `packages/core/src/annotate-sidebar.ts`
-  Owns the single send action and batch composer UI, including the instruction token/mention segments that back the inline chip experience.
+  Owns the primary submit action and batch composer UI, including the instruction token/mention segments that back the inline chip experience.
 - `packages/core/src/component.ts`
   Owns record creation, batch payload assembly, and evidence attachment.
 - `packages/types/src/index.ts`
@@ -44,7 +44,7 @@ The current implementation intentionally does **not** use:
 6. Save it with `Save note`.
 7. Repeat across other components.
 8. Optionally add a batch instruction.
-9. Click `Ask AI`.
+9. Click the current primary action (`Ask AI` or `Create Task`).
 
 Supporting UX terms:
 
@@ -63,7 +63,7 @@ The minimum verification set for this design is:
 
 ## Follow-up Constraint
 
-Any future annotate enhancement should preserve the single-send UX unless there is a strong, user-proven reason to introduce another send path.
+Any future annotate enhancement should preserve the single primary-action UX unless there is a strong, user-proven reason to introduce another send path.
 
 The batch instruction field also has a second constraint:
 

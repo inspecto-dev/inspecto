@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import os from 'node:os'
 
 vi.mock('../src/utils/fs.js', () => ({
   exists: vi.fn(),
@@ -47,6 +48,7 @@ function mockFailingInstall(): void {
       '/repo/package.json',
       '/repo/vite.config.ts',
       '/repo/node_modules/@inspecto-dev/plugin',
+      '/repo/.inspecto',
       '/repo/.inspecto/settings.json',
       '/repo/.gitignore',
     ])
@@ -207,6 +209,7 @@ describe('doctor command', () => {
         '/repo/package.json',
         '/repo/vite.config.ts',
         '/repo/node_modules/@inspecto-dev/plugin',
+        '/repo/.inspecto',
         '/repo/.inspecto/settings.local.json',
         '/repo/.gitignore',
       ])
@@ -236,6 +239,235 @@ describe('doctor command', () => {
           hints: [
             'Update .inspecto/settings.local.json if you want Inspecto to target the currently detected IDE instead.',
           ],
+        }),
+      ]),
+    )
+  })
+
+  it('reports effective settings sources in priority order', async () => {
+    mockFailingInstall()
+    const globalSettingsPath = `${os.homedir()}/.inspecto/settings.json`
+    vi.mocked(fsUtils.exists).mockImplementation(async (filePath: string) => {
+      const existingPaths = new Set([
+        '/repo/package.json',
+        '/repo/vite.config.ts',
+        '/repo/node_modules/@inspecto-dev/plugin',
+        '/repo/.inspecto',
+        '/repo/.inspecto/settings.local.json',
+        '/repo/.inspecto/settings.json',
+        globalSettingsPath,
+        '/repo/.gitignore',
+      ])
+      return existingPaths.has(filePath)
+    })
+    vi.mocked(fsUtils.readJSON).mockImplementation(async (filePath: string) => {
+      if (filePath === '/repo/node_modules/@inspecto-dev/plugin/package.json') {
+        return { version: '1.2.3' }
+      }
+      if (filePath === '/repo/.inspecto/settings.local.json') {
+        return { ide: 'vscode' }
+      }
+      if (filePath === '/repo/.inspecto/settings.json') {
+        return { 'provider.default': 'claude-code.cli' }
+      }
+      if (filePath === globalSettingsPath) {
+        return { 'prompt.autoSend': true }
+      }
+      return null
+    })
+
+    const result = await collectDoctorResult('/repo')
+
+    expect(result.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'settings-effective-sources',
+          status: 'ok',
+          message:
+            'Effective settings sources: .inspecto/settings.local.json > .inspecto/settings.json > ~/.inspecto/settings.json',
+          details: {
+            sources: [
+              '/repo/.inspecto/settings.local.json',
+              '/repo/.inspecto/settings.json',
+              globalSettingsPath,
+            ],
+          },
+        }),
+      ]),
+    )
+  })
+
+  it('reports effective settings sources from the nearest ancestor .inspecto when doctor runs in a subdirectory', async () => {
+    const globalSettingsPath = `${os.homedir()}/.inspecto/settings.json`
+    vi.mocked(fsUtils.exists).mockImplementation(async (filePath: string) => {
+      const existingPaths = new Set([
+        '/repo/apps/web/package.json',
+        '/repo/apps/web/vite.config.ts',
+        '/repo/apps/web/node_modules/@inspecto-dev/plugin',
+        '/repo/.inspecto',
+        '/repo/.inspecto/settings.json',
+        globalSettingsPath,
+        '/repo/apps/web/.gitignore',
+      ])
+      return existingPaths.has(filePath)
+    })
+    vi.mocked(fsUtils.readJSON).mockImplementation(async (filePath: string) => {
+      if (filePath === '/repo/apps/web/node_modules/@inspecto-dev/plugin/package.json') {
+        return { version: '1.2.3' }
+      }
+      if (filePath === '/repo/.inspecto/settings.json') {
+        return { ide: 'vscode' }
+      }
+      if (filePath === globalSettingsPath) {
+        return { 'prompt.autoSend': true }
+      }
+      return null
+    })
+    vi.mocked(fsUtils.readFile).mockImplementation(async filePath => {
+      if (filePath === '/repo/apps/web/vite.config.ts') return 'export default {}'
+      if (filePath === '/repo/apps/web/.gitignore') return '.inspecto/install.lock\n'
+      return null
+    })
+    vi.mocked(packageManager.detectPackageManager).mockResolvedValue('pnpm')
+    vi.mocked(packageManager.getInstallCommand).mockReturnValue('pnpm add -D @inspecto-dev/plugin')
+    vi.mocked(ide.detectIDE).mockResolvedValue({
+      detected: [{ ide: 'vscode', supported: true }],
+    })
+    vi.mocked(framework.detectFrameworks).mockResolvedValue({
+      supported: ['react'],
+      unsupported: [],
+    })
+    vi.mocked(provider.detectProviders).mockResolvedValue({ detected: [] })
+    vi.mocked(buildTool.detectBuildTools).mockResolvedValue({
+      supported: [{ tool: 'vite', configPath: 'vite.config.ts', label: 'Vite (vite.config.ts)' }],
+      unsupported: [],
+    })
+    vi.mocked(extension.isExtensionInstalled).mockResolvedValue(true)
+
+    const result = await collectDoctorResult('/repo/apps/web')
+
+    expect(result.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'settings-effective-sources',
+          message:
+            'Effective settings sources: ../../.inspecto/settings.json > ~/.inspecto/settings.json',
+          details: {
+            sources: ['/repo/.inspecto/settings.json', globalSettingsPath],
+          },
+        }),
+        expect.objectContaining({
+          code: 'settings-valid',
+          message: '../../.inspecto/settings.json valid',
+        }),
+      ]),
+    )
+  })
+
+  it('uses global settings as effective config instead of reporting defaults', async () => {
+    const globalSettingsPath = `${os.homedir()}/.inspecto/settings.json`
+    vi.mocked(fsUtils.exists).mockImplementation(async (filePath: string) => {
+      const existingPaths = new Set([
+        '/repo/package.json',
+        '/repo/vite.config.ts',
+        '/repo/node_modules/@inspecto-dev/plugin',
+        globalSettingsPath,
+        '/repo/.gitignore',
+      ])
+      return existingPaths.has(filePath)
+    })
+    vi.mocked(fsUtils.readJSON).mockImplementation(async (filePath: string) => {
+      if (filePath === '/repo/node_modules/@inspecto-dev/plugin/package.json') {
+        return { version: '1.2.3' }
+      }
+      if (filePath === globalSettingsPath) {
+        return { ide: 'trae' }
+      }
+      return null
+    })
+    vi.mocked(fsUtils.readFile).mockImplementation(async filePath => {
+      if (filePath === '/repo/vite.config.ts') return 'export default {}'
+      if (filePath === '/repo/.gitignore') return '.inspecto/install.lock\n'
+      return null
+    })
+    vi.mocked(packageManager.detectPackageManager).mockResolvedValue('pnpm')
+    vi.mocked(packageManager.getInstallCommand).mockReturnValue('pnpm add -D @inspecto-dev/plugin')
+    vi.mocked(ide.detectIDE).mockResolvedValue({
+      detected: [{ ide: 'vscode', supported: true }],
+    })
+    vi.mocked(framework.detectFrameworks).mockResolvedValue({
+      supported: ['react'],
+      unsupported: [],
+    })
+    vi.mocked(provider.detectProviders).mockResolvedValue({ detected: [] })
+    vi.mocked(buildTool.detectBuildTools).mockResolvedValue({
+      supported: [{ tool: 'vite', configPath: 'vite.config.ts', label: 'Vite (vite.config.ts)' }],
+      unsupported: [],
+    })
+    vi.mocked(extension.isExtensionInstalled).mockResolvedValue(true)
+
+    const result = await collectDoctorResult('/repo')
+
+    expect(result.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'settings-effective-sources',
+          message: 'Effective settings sources: ~/.inspecto/settings.json',
+        }),
+        expect.objectContaining({
+          code: 'settings-valid',
+          message: '~/.inspecto/settings.json valid',
+        }),
+        expect.objectContaining({
+          code: 'settings-ide-mismatch',
+          message:
+            '~/.inspecto/settings.json sets ide=trae, but the current environment looks like vscode. Inspecto will use the configured IDE from settings.json.',
+        }),
+      ]),
+    )
+    expect(result.checks).toEqual(
+      expect.not.arrayContaining([expect.objectContaining({ code: 'settings-missing' })]),
+    )
+  })
+
+  it('uses merged effective settings when diagnosing configured ide', async () => {
+    mockFailingInstall()
+    vi.mocked(fsUtils.exists).mockImplementation(async (filePath: string) => {
+      const existingPaths = new Set([
+        '/repo/package.json',
+        '/repo/vite.config.ts',
+        '/repo/node_modules/@inspecto-dev/plugin',
+        '/repo/.inspecto',
+        '/repo/.inspecto/settings.local.json',
+        '/repo/.inspecto/settings.json',
+        '/repo/.gitignore',
+      ])
+      return existingPaths.has(filePath)
+    })
+    vi.mocked(fsUtils.readJSON).mockImplementation(async (filePath: string) => {
+      if (filePath === '/repo/node_modules/@inspecto-dev/plugin/package.json') {
+        return { version: '1.2.3' }
+      }
+      if (filePath === '/repo/.inspecto/settings.local.json') {
+        return { 'provider.default': 'claude-code.cli' }
+      }
+      if (filePath === '/repo/.inspecto/settings.json') {
+        return { ide: 'trae' }
+      }
+      return null
+    })
+    vi.mocked(ide.detectIDE).mockResolvedValue({
+      detected: [{ ide: 'vscode', supported: true }],
+    })
+
+    const result = await collectDoctorResult('/repo')
+
+    expect(result.checks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'settings-ide-mismatch',
+          message:
+            'effective settings sets ide=trae, but the current environment looks like vscode. Inspecto will use the configured IDE from settings.json.',
         }),
       ]),
     )

@@ -36,7 +36,7 @@
 
 ## 推荐的使用模式
 
-Inspecto 支持两种与 Agent 协作的工作流，你可以根据你使用的 AI 客户端（如 Cursor、Claude Desktop 等）的特性来选择。在开始前，请确保你项目中的 `.inspecto/settings.local.json` 里 `"annotate.deliveryMode"` 设为了 `"agent"`（或 `"both"`）。
+Inspecto 支持两种与 Agent 协作的工作流，你可以根据你使用的 AI 客户端（如 Cursor、Claude Desktop 等）的特性来选择。在开始前，请确保你项目中的 `.inspecto/settings.local.json` 里 `"annotate.channel"` 设为了 `"mcp"`。
 
 ### 模式 1：异步队列模式（推荐大多数客户端使用）
 

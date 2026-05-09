@@ -193,7 +193,7 @@ describe('annotate sidebar', () => {
       shadowRoot,
       createSidebarOptions(createEmptySession(), {
         includedRecords: [],
-        annotateDeliveryMode: 'both',
+        annotateChannel: 'mcp',
         preferredAction: 'create-task',
         isSending: false,
       }),
@@ -219,8 +219,8 @@ describe('annotate sidebar', () => {
     const previewButton = buttons.find(
       button => button.getAttribute('title') === 'View raw prompt payload',
     )
-    if (previewButton && previewButton.parentElement) {
-      expect(previewButton.parentElement.style.display).toBe('none')
+    if (previewButton) {
+      expect((previewButton as HTMLButtonElement).style.display).toBe('none')
     }
   })
 
@@ -483,7 +483,7 @@ describe('annotate sidebar', () => {
     createAnnotateSidebar(
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
-        annotateDeliveryMode: 'agent',
+        annotateChannel: 'mcp',
         preferredAction: 'create-task',
       }),
     )
@@ -508,7 +508,7 @@ describe('annotate sidebar', () => {
     createAnnotateSidebar(
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
-        annotateDeliveryMode: 'agent',
+        annotateChannel: 'mcp',
         preferredAction: 'create-task',
       }),
     )
@@ -528,7 +528,7 @@ describe('annotate sidebar', () => {
     createAnnotateSidebar(
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
-        annotateDeliveryMode: 'agent',
+        annotateChannel: 'mcp',
         preferredAction: 'create-task',
       }),
     )
@@ -543,7 +543,7 @@ describe('annotate sidebar', () => {
     createAnnotateSidebar(
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
-        annotateDeliveryMode: 'agent',
+        annotateChannel: 'mcp',
         preferredAction: 'create-task',
       }),
     )
@@ -569,8 +569,8 @@ describe('annotate sidebar', () => {
       button => button.textContent === 'Create Task',
     ) as HTMLButtonElement
 
-    expect(askAiButton.classList.contains('primary')).toBe(false)
-    expect(createTaskButton.classList.contains('primary')).toBe(false)
+    expect(askAiButton.classList.contains('primary')).toBe(true)
+    expect(createTaskButton.classList.contains('primary')).toBe(true)
     expect(shadowRoot.textContent).toContain('Recommended: Ask AI')
   })
 
@@ -585,7 +585,7 @@ describe('annotate sidebar', () => {
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
         preferredAction: 'create-task',
-        annotateDeliveryMode: 'both',
+        annotateChannel: 'mcp',
         isSending: false,
       }),
     )
@@ -597,9 +597,9 @@ describe('annotate sidebar', () => {
       button => button.textContent === 'Create Task',
     ) as HTMLButtonElement
 
-    expect(askAiButton.dataset.emphasis).toBe('secondary')
+    expect(askAiButton.dataset.emphasis).toBe('primary')
     expect(createTaskButton.dataset.emphasis).toBe('primary')
-    expect(askAiButton.dataset.layoutRole).toBe('secondary')
+    expect(askAiButton.dataset.layoutRole).toBe('primary')
     expect(createTaskButton.dataset.layoutRole).toBe('primary')
     expect(askAiButton.style.flex).toBe('1 1 0%')
     expect(createTaskButton.style.flex).toBe('1 1 0%')
@@ -636,7 +636,7 @@ describe('annotate sidebar', () => {
       shadowRoot,
       createSidebarOptions(createEmptySession(), {
         successScope: 'create-task',
-        annotateDeliveryMode: 'both',
+        annotateChannel: 'mcp',
         preferredAction: 'create-task',
       }),
     )
@@ -644,7 +644,7 @@ describe('annotate sidebar', () => {
     controller.update(
       createSidebarOptions(createEmptySession(), {
         successScope: 'create-task',
-        annotateDeliveryMode: 'both',
+        annotateChannel: 'mcp',
         preferredAction: 'create-task',
         latestSessionSummary: {
           id: 'session-abcdef12',
@@ -843,7 +843,7 @@ describe('annotate sidebar', () => {
     createAnnotateSidebar(
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
-        annotateDeliveryMode: 'both',
+        annotateChannel: 'mcp',
         preferredAction: 'create-task',
         isSending: false,
       }),

@@ -155,6 +155,16 @@ describe('annotate mode integration', () => {
     }
   }
 
+  function createDeferred<T>() {
+    let resolve!: (value: T) => void
+    let reject!: (reason?: unknown) => void
+    const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+      resolve = resolvePromise
+      reject = rejectPromise
+    })
+    return { promise, resolve, reject }
+  }
+
   function clickQuickCaptureToggle(shadowRoot: ShadowRoot): void {
     const pureMarkButton = shadowRoot.querySelector(
       'button[aria-label="Toggle quick capture"]',
@@ -2427,7 +2437,7 @@ describe('annotate mode integration', () => {
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
 
     const req = JSON.parse(fetchMock.mock.calls[1]![1].body as string) as SendAnnotationsToAiRequest
-    expect(req.deliveryMode).toBe('agent')
+    expect(req.deliveryMode).toBe('mcp')
     expect(req.annotations).toHaveLength(1)
   })
 
@@ -2964,5 +2974,320 @@ describe('annotate mode integration', () => {
 
     const req = JSON.parse(fetchMock.mock.calls[1]![1].body as string) as SendAnnotationsToAiRequest
     expect(req.instruction).toBe('')
+  })
+
+  it('routes ide workflow confirmations through ide dispatch and explains live updates are unavailable', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        configResponse({
+          annotateChannel: 'ide',
+          workflows: [
+            {
+              id: 'review-pr',
+              label: 'Review & PR',
+              prompt: 'Review these notes and prepare the next action.',
+              confirm: true,
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    await vi.waitFor(() => expect(shadowRoot.textContent).toContain('Review & PR'))
+
+    const workflowButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Review & PR',
+    ) as HTMLButtonElement
+
+    workflowButton.click()
+    await Promise.resolve()
+
+    const confirmButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Confirm' || button.textContent === '确认',
+    ) as HTMLButtonElement
+
+    expect(confirmButton).toBeDefined()
+
+    confirmButton.click()
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+
+    const url = fetchMock.mock.calls[1]![0] as string
+    expect(url).toContain('/inspecto/api/v1/ai/dispatch')
+    expect(url).not.toContain('/inspecto/api/v1/ai/dispatch/annotations')
+
+    const req = JSON.parse(fetchMock.mock.calls[1]![1].body as string) as {
+      prompt?: string
+      location?: { file: string; line: number; column: number }
+      snippet?: string
+    }
+    expect(req.prompt).toBe('Review these notes and prepare the next action.')
+    expect(req.location).toBeUndefined()
+    expect(req.snippet).toBeUndefined()
+    expect(FakeEventSource.instances).toHaveLength(0)
+
+    expect(shadowRoot.textContent).toContain('Sent to IDE')
+    expect(shadowRoot.textContent).toContain('Live sidebar updates are unavailable')
+
+    vi.advanceTimersByTime(1600)
+    await Promise.resolve()
+
+    const emptyState = shadowRoot.querySelector(
+      'section[data-variant="empty-state"]',
+    ) as HTMLElement
+    const workflowNotice = shadowRoot.querySelector(
+      'section[data-variant="latest-session"]',
+    ) as HTMLElement
+    expect(emptyState.style.display).toBe('none')
+    expect(workflowNotice.style.display).toBe('')
+    expect(shadowRoot.textContent).toContain('Live sidebar updates are unavailable')
+
+    const previewButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.getAttribute('title') === 'View raw prompt payload',
+    ) as HTMLButtonElement | undefined
+    const copyContextButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.getAttribute('title') === 'Copy context',
+    ) as HTMLButtonElement | undefined
+    expect(previewButton?.style.display).toBe('none')
+    expect(copyContextButton?.style.display).toBe('none')
+  })
+
+  it('routes workflow confirmations through agent dispatch when annotate delivery mode is agent', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        configResponse({
+          annotateChannel: 'mcp',
+          workflows: [
+            {
+              id: 'review-pr',
+              label: 'Review & PR',
+              prompt: 'Review these notes and prepare the next action.',
+              confirm: true,
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            instruction: 'Review these notes and prepare the next action.',
+            annotations: [],
+            messages: [],
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    await vi.waitFor(() => expect(shadowRoot.textContent).toContain('Review & PR'))
+
+    const workflowButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Review & PR',
+    ) as HTMLButtonElement
+
+    workflowButton.click()
+    await Promise.resolve()
+
+    const confirmButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Confirm' || button.textContent === '确认',
+    ) as HTMLButtonElement
+
+    expect(confirmButton).toBeDefined()
+
+    confirmButton.click()
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+
+    const url = fetchMock.mock.calls[1]![0] as string
+    expect(url).toContain('/inspecto/api/v1/ai/dispatch/annotations')
+
+    const req = JSON.parse(fetchMock.mock.calls[1]![1].body as string) as SendAnnotationsToAiRequest
+    expect(req.deliveryMode).toBe('mcp')
+    expect(req.source).toBe('workflow')
+    expect(req.workflowId).toBe('review-pr')
+    expect(req.instruction).toBe('Review these notes and prepare the next action.')
+    expect(req.annotations).toEqual([])
+  })
+
+  it('keeps workflow execution visible and streams agent results into the sidebar', async () => {
+    const dispatchDeferred = createDeferred<{
+      ok: true
+      json: () => Promise<{
+        success: true
+        session: { id: string; status: 'pending'; createdAt: number; updatedAt: number }
+      }>
+    }>()
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        configResponse({
+          annotateChannel: 'mcp',
+          workflows: [
+            {
+              id: 'auto-merge-commit',
+              label: 'AUTO-MERGE-COMMIT',
+              prompt: 'Append local changes to the latest commit.',
+              confirm: true,
+            },
+          ],
+        }),
+      )
+      .mockImplementationOnce(() => dispatchDeferred.promise)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'workflow-session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+            instruction: 'Append local changes to the latest commit.',
+            annotations: [],
+            messages: [],
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource as unknown as typeof EventSource)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    await vi.waitFor(() => expect(shadowRoot.textContent).toContain('AUTO-MERGE-COMMIT'))
+
+    const workflowButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'AUTO-MERGE-COMMIT',
+    ) as HTMLButtonElement
+
+    workflowButton.click()
+    await Promise.resolve()
+
+    const confirmButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Confirm' || button.textContent === '确认',
+    ) as HTMLButtonElement
+
+    confirmButton.click()
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    await vi.waitFor(() => {
+      const sendingWorkflowButton = shadowRoot.querySelector(
+        'button[data-workflow-id="auto-merge-commit"]',
+      ) as HTMLButtonElement | null
+      expect(sendingWorkflowButton?.textContent).toBe('Sending...')
+    })
+
+    dispatchDeferred.resolve({
+      ok: true,
+      json: async () => ({
+        success: true,
+        session: {
+          id: 'workflow-session-1',
+          status: 'pending',
+          createdAt: 100,
+          updatedAt: 100,
+        },
+      }),
+    })
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+    expect(FakeEventSource.instances).toHaveLength(1)
+    expect(FakeEventSource.instances[0]?.url).toContain(
+      '/inspecto/api/v1/sessions/events?sessionId=workflow-session-1',
+    )
+
+    const emptyState = shadowRoot.querySelector(
+      'section[data-variant="empty-state"]',
+    ) as HTMLElement
+    const draftSection = shadowRoot.querySelector('section[data-variant="draft"]') as HTMLElement
+    const latestSessionSection = shadowRoot.querySelector(
+      'section[data-variant="latest-session"]',
+    ) as HTMLElement
+
+    expect(emptyState.style.display).toBe('none')
+    expect(draftSection.style.display).toBe('')
+    expect(latestSessionSection.style.display).toBe('')
+
+    FakeEventSource.instances[0]?.emit('session-message-appended', {
+      type: 'session-message-appended',
+      session: {
+        id: 'workflow-session-1',
+        status: 'in_progress',
+        createdAt: 100,
+        updatedAt: 120,
+        instruction: 'Append local changes to the latest commit.',
+        annotations: [],
+        messages: [
+          {
+            id: 'message-1',
+            role: 'agent',
+            text: 'Appended changes to the latest commit and kept the message unchanged.',
+            createdAt: 120,
+          },
+        ],
+      },
+    })
+    await Promise.resolve()
+
+    expect(shadowRoot.textContent).toContain('◔ in progress')
+    expect(shadowRoot.textContent).toContain(
+      'Appended changes to the latest commit and kept the message unchanged.',
+    )
+    expect(shadowRoot.textContent).toContain('AUTO-MERGE-COMMIT')
   })
 })

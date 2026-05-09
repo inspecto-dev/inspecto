@@ -1,4 +1,5 @@
-import type { AnnotateSidebarOptions } from './annotate-sidebar.js'
+import type { AnnotateSidebarOptions, AnnotateWorkflowNotice } from './annotate-sidebar.js'
+import type { AnnotateSendScope } from './annotate-sidebar-helpers.js'
 import type { SelectedTargetOverlayEntry } from './annotate-overlay.js'
 import type {
   AnnotationTarget,
@@ -57,16 +58,18 @@ export type AnnotateContext = {
   annotateErrorMessage: string
   annotateRuntimeContextEnabled: boolean
   annotateCssContextEnabled: boolean
-  annotateDeliveryMode: 'ide' | 'agent' | 'both'
+  annotateChannel: 'ide' | 'mcp'
+  annotateWorkflows: import('@inspecto-dev/types').WorkflowSlotOption[]
   annotateSendState: {
     isSending: boolean
-    scope: 'quick-ask' | 'create-task' | null
+    scope: AnnotateSendScope
   }
   annotateLatestSessionSummary: AnnotationWorkSessionSummary | null
   annotateLatestSessionDetail: AnnotationWorkSession | null
   annotateLatestSessionStream: import('./http.js').AnnotationSessionEventStreamConnection | null
   annotateLatestSessionLoading: boolean
   annotateLatestSessionError: string
+  annotateWorkflowNotice: AnnotateWorkflowNotice | null
   annotateSuccessScope: 'quick-ask' | 'create-task' | null
   annotateSuccessTimeout: ReturnType<typeof setTimeout> | null
   annotateSuccessOnClear: (() => void) | null

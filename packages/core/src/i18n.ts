@@ -103,6 +103,15 @@ const EN_MESSAGES: Record<string, string> = {
   'runtime.summary.error.other': '{count} runtime errors',
   'runtime.summary.request.one': '{count} failed request',
   'runtime.summary.request.other': '{count} failed requests',
+  'workflow.confirm': 'Confirm to execute "{label}"?',
+  'workflow.confirm.ok': 'Confirm',
+  'workflow.feedback.executed': 'Execution started',
+  'workflow.notice.title': 'Workflow dispatched',
+  'workflow.notice.status.ide': 'sent to IDE',
+  'workflow.notice.meta.ide': 'IDE channel',
+  'workflow.notice.message.ide':
+    'Sent to IDE. Live sidebar updates are unavailable for annotate.channel=ide.',
+  'workflow.notice.hint.ide': 'Switch annotate.channel to mcp to follow agent progress here.',
 }
 
 const ZH_CN_MESSAGES: Record<string, string> = {
@@ -202,6 +211,14 @@ const ZH_CN_MESSAGES: Record<string, string> = {
   'runtime.summary.error.other': '{count} 个运行时错误',
   'runtime.summary.request.one': '{count} 个失败请求',
   'runtime.summary.request.other': '{count} 个失败请求',
+  'workflow.confirm': '确认执行「{label}」？',
+  'workflow.confirm.ok': '确认执行',
+  'workflow.feedback.executed': '执行已启动',
+  'workflow.notice.title': 'Workflow 已发送',
+  'workflow.notice.status.ide': '已发送到 IDE',
+  'workflow.notice.meta.ide': 'IDE 通道',
+  'workflow.notice.message.ide': '已发送到 IDE。annotate.channel=ide 不支持在侧边栏实时更新。',
+  'workflow.notice.hint.ide': '如需在这里跟进 agent 进度，请将 annotate.channel 切换为 mcp。',
 }
 
 const BUILTIN_MESSAGES: Record<string, Record<string, string>> = {

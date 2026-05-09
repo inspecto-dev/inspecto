@@ -4,23 +4,40 @@ import type { SourceLocation } from './common.js'
 import type { AiErrorCode } from './runtime.js'
 import type { Provider } from './providers.js'
 
+export type IntentKind = 'ai-prompt' | 'workflow'
+
 export type AiIntent = 'ask' | 'fix' | 'review' | 'redesign'
 export type AnnotationIntent = AiIntent
 
-export interface IntentConfigBase {
+export interface AiIntentConfig {
+  kind?: 'ai-prompt'
   id: string
   label?: string
+  aiIntent: AiIntent
+  prompt?: string
   prependPrompt?: string
   appendPrompt?: string
-  prompt?: string
   enabled?: boolean
 }
 
-export interface AiIntentConfig extends IntentConfigBase {
-  aiIntent: AiIntent
+export interface WorkflowConfig {
+  kind: 'workflow'
+  id: string
+  label?: string
+  prompt: string
+  confirm?: boolean
+  enabled?: boolean
 }
 
-export type IntentConfig = AiIntentConfig
+export type IntentConfig = AiIntentConfig | WorkflowConfig
+
+export function isWorkflowConfig(c: IntentConfig): c is WorkflowConfig {
+  return c.kind === 'workflow'
+}
+
+export function isAiIntentConfig(c: IntentConfig): c is AiIntentConfig {
+  return c.kind !== 'workflow'
+}
 
 export type InspectoPromptsConfig =
   | (string | IntentConfig)[]
@@ -46,8 +63,8 @@ export interface InspectorOptions {
 }
 
 export interface SendToAiRequest {
-  location: SourceLocation
-  snippet: string
+  location?: SourceLocation
+  snippet?: string
   prompt?: string
   target?: Provider
   runtimeContext?: RuntimeContextEnvelope

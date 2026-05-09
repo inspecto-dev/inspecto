@@ -1,4 +1,5 @@
 import {
+  annotateConfirmDialogClass,
   annotateQueueListClass,
   annotateSidebarActionsClass,
   annotateSidebarButtonClass,
@@ -31,6 +32,7 @@ export interface AnnotateSidebarDom {
   exitButton: HTMLButtonElement
   emptyState: HTMLElement
   draftSection: HTMLElement
+  workflowRow: HTMLDivElement
   instructionInput: HTMLDivElement
   includedSummary: HTMLElement
   recordsList: HTMLDivElement
@@ -56,6 +58,7 @@ export interface AnnotateSidebarDom {
   createTaskButton: HTMLButtonElement
   updateRawPromptPreviewPosition(): void
   setRawPromptPreviewVisible(isVisible: boolean): void
+  showConfirmDialog(message: string, onConfirm: () => void): void
 }
 
 export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSidebarDom {
@@ -77,9 +80,34 @@ export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSideba
 
   headerCopy.append(headerTitle, headerStatus)
 
-  const headerActions = document.createElement('div')
-  headerActions.className = annotateSidebarActionsClass
-  headerActions.setAttribute('data-inspecto-annotate-header-actions', 'true')
+  const headerActionsLeft = document.createElement('div')
+  headerActionsLeft.className = annotateSidebarActionsClass
+  headerActionsLeft.setAttribute('data-inspecto-annotate-header-actions-left', 'true')
+
+  const previewButton = createSidebarButton('</>', annotateSidebarButtonClass)
+  previewButton.dataset.role = 'raw-preview-toggle'
+  previewButton.setAttribute('aria-label', t('annotate.previewRawPrompt'))
+  previewButton.title = t('annotate.previewRawPrompt')
+
+  const copyContextButton = createSidebarButton(
+    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
+    annotateSidebarButtonClass,
+    true,
+  )
+  copyContextButton.dataset.role = 'raw-preview'
+  copyContextButton.setAttribute('aria-label', t('annotate.copyContext'))
+  copyContextButton.title = t('annotate.copyContext')
+
+  headerActionsLeft.append(previewButton, copyContextButton)
+
+  const headerActionsRight = document.createElement('div')
+  headerActionsRight.className = annotateSidebarActionsClass
+  headerActionsRight.setAttribute('data-inspecto-annotate-header-actions-right', 'true')
+
+  const headerActionsContainer = document.createElement('div')
+  headerActionsContainer.style.display = 'flex'
+  headerActionsContainer.style.gap = '8px'
+  headerActionsContainer.style.alignItems = 'center'
 
   const quickCaptureButton = createSidebarButton(pureMarkIconSvg, annotateSidebarButtonClass, true)
   quickCaptureButton.dataset.role = 'quick-capture'
@@ -135,14 +163,15 @@ export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSideba
   exitButton.setAttribute('aria-label', t('annotate.exitMode'))
   exitButton.title = t('annotate.exitMode')
 
-  headerActions.append(
+  headerActionsRight.append(
     quickCaptureButton,
     cssContextButton,
     runtimeContextButton,
     modeButton,
     exitButton,
   )
-  header.append(headerCopy, headerActions)
+  headerActionsContainer.append(headerActionsLeft, headerActionsRight)
+  header.append(headerCopy, headerActionsContainer)
 
   const emptyState = document.createElement('section')
   emptyState.className = annotateSidebarSectionClass
@@ -358,26 +387,18 @@ export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSideba
   footerActionRowContainer.style.width = '100%'
   footerActionRowContainer.style.gap = '8px'
 
+  const workflowRow = document.createElement('div')
+  workflowRow.className = annotateSidebarActionsClass
+  workflowRow.style.display = 'none'
+  workflowRow.style.gap = '8px'
+  workflowRow.style.width = '100%'
+
   const footerLeftActions = document.createElement('div')
   footerLeftActions.className = annotateSidebarActionsClass
   footerLeftActions.style.flex = '0 0 auto'
   footerLeftActions.style.display = 'none'
   footerLeftActions.style.alignItems = 'center'
   footerLeftActions.style.gap = '8px'
-
-  const previewButton = createSidebarButton('</>', annotateSidebarButtonClass)
-  previewButton.dataset.role = 'raw-preview-toggle'
-  previewButton.setAttribute('aria-label', t('annotate.previewRawPrompt'))
-  previewButton.title = t('annotate.previewRawPrompt')
-
-  const copyContextButton = createSidebarButton(
-    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>',
-    annotateSidebarButtonClass,
-    true,
-  )
-  copyContextButton.dataset.role = 'raw-preview'
-  copyContextButton.setAttribute('aria-label', t('annotate.copyContext'))
-  copyContextButton.title = t('annotate.copyContext')
 
   const previewFloat = document.createElement('div')
   previewFloat.dataset.inspectoAnnotateRawPreview = 'true'
@@ -407,6 +428,63 @@ export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSideba
   previewFloatContent.style.color = 'rgba(255, 255, 255, 0.7)'
 
   previewFloat.appendChild(previewFloatContent)
+
+  const confirmDialog = document.createElement('div')
+  confirmDialog.className = annotateConfirmDialogClass
+  confirmDialog.style.display = 'none'
+
+  const confirmContent = document.createElement('div')
+  confirmContent.className = 'content'
+
+  const confirmMessage = document.createElement('p')
+  const confirmActions = document.createElement('div')
+  confirmActions.className = 'actions'
+
+  const confirmCancelBtn = createSidebarButton(t('annotate.cancel'), annotateSidebarButtonClass)
+  confirmCancelBtn.dataset.emphasis = 'secondary'
+  const confirmOkBtn = createSidebarButton(t('workflow.confirm.ok'), annotateSidebarButtonClass)
+  confirmOkBtn.classList.add('primary')
+
+  confirmActions.append(confirmCancelBtn, confirmOkBtn)
+  confirmContent.append(confirmMessage, confirmActions)
+  confirmDialog.append(confirmContent)
+
+  let currentConfirmCallback: (() => void) | null = null
+
+  confirmCancelBtn.addEventListener('click', event => {
+    event.preventDefault()
+    event.stopPropagation()
+    confirmDialog.style.display = 'none'
+    currentConfirmCallback = null
+  })
+
+  confirmOkBtn.addEventListener('click', event => {
+    event.preventDefault()
+    event.stopPropagation()
+    confirmDialog.style.display = 'none'
+
+    if (currentConfirmCallback) {
+      currentConfirmCallback()
+      currentConfirmCallback = null
+    }
+
+    const toast = document.createElement('div')
+    toast.className = 'inspecto-workflow-toast'
+    toast.textContent = t('workflow.feedback.executed')
+
+    workflowRow.style.position = 'relative'
+    workflowRow.appendChild(toast)
+
+    setTimeout(() => {
+      toast.remove()
+    }, 2000)
+  })
+
+  function showConfirmDialog(message: string, onConfirm: () => void): void {
+    confirmMessage.textContent = message
+    currentConfirmCallback = onConfirm
+    confirmDialog.style.display = 'flex'
+  }
 
   function updateRawPromptPreviewPosition(): void {
     const viewportPadding = 12
@@ -448,9 +526,13 @@ export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSideba
     if (!previewFloat.contains(clickTarget) && !previewButton.contains(clickTarget)) {
       setRawPromptPreviewVisible(false)
     }
+    if (!confirmContent.contains(clickTarget) && !workflowRow.contains(clickTarget)) {
+      confirmDialog.style.display = 'none'
+      currentConfirmCallback = null
+    }
   })
 
-  footerLeftActions.append(previewButton, copyContextButton)
+  // footerLeftActions.append(previewButton, copyContextButton)
 
   const footerActions = document.createElement('div')
   footerActions.className = annotateSidebarActionsClass
@@ -473,11 +555,11 @@ export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSideba
 
   footerActions.append(quickAskButton, createTaskButton)
   footerActionRowContainer.append(footerLeftActions, footerActions)
-  footerActionRow.append(footerActionRowContainer)
+  footerActionRow.append(footerActionRowContainer, workflowRow)
   footerLayout.append(recommendedActionLabel, footerActionRow)
   footer.append(previewFloat, statusMessage, errorMessage, footerLayout)
 
-  element.append(header, emptyState, draftSection, footer)
+  element.append(header, emptyState, draftSection, footer, confirmDialog)
   shadowRoot.appendChild(element)
 
   return {
@@ -491,6 +573,7 @@ export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSideba
     exitButton,
     emptyState,
     draftSection,
+    workflowRow,
     instructionInput,
     includedSummary,
     recordsList,
@@ -516,5 +599,6 @@ export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSideba
     createTaskButton,
     updateRawPromptPreviewPosition,
     setRawPromptPreviewVisible,
+    showConfirmDialog,
   }
 }

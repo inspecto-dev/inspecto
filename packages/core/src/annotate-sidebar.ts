@@ -15,17 +15,26 @@ import {
   normalizeInstructionSegments,
   serializeInstructionSegments,
   type InstructionSegment,
+  type AnnotateSendScope,
   type PromptChipRecord,
 } from './annotate-sidebar-helpers.js'
 import { createAnnotateSidebarDom } from './annotate-sidebar-dom.js'
 import { createAnnotateSidebarRenderers } from './annotate-sidebar-renderers.js'
+import { createSidebarButton } from './annotate-sidebar-helpers.js'
+import { annotateSidebarButtonClass } from './styles.js'
 import { t } from './i18n.js'
 import { pauseIconSvg, playIconSvg } from './icons.js'
 
 type SidebarMode = 'capture-enabled' | 'capture-paused'
-type SendScope = 'quick-ask' | 'create-task' | null
+type SendScope = AnnotateSendScope
+type SuccessScope = 'quick-ask' | 'create-task' | null
 type PreferredAction = 'quick-ask' | 'create-task'
-export type AnnotateDefaultDelivery = 'ide' | 'agent' | 'both'
+export type AnnotateDefaultChannel = 'ide' | 'mcp'
+export type AnnotateWorkflowNotice = {
+  kind: 'ide-dispatch'
+  workflowId: string
+  workflowLabel: string
+}
 
 export interface AnnotateSidebarOptions {
   mode: SidebarMode
@@ -41,13 +50,16 @@ export interface AnnotateSidebarOptions {
   fullPrompt: string
   isSending: boolean
   sendingScope: SendScope
-  successScope: SendScope
+  successScope: SuccessScope
   preferredAction?: PreferredAction
-  annotateDeliveryMode?: AnnotateDefaultDelivery
+  annotateChannel?: AnnotateDefaultChannel
   latestSessionSummary?: AnnotationWorkSessionSummary | null
   latestSessionDetail?: AnnotationWorkSession | null
   latestSessionLoading?: boolean
   latestSessionError?: string
+  workflowNotice?: AnnotateWorkflowNotice | null
+  workflows?: import('@inspecto-dev/types').WorkflowSlotOption[]
+  onWorkflow?: (workflowId: string) => void
   quickCaptureEnabled?: boolean
   errorMessage?: string
   onPauseCapture: () => void
@@ -87,6 +99,7 @@ export function createAnnotateSidebar(
     exitButton,
     emptyState,
     draftSection,
+    workflowRow,
     instructionInput,
     includedSummary,
     recordsList,
@@ -346,16 +359,20 @@ export function createAnnotateSidebar(
     const hasSavedRecords = next.session.records.length > 0
     const hasCurrentDraft = Boolean(next.session.current.target)
     const hasBatchContent = hasSavedRecords || hasCurrentDraft
+    const hasLatestSession = Boolean(next.latestSessionDetail || next.latestSessionSummary)
+    const hasWorkflowNotice = Boolean(next.workflowNotice)
     const shouldShowBody =
       hasSavedRecords ||
       hasCurrentDraft ||
+      hasLatestSession ||
+      hasWorkflowNotice ||
       next.isSending ||
       next.successScope === 'quick-ask' ||
       Boolean(next.errorMessage)
     const canSend = next.isSending ? false : next.includedRecords.length > 0 || hasCurrentDraft
     const preferredAction: PreferredAction = next.preferredAction ?? 'create-task'
-    const deliveryPreference = next.annotateDeliveryMode ?? 'both'
-    const showDebugHelperActions = deliveryPreference !== 'agent'
+    const channelPreference = next.annotateChannel ?? 'mcp'
+    const showDebugHelperActions = channelPreference !== 'mcp'
 
     element.style.display = ''
     emptyState.style.display = shouldShowBody ? 'none' : ''
@@ -422,7 +439,7 @@ export function createAnnotateSidebar(
     allPromptText.textContent = next.fullPrompt
     previewFloatContent.textContent = next.fullPrompt
     footerLeftActions.style.display = canSend && showDebugHelperActions ? 'flex' : 'none'
-    previewButton.style.display = showDebugHelperActions ? '' : 'none'
+    previewButton.style.display = canSend && showDebugHelperActions ? '' : 'none'
     copyContextButton.style.display = canSend && showDebugHelperActions ? '' : 'none'
     if (!canSend) {
       setRawPromptPreviewVisible(false)
@@ -434,42 +451,27 @@ export function createAnnotateSidebar(
     includedSummary.textContent = `Element notes (${next.includedRecords.length})`
     renderers.renderIncludedRecords(next.includedRecords, recordsList)
 
-    const allowQuickAsk = deliveryPreference === 'both' || deliveryPreference === 'ide'
-    const allowCreateTask = deliveryPreference === 'both' || deliveryPreference === 'agent'
-    const onlyOneAction = allowQuickAsk !== allowCreateTask
+    const allowQuickAsk = channelPreference === 'ide'
+    const allowCreateTask = channelPreference === 'mcp'
 
     quickAskButton.style.display = allowQuickAsk ? '' : 'none'
     createTaskButton.style.display = allowCreateTask ? '' : 'none'
 
     quickAskButton.disabled = !canSend
     createTaskButton.disabled = !canSend
-    if (onlyOneAction) {
-      quickAskButton.classList.toggle('primary', true)
-      createTaskButton.classList.toggle('primary', true)
-      quickAskButton.dataset.emphasis = 'primary'
-      createTaskButton.dataset.emphasis = 'primary'
-      quickAskButton.style.flex = '1'
-      createTaskButton.style.flex = '1'
-      quickAskButton.dataset.layoutRole = 'primary'
-      createTaskButton.dataset.layoutRole = 'primary'
-    } else {
-      quickAskButton.classList.toggle('primary', false)
-      createTaskButton.classList.toggle('primary', false)
-      quickAskButton.dataset.emphasis = preferredAction === 'quick-ask' ? 'primary' : 'secondary'
-      createTaskButton.dataset.emphasis =
-        preferredAction === 'create-task' ? 'primary' : 'secondary'
-      quickAskButton.dataset.layoutRole = preferredAction === 'quick-ask' ? 'primary' : 'secondary'
-      createTaskButton.dataset.layoutRole =
-        preferredAction === 'create-task' ? 'primary' : 'secondary'
-      quickAskButton.style.order = '1'
-      createTaskButton.style.order = '2'
-      quickAskButton.style.flex = '1'
-      createTaskButton.style.flex = '1'
-    }
+
+    quickAskButton.classList.toggle('primary', true)
+    createTaskButton.classList.toggle('primary', true)
+    quickAskButton.dataset.emphasis = 'primary'
+    createTaskButton.dataset.emphasis = 'primary'
+    quickAskButton.style.flex = '1'
+    createTaskButton.style.flex = '1'
+    quickAskButton.dataset.layoutRole = 'primary'
+    createTaskButton.dataset.layoutRole = 'primary'
+
     quickAskButton.title = t('annotate.askAiHint')
     createTaskButton.title = t('annotate.createTaskHint')
-    recommendedActionLabel.style.display =
-      canSend && !onlyOneAction && deliveryPreference === 'both' ? 'block' : 'none'
+    recommendedActionLabel.style.display = 'none'
     recommendedActionLabel.textContent =
       preferredAction === 'quick-ask'
         ? t('annotate.recommendedAction.askHint', {
@@ -489,13 +491,66 @@ export function createAnnotateSidebar(
         ? t('menu.sending')
         : t('annotate.createTask')
 
+    // ===== Workflow Buttons =====
+    const workflows = next.workflows || []
+    workflowRow.style.display = workflows.length > 0 ? 'flex' : 'none'
+
+    // Clear and rebuild workflow buttons
+    workflowRow.innerHTML = ''
+
+    for (const wf of workflows) {
+      const btn = createSidebarButton(wf.label, annotateSidebarButtonClass)
+      btn.dataset.workflowId = wf.id
+      btn.style.flex = '1'
+      btn.style.justifyContent = 'center'
+      btn.style.whiteSpace = 'nowrap'
+
+      const isSendingWorkflow = next.isSending && next.sendingScope === `workflow:${wf.id}`
+      btn.disabled = next.isSending
+      btn.textContent = isSendingWorkflow ? t('menu.sending') : wf.label
+
+      btn.addEventListener('click', () => {
+        if (wf.confirm) {
+          dom.showConfirmDialog(t('workflow.confirm', { label: wf.label }), () => {
+            next.onWorkflow?.(wf.id)
+          })
+          return
+        }
+        next.onWorkflow?.(wf.id)
+      })
+
+      workflowRow.appendChild(btn)
+    }
+
     const latestSession = next.latestSessionDetail
     const latestSessionSummary = next.latestSessionSummary
-    latestSessionSection.style.display = latestSession || latestSessionSummary ? '' : 'none'
+    const workflowNotice = next.workflowNotice ?? null
+    latestSessionSection.style.display =
+      latestSession || latestSessionSummary || workflowNotice ? '' : 'none'
     latestSessionRefreshButton.disabled = Boolean(next.latestSessionLoading)
-    latestSessionTitle.textContent = t('annotate.latestSession.title')
+    latestSessionTitle.textContent = workflowNotice
+      ? t('workflow.notice.title')
+      : t('annotate.latestSession.title')
 
-    if (latestSession || latestSessionSummary) {
+    if (workflowNotice && !latestSession && !latestSessionSummary) {
+      latestSessionMeta.textContent = t('workflow.notice.meta.ide')
+      latestSessionStatus.textContent = `• ${t('workflow.notice.status.ide')}`
+      applyLatestSessionStatusStyles('pending')
+      latestSessionMessage.style.display = 'block'
+      latestSessionMessage.textContent = t('workflow.notice.message.ide')
+      latestSessionMessage.dataset.variant = 'system-info'
+      latestSessionMessage.style.color = '#9ed8ff'
+      latestSessionHint.textContent = t('workflow.notice.hint.ide')
+      latestSessionHint.style.display = 'block'
+      latestSessionHint.style.color = 'var(--inspecto-text-secondary)'
+      latestSessionError.textContent = ''
+      latestSessionError.style.display = 'none'
+      latestSessionRefreshButton.textContent = '↻'
+      latestSessionRefreshButton.style.display = 'none'
+      latestSessionRefreshButton.style.minWidth = ''
+      latestSessionRefreshButton.style.padding = ''
+      latestSessionRefreshButton.style.fontSize = '12px'
+    } else if (latestSession || latestSessionSummary) {
       const latestStatus = latestSession?.status ?? latestSessionSummary?.status ?? 'pending'
       latestSessionMeta.textContent = latestSession
         ? t('annotate.latestSession.meta.loaded', {

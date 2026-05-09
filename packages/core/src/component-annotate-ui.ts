@@ -8,11 +8,13 @@ import {
 } from './annotate-session.js'
 import { buildAnnotateFullPrompt } from './annotate-full-prompt.js'
 import type { AnnotateSidebarOptions } from './annotate-sidebar.js'
+import { isStandardAnnotateSendScope, type AnnotateSendScope } from './annotate-sidebar-helpers.js'
 import type { SelectedTargetOverlayEntry } from './annotate-overlay.js'
 import {
   fetchAnnotationSession,
   openAnnotationSessionEventStream,
   openFile,
+  sendToAi,
   sendAnnotationsToAi,
 } from './http.js'
 import type {
@@ -164,13 +166,15 @@ export function toAnnotationTransportFromRecordUi(
 export async function sendAnnotationBatch(
   ctx: unknown,
   annotations: AnnotationTransport[],
-  scope: 'quick-ask' | 'create-task',
+  scope: AnnotateSendScope,
   instruction: string,
   deliveryMode: AnnotationDeliveryMode,
   onSuccess: () => void,
+  extraPayload?: { source?: 'annotation' | 'workflow'; workflowId?: string },
 ): Promise<void> {
   const state = asAnnotateContext(ctx)
-  if (annotations.length === 0 || state.annotateSendState.isSending) return
+  if (state.annotateSendState.isSending) return
+  if (annotations.length === 0 && extraPayload?.source !== 'workflow') return
 
   state.annotateSendState = { isSending: true, scope }
   state.updateAnnotateSidebar()
@@ -186,6 +190,7 @@ export async function sendAnnotationBatch(
       ...(runtimeContext ? { runtimeContext } : {}),
       ...(cssContextPrompt ? { cssContextPrompt } : {}),
       deliveryMode,
+      ...(extraPayload || {}),
     })
 
     if (!result.success) {
@@ -210,7 +215,9 @@ export async function sendAnnotationBatch(
     // For quick-ask: show transient success banner.
     // For create-task: only announce via aria-live (no visual banner); the
     // sidebar's live session section shows status from that point on.
-    state.showAnnotateSuccess(scope)
+    if (isStandardAnnotateSendScope(scope)) {
+      state.showAnnotateSuccess(scope)
+    }
     state.renderAnnotateSelectionOverlay()
     state.updateAnnotateSidebar()
   } catch (err) {
@@ -224,6 +231,82 @@ export async function sendAnnotationBatch(
     state.annotateSendState = { isSending: false, scope: null }
     state.updateAnnotateSidebar()
   }
+}
+
+export async function triggerWorkflow(ctx: unknown, workflowId: string): Promise<void> {
+  const state = asAnnotateContext(ctx)
+  if (state.annotateSendState.isSending) return
+
+  const workflow = state.annotateWorkflows.find(w => w.id === workflowId)
+  const workflowPrompt = workflow?.prompt || ''
+  if (!workflowPrompt.trim()) return
+
+  const deliveryMode = state.annotateChannel ?? 'mcp'
+
+  if (deliveryMode === 'ide') {
+    const scope: AnnotateSendScope = `workflow:${workflowId}`
+    state.annotateSendState = { isSending: true, scope }
+    state.updateAnnotateSidebar()
+
+    try {
+      await state.configLoadPromise
+      const result = await sendToAi({
+        prompt: workflowPrompt,
+      })
+
+      if (!result.success) {
+        state.annotateErrorMessage = toAnnotateErrorMessage(state, result.errorCode, result.error)
+        state.updateAnnotateSidebar()
+        return
+      }
+
+      state.annotateInstructionDraft = ''
+      state.annotateSession = createEmptySession()
+      state.annotateEditingRecord = null
+      state.annotateElements.clear()
+      state.annotateLatestSessionSummary = null
+      state.annotateLatestSessionDetail = null
+      state.stopLatestAnnotateSessionStream()
+      state.annotateLatestSessionError = ''
+      state.annotateWorkflowNotice = {
+        kind: 'ide-dispatch',
+        workflowId,
+        workflowLabel: workflow?.label ?? workflowId,
+      }
+      state.annotateErrorMessage = ''
+      state.renderAnnotateSelectionOverlay()
+      state.updateAnnotateSidebar()
+    } catch (err) {
+      state.annotateErrorMessage = toAnnotateErrorMessage(
+        state,
+        (err as { errorCode?: AiErrorCode }).errorCode,
+        (err as Error).message,
+      )
+      state.updateAnnotateSidebar()
+    } finally {
+      state.annotateSendState = { isSending: false, scope: null }
+      state.updateAnnotateSidebar()
+    }
+    return
+  }
+
+  state.annotateWorkflowNotice = null
+
+  await sendAnnotationBatch(
+    ctx,
+    [],
+    `workflow:${workflowId}`,
+    workflowPrompt,
+    'mcp',
+    () => {
+      state.annotateInstructionDraft = ''
+      state.annotateSession = createEmptySession()
+      state.annotateEditingRecord = null
+      state.annotateElements.clear()
+      state.renderAnnotateSelectionOverlay()
+    },
+    { source: 'workflow', workflowId },
+  )
 }
 
 export async function refreshLatestAnnotateSession(ctx: unknown): Promise<void> {
@@ -307,10 +390,10 @@ export function getAnnotateSidebarOptions(ctx: unknown): AnnotateSidebarOptions 
   const allRuntimeContext = state.getAnnotateRuntimeContext(allAnnotations)
   const allCssContextPrompt = state.getAnnotateCssContextPrompt(allAnnotations)
 
-  const deliveryPreference = state.annotateDeliveryMode ?? 'both'
+  const channelPreference = state.annotateChannel ?? 'mcp'
   let preferredAction: 'quick-ask' | 'create-task' = 'create-task'
-  if (deliveryPreference === 'ide') preferredAction = 'quick-ask'
-  if (deliveryPreference === 'agent') preferredAction = 'create-task'
+  if (channelPreference === 'ide') preferredAction = 'quick-ask'
+  if (channelPreference === 'mcp') preferredAction = 'create-task'
 
   return {
     mode: state.annotateCapturePaused ? 'capture-paused' : 'capture-enabled',
@@ -333,11 +416,13 @@ export function getAnnotateSidebarOptions(ctx: unknown): AnnotateSidebarOptions 
     sendingScope: state.annotateSendState.scope,
     successScope: state.annotateSuccessScope,
     preferredAction,
-    annotateDeliveryMode: state.annotateDeliveryMode,
+    annotateChannel: state.annotateChannel,
+    workflows: state.annotateWorkflows,
     latestSessionSummary: state.annotateLatestSessionSummary,
     latestSessionDetail: state.annotateLatestSessionDetail,
     latestSessionLoading: state.annotateLatestSessionLoading,
     latestSessionError: state.annotateLatestSessionError,
+    workflowNotice: state.annotateWorkflowNotice,
     quickCaptureEnabled: state.annotateQuickCaptureEnabled,
     errorMessage: state.annotateErrorMessage,
     onPauseCapture: () => {
@@ -487,13 +572,16 @@ export function getAnnotateSidebarOptions(ctx: unknown): AnnotateSidebarOptions 
         transports,
         'create-task',
         composeAnnotateInstruction(state),
-        'agent',
+        'mcp',
         () => {
           // Records are kept visible so the user can see badge status updates
           // (saved → completed) driven by the live session stream. The session
           // will be cleared when the user starts a new annotation batch (onSave).
         },
       )
+    },
+    onWorkflow: workflowId => {
+      void triggerWorkflow(state, workflowId)
     },
     onExit: () => {
       state.setMode('inspect')

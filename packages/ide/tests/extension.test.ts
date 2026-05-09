@@ -104,7 +104,9 @@ describe('resolveServerPorts', () => {
       toString: () => 'vscode://inspecto.inspecto/send?target=copilot&ticket=test-ticket',
     } as any)
 
-    expect(fetchMock).toHaveBeenCalled()
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://127.0.0.1:5678/inspecto/api/v1/ai/ticket/test-ticket',
+    )
     expect(uriHandlerMocks.executeWithFallback).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
@@ -203,6 +205,12 @@ describe('resolveServerPorts', () => {
       expect.stringContaining('Inspecto could not reach the local dev server'),
       'Push IDE Info',
       'Open Output',
+    )
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://127.0.0.1:5678/inspecto/api/v1/ide/info',
+      expect.objectContaining({
+        method: 'POST',
+      }),
     )
 
     vi.useRealTimers()

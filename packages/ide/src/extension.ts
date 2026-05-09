@@ -173,7 +173,7 @@ async function pushIdeInfoToServer(info: IdeInfo): Promise<boolean> {
   const ports = resolveServerPorts()
   for (const port of ports) {
     try {
-      const res = await fetch(`http://0.0.0.0:${port}${INSPECTO_API_PATHS.IDE_INFO}`, {
+      const res = await fetch(`http://127.0.0.1:${port}${INSPECTO_API_PATHS.IDE_INFO}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(info),

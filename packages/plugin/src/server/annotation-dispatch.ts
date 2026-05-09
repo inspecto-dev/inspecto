@@ -12,6 +12,10 @@ import type {
 } from '@inspecto-dev/types'
 import { dispatchPromptThroughIde, resolvePromptDispatchRuntime } from './dispatch-runtime.js'
 import { assertPathWithinProject, resolveWorkspacePath } from './path-guards.js'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execAsync = promisify(exec)
 import type { AnnotationSessionStore } from './session-store.js'
 import { annotationSessionStore } from './session-store.js'
 
@@ -50,15 +54,23 @@ class AnnotationDispatchError extends Error {
 
 export async function dispatchAnnotationsToAi(
   req: SendAnnotationsToAiRequest,
-  state: Pick<ServerState, 'projectRoot' | 'cwd' | 'ideInfo'>,
+  state: Pick<ServerState, 'projectRoot' | 'configRoot' | 'cwd' | 'ideInfo'>,
   store: AnnotationSessionStore = annotationSessionStore,
 ): Promise<SendAnnotationsToAiResponse> {
   try {
     validateAnnotationDispatchRequest(req, state)
     const batch = normalizeAnnotationBatch(req)
-    const prompt = buildAnnotationBatchPrompt(batch)
+    let prompt = buildAnnotationBatchPrompt(batch)
+
+    // ===== 注入项目元信息 =====
+    if (req.source === 'workflow') {
+      prompt = await appendProjectMetadata(prompt, state)
+    }
+
     const deliveryMode = normalizeDeliveryMode(req.deliveryMode)
     const session = store.createSession({
+      source: req.source || 'annotation',
+      ...(req.workflowId ? { workflowId: req.workflowId } : {}),
       instruction: batch.instruction,
       annotations: toSessionAnnotations(batch.annotations),
       deliveryMode,
@@ -89,8 +101,39 @@ export async function dispatchAnnotationsToAi(
   }
 }
 
+/** 在 prompt 末尾追加项目元信息 */
+async function appendProjectMetadata(
+  prompt: string,
+  state: Pick<ServerState, 'projectRoot' | 'cwd'>,
+): Promise<string> {
+  const lines = ['\n## Project']
+  lines.push(`- Root: ${state.projectRoot}`)
+  try {
+    const options = {
+      cwd: state.projectRoot,
+      encoding: 'utf-8',
+      timeout: 2000,
+    } as const
+    const { stdout: branchStdout } = await execAsync('git branch --show-current', options)
+    const branch = branchStdout.trim()
+    lines.push(`- Branch: ${branch}`)
+
+    const { stdout: statusStdout } = await execAsync('git status --porcelain', options)
+    const statusRaw = statusStdout.trim()
+    const entries = statusRaw ? statusRaw.split('\n') : []
+    const staged = entries.filter(l => l[0] !== ' ' && l[0] !== '?').length
+    const unstaged = entries.filter(l => l[1] !== ' ' && l[1] !== '?').length
+    const untracked = entries.filter(l => l[0] === '?').length
+    lines.push(`- Status: ${staged} staged, ${unstaged} unstaged, ${untracked} untracked`)
+  } catch (err) {
+    console.warn('[inspecto] Failed to get git status for workflow:', err)
+    lines.push('- Git: unavailable or check timeout')
+  }
+  return `${prompt}\n\n${lines.join('\n')}`
+}
+
 function normalizeDeliveryMode(input: AnnotationDeliveryMode | undefined): AnnotationDeliveryMode {
-  return input === 'agent' ? 'agent' : 'ide'
+  return input === 'mcp' ? 'mcp' : 'ide'
 }
 
 function toSessionAnnotations(annotations: NormalizedAnnotation[]): Annotation[] {
@@ -136,7 +179,7 @@ export function validateAnnotationDispatchRequest(
   req: SendAnnotationsToAiRequest,
   state: Pick<ServerState, 'projectRoot' | 'cwd'>,
 ): void {
-  if (!req.annotations.length) {
+  if (!req.annotations.length && req.source !== 'workflow') {
     throw new AnnotationDispatchError('At least one annotation is required.', 'INVALID_REQUEST')
   }
 

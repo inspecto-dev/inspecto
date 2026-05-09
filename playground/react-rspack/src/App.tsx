@@ -101,7 +101,7 @@ const App = () => {
             steps={[
               'Choose Annotate from the launcher.',
               'Click multiple cards and save notes.',
-              'Use the sidebar goal field, then Ask AI once.',
+              'Use the sidebar goal field, then submit the batch.',
             ]}
           />
           <ModeCard

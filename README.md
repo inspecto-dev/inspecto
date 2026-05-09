@@ -8,7 +8,7 @@ English | [简体中文](./README.zh-CN.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > Say goodbye to context switching between browser, DevTools, editor, and AI assistant.
-> Inspecto shortens the loop. Start from the webpage, and instantly hand off the right context to your code or AI.
+> Inspecto shortens the loop. Start from the webpage, and instantly hand off the right context to your code or your configured assistant path.
 
 👉 **[Read the full documentation at inspecto-dev.github.io/inspecto](https://inspecto-dev.github.io/inspecto/)**
 
@@ -19,13 +19,13 @@ English | [简体中文](./README.zh-CN.md)
         <img src="packages/docs/public/inspect-mode.gif" width="100%" alt="Inspect mode workflow" />
         <br/>
         <b>Inspect mode</b><br/>
-        Click one component and ask AI right away
+        Click one component and hand off the right context immediately
       </td>
       <td width="33%" align="center">
         <img src="packages/docs/public/annotate-mode.gif" width="100%" alt="Annotate mode workflow" />
         <br/>
         <b>Annotate mode</b><br/>
-        Collect notes across components, send one batch
+        Collect notes across components, submit one batch
       </td>
       <td width="33%" align="center">
         <img src="packages/docs/public/quick-jump.gif" width="100%" alt="Quick jump workflow" />

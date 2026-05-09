@@ -26,7 +26,8 @@ type LifecycleContext = {
   annotateQuickCaptureEnabled: boolean
   annotateRuntimeContextEnabled: boolean
   annotateCssContextEnabled: boolean
-  annotateDeliveryMode: 'ide' | 'agent' | 'both'
+  annotateChannel: 'ide' | 'mcp'
+  annotateWorkflows: import('@inspecto-dev/types').WorkflowSlotOption[]
   stopLatestAnnotateSessionStream(): void
   setAttribute(name: string, value: string): void
   removeAttribute(name: string): void
@@ -37,6 +38,7 @@ type LifecycleContext = {
   teardownListeners(): void
   syncRuntimeContextCapture(): void
   syncModeUi(): void
+  updateAnnotateSidebar(): void
 }
 
 function asLifecycleContext(ctx: unknown): LifecycleContext {
@@ -151,13 +153,15 @@ export function configure(ctx: unknown, options: InspectoOptions): void {
     .then(info => {
       if (info?.hotKeys !== undefined) {
         state.serverHotKeys = info.hotKeys
-        state.syncModeUi()
       }
       if (info?.theme !== undefined) {
         applyTheme(state, info.theme)
       }
-      if (info?.annotateDeliveryMode !== undefined) {
-        state.annotateDeliveryMode = info.annotateDeliveryMode
+      if (info?.annotateChannel !== undefined) {
+        state.annotateChannel = info.annotateChannel
+      }
+      if (info?.workflows !== undefined) {
+        state.annotateWorkflows = info.workflows
       }
       if (info?.includeSnippet !== undefined) {
         state.options.includeSnippet = info.includeSnippet
@@ -168,6 +172,10 @@ export function configure(ctx: unknown, options: InspectoOptions): void {
           ...info.runtimeContext,
         }
         state.syncRuntimeContextCapture()
+      }
+
+      if (state.mode === 'annotate' && state.annotateSidebar) {
+        state.updateAnnotateSidebar()
       }
     })
     .catch(() => {})

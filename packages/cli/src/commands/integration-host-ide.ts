@@ -1,4 +1,6 @@
 import path from 'node:path'
+import os from 'node:os'
+import { execSync } from 'node:child_process'
 import { exists, readJSON } from '../utils/fs.js'
 import {
   getHostIdeArtifactPath,
@@ -97,10 +99,14 @@ export async function resolveIntegrationHostIde(
 }
 
 async function resolveConfiguredIde(cwd: string): Promise<SupportedHostIde | null> {
-  const settingsPaths = [
-    path.join(cwd, '.inspecto', 'settings.local.json'),
-    path.join(cwd, '.inspecto', 'settings.json'),
-  ]
+  const settingsRoot = await resolveSettingsRoot(cwd)
+  const settingsPaths = settingsRoot
+    ? [
+        path.join(settingsRoot, '.inspecto', 'settings.local.json'),
+        path.join(settingsRoot, '.inspecto', 'settings.json'),
+        path.join(os.homedir(), '.inspecto', 'settings.json'),
+      ]
+    : [path.join(os.homedir(), '.inspecto', 'settings.json')]
 
   for (const settingsPath of settingsPaths) {
     const settings = await readJSON<InspectoSettingsShape>(settingsPath)
@@ -110,6 +116,39 @@ async function resolveConfiguredIde(cwd: string): Promise<SupportedHostIde | nul
   }
 
   return null
+}
+
+async function resolveSettingsRoot(cwd: string): Promise<string | null> {
+  let current = cwd
+  const home = os.homedir()
+  const gitRoot = resolveGitRoot(cwd)
+  while (true) {
+    if (gitRoot && !isUnderOrEqual(current, gitRoot)) return null
+    if (current === home) return null
+    if (isHomeOrHomeAncestor(current, home)) return null
+    if (current !== home && (await exists(path.join(current, '.inspecto')))) return current
+    if (gitRoot && current === gitRoot) return null
+    const parent = path.dirname(current)
+    if (parent === current) return null
+    current = parent
+  }
+}
+
+function resolveGitRoot(cwd: string): string | null {
+  try {
+    const output = execSync('git rev-parse --show-toplevel', { cwd, encoding: 'utf-8' })
+    return typeof output === 'string' ? output.trim() : null
+  } catch {
+    return null
+  }
+}
+
+function isUnderOrEqual(candidate: string, root: string): boolean {
+  return candidate === root || candidate.startsWith(root + path.sep)
+}
+
+function isHomeOrHomeAncestor(candidate: string, home: string): boolean {
+  return candidate === home || home.startsWith(candidate + path.sep)
 }
 
 function detectEnvHostIdes(): SupportedHostIde[] {

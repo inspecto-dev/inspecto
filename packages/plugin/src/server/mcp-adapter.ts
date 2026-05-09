@@ -25,6 +25,7 @@ export interface InspectoGetSessionArgs {
 
 export interface InspectoClaimNextArgs {
   timeoutMs?: number
+  source?: 'annotation' | 'workflow'
 }
 
 export interface InspectoReplyArgs {
@@ -96,9 +97,10 @@ export function createInspectoMcpAdapter(options: InspectoMcpAdapterOptions): In
     },
 
     async claimNext(args = {}) {
-      const result = await store.claimNextSession(
-        args.timeoutMs !== undefined ? { timeoutMs: args.timeoutMs } : {},
-      )
+      const result = await store.claimNextSession({
+        ...(args.timeoutMs !== undefined ? { timeoutMs: args.timeoutMs } : {}),
+        ...(args.source ? { source: args.source } : {}),
+      })
       return {
         success: true,
         timedOut: result.timedOut,
@@ -202,13 +204,19 @@ const INSPECTO_MCP_TOOL_DEFINITIONS: InspectoMcpToolDefinition[] = [
   {
     name: 'inspecto_claim_next',
     description:
-      'Wait for the next unclaimed Inspecto annotation session, mark it acknowledged, and return full context.',
+      'Wait for the next unclaimed Inspecto session. Use source=\'workflow\' for workflow automation sessions (e.g. "submit PR", "deploy") which include project metadata (git branch, status, project root) in the instruction. Use source=\'annotation\' (or omit) for code review/fix sessions with DOM annotation context. Marks it acknowledged and returns full context.',
     inputSchema: {
       type: 'object',
       properties: {
         timeoutMs: {
           type: 'number',
           description: 'Optional maximum wait time in milliseconds. Omit to wait indefinitely.',
+        },
+        source: {
+          type: 'string',
+          enum: ['annotation', 'workflow'],
+          description:
+            'Optional source filter. Use "workflow" for macro automation, "annotation" for DOM fixes.',
         },
       },
     },

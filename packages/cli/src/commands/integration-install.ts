@@ -75,7 +75,7 @@ interface InstallPlan {
 interface InspectoSettingsShape {
   ide?: string
   'provider.default'?: string
-  'annotate.deliveryMode'?: 'ide' | 'agent' | 'both'
+  'annotate.channel'?: 'ide' | 'mcp'
   [key: string]: unknown
 }
 
@@ -377,29 +377,27 @@ async function persistProjectOnboardingDefaults(
     resolvedHostIde.ide && resolvedHostIde.confidence !== 'low'
       ? await resolveProviderDefaultForAssistant(assistant, resolvedHostIde.ide)
       : undefined
-  const annotateDeliveryMode = resolveAnnotateDefaultDeliveryForAssistant(assistant)
+  const annotateChannel = resolveAnnotateDefaultChannelForAssistant(assistant)
   const mergedSettings =
     existingSettings && typeof existingSettings === 'object'
       ? {
           ...existingSettings,
           ide: options.ide,
           ...(providerDefault ? { 'provider.default': providerDefault } : {}),
-          'annotate.deliveryMode': annotateDeliveryMode,
+          'annotate.channel': annotateChannel,
         }
       : {
           ide: options.ide,
           ...(providerDefault ? { 'provider.default': providerDefault } : {}),
-          'annotate.deliveryMode': annotateDeliveryMode,
+          'annotate.channel': annotateChannel,
         }
 
   await writeJSON(settingsPath, mergedSettings)
 }
 
-function resolveAnnotateDefaultDeliveryForAssistant(
-  assistant: AssistantId,
-): 'ide' | 'agent' | 'both' {
+function resolveAnnotateDefaultChannelForAssistant(assistant: AssistantId): 'ide' | 'mcp' {
   void assistant
-  return 'both'
+  return 'mcp'
 }
 
 function shouldSkipAutomationForInstall(options: InstallIntegrationOptions): boolean {

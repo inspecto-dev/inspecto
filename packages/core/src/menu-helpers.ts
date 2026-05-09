@@ -1,6 +1,6 @@
 import type {
+  AiIntentConfig,
   InspectorOptions,
-  IntentConfig,
   RuntimeContextEnvelope,
   RuntimeEvidenceRecord,
   SourceLocation,
@@ -94,11 +94,11 @@ function formatMenuErrorMessage(message: string, errorCode?: string): string {
   return `Error: ${message}`
 }
 
-export function isFixIntent(intent: Pick<IntentConfig, 'id' | 'aiIntent'>): boolean {
+export function isFixIntent(intent: Pick<AiIntentConfig, 'id' | 'aiIntent'>): boolean {
   return intent.aiIntent === 'fix'
 }
 
-export function isFixUiIntent(intent: Pick<IntentConfig, 'id'>): boolean {
+export function isFixUiIntent(intent: Pick<AiIntentConfig, 'id'>): boolean {
   return intent.id === 'fix-ui'
 }
 

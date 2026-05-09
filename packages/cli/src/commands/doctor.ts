@@ -2,6 +2,8 @@
 // src/commands/doctor.ts — Installation diagnostics (v1)
 // ============================================================
 import path from 'node:path'
+import os from 'node:os'
+import { execSync } from 'node:child_process'
 import { log } from '../utils/logger.js'
 import { exists, readJSON, readFile } from '../utils/fs.js'
 import { detectPackageManager, getInstallCommand } from '../detect/package-manager.js'
@@ -82,6 +84,91 @@ function isConfigPatchReason(reason: string): boolean {
 
 function isNextWebpackDevPatchReason(reason: string): boolean {
   return reason === 'next_dev_script_requires_webpack'
+}
+
+async function resolveSettingsRoot(root: string): Promise<string | null> {
+  let current = root
+  const home = os.homedir()
+  const gitRoot = resolveGitRoot(root)
+  while (true) {
+    if (gitRoot && !isUnderOrEqual(current, gitRoot)) return null
+    if (current === home) return null
+    if (isHomeOrHomeAncestor(current, home)) return null
+    if (await exists(path.join(current, '.inspecto'))) return current
+    if (gitRoot && current === gitRoot) return null
+    const parent = path.dirname(current)
+    if (parent === current) return null
+    current = parent
+  }
+}
+
+function resolveGitRoot(cwd: string): string | null {
+  try {
+    const output = execSync('git rev-parse --show-toplevel', { cwd, encoding: 'utf-8' })
+    return typeof output === 'string' ? output.trim() : null
+  } catch {
+    return null
+  }
+}
+
+function isUnderOrEqual(candidate: string, root: string): boolean {
+  return candidate === root || candidate.startsWith(root + path.sep)
+}
+
+function isHomeOrHomeAncestor(candidate: string, home: string): boolean {
+  return candidate === home || home.startsWith(candidate + path.sep)
+}
+
+async function collectEffectiveSettingsSources(root: string): Promise<string[]> {
+  const settingsRoot = await resolveSettingsRoot(root)
+  const candidatePaths = [
+    ...(settingsRoot
+      ? [
+          path.join(settingsRoot, '.inspecto', 'settings.local.json'),
+          path.join(settingsRoot, '.inspecto', 'settings.json'),
+        ]
+      : []),
+    path.join(os.homedir(), '.inspecto', 'settings.json'),
+  ]
+
+  const sources: string[] = []
+  for (const candidatePath of candidatePaths) {
+    if (await exists(candidatePath)) sources.push(candidatePath)
+  }
+  return sources
+}
+
+function formatSettingsSource(root: string, source: string): string {
+  const globalSettingsPath = path.join(os.homedir(), '.inspecto', 'settings.json')
+  if (source === globalSettingsPath) return '~/.inspecto/settings.json'
+  const relative = path.relative(root, source)
+  if (relative && !relative.startsWith('..' + path.sep) && relative !== '..') return relative
+  if (relative.startsWith('..' + path.sep)) return relative
+  return source
+}
+
+async function readEffectiveSettings(sources: string[]): Promise<{
+  settings: Record<string, unknown>
+  invalidSources: string[]
+  valueSources: Record<string, string>
+}> {
+  const settings: Record<string, unknown> = {}
+  const invalidSources: string[] = []
+  const valueSources: Record<string, string> = {}
+
+  for (const source of [...sources].reverse()) {
+    const layer = await readJSON<Record<string, unknown>>(source)
+    if (!layer) {
+      invalidSources.push(source)
+      continue
+    }
+    Object.assign(settings, layer)
+    for (const key of Object.keys(layer)) {
+      valueSources[key] = source
+    }
+  }
+
+  return { settings, invalidSources, valueSources }
 }
 
 async function collectGuidedPatchDiagnostics(
@@ -423,22 +510,43 @@ export async function collectDoctorResult(root = process.cwd()): Promise<DoctorR
   }
 
   // Check 7: settings
-  const settingsJsonPath = path.join(root, '.inspecto', 'settings.json')
-  const settingsLocalPath = path.join(root, '.inspecto', 'settings.local.json')
+  const settingsRoot = await resolveSettingsRoot(root)
+  const settingsJsonPath = settingsRoot
+    ? path.join(settingsRoot, '.inspecto', 'settings.json')
+    : path.join(root, '.inspecto', 'settings.json')
+  const settingsLocalPath = settingsRoot
+    ? path.join(settingsRoot, '.inspecto', 'settings.local.json')
+    : path.join(root, '.inspecto', 'settings.local.json')
+  const effectiveSettingsSources = await collectEffectiveSettingsSources(root)
 
   const hasSettingsJson = await exists(settingsJsonPath)
   const hasSettingsLocal = await exists(settingsLocalPath)
+  const effectiveSettings = await readEffectiveSettings(effectiveSettingsSources)
 
-  if (hasSettingsJson || hasSettingsLocal) {
+  if (effectiveSettingsSources.length > 0) {
+    checks.push(
+      createDiagnostic(
+        'settings-effective-sources',
+        'ok',
+        `Effective settings sources: ${effectiveSettingsSources.map(source => formatSettingsSource(root, source)).join(' > ')}`,
+        [],
+        { sources: effectiveSettingsSources },
+      ),
+    )
+  }
+
+  if (effectiveSettingsSources.length > 0) {
     const targetPath = hasSettingsLocal ? settingsLocalPath : settingsJsonPath
-    const fileName = hasSettingsLocal ? 'settings.local.json' : 'settings.json'
-    const settings = await readJSON(targetPath)
-    if (settings) {
-      checks.push(createDiagnostic('settings-valid', 'ok', `.inspecto/${fileName} valid`))
+    const primarySource =
+      hasSettingsLocal || hasSettingsJson ? targetPath : effectiveSettingsSources[0]!
+    const fileName = path.basename(primarySource)
+    const settingsLabel = formatSettingsSource(root, primarySource)
+    if (!effectiveSettings.invalidSources.includes(primarySource)) {
+      checks.push(createDiagnostic('settings-valid', 'ok', `${settingsLabel} valid`))
 
       const configuredIde =
-        typeof (settings as Record<string, unknown>).ide === 'string'
-          ? ((settings as Record<string, unknown>).ide as string)
+        typeof effectiveSettings.settings.ide === 'string'
+          ? (effectiveSettings.settings.ide as string)
           : undefined
       const detectedIdeCandidates = ideProbe.detected.map(item => item.ide)
       if (
@@ -446,18 +554,22 @@ export async function collectDoctorResult(root = process.cwd()): Promise<DoctorR
         detectedIdeCandidates.length > 0 &&
         !detectedIdeCandidates.includes(configuredIde)
       ) {
+        const ideSource = effectiveSettings.valueSources['ide']
+        const ideLabel = ideSource ? formatSettingsSource(root, ideSource) : 'effective settings'
+        const mismatchSubject = ideSource === primarySource ? ideLabel : 'effective settings'
+        const mismatchFileName = ideSource ? path.basename(ideSource) : fileName
         checks.push(
           createDiagnostic(
             'settings-ide-mismatch',
             'warning',
-            `.inspecto/${fileName} sets ide=${configuredIde}, but the current environment looks like ${detectedIdeCandidates.join(', ')}. Inspecto will use the configured IDE from ${fileName}.`,
+            `${mismatchSubject} sets ide=${configuredIde}, but the current environment looks like ${detectedIdeCandidates.join(', ')}. Inspecto will use the configured IDE from ${mismatchFileName}.`,
             [
-              `Update .inspecto/${fileName} if you want Inspecto to target the currently detected IDE instead.`,
+              `Update ${ideLabel} if you want Inspecto to target the currently detected IDE instead.`,
             ],
             {
               configuredIde,
               detectedIdeCandidates,
-              precedence: `configured ide from ${fileName}`,
+              precedence: `configured ide from ${ideLabel}`,
             },
           ),
         )
@@ -467,7 +579,7 @@ export async function collectDoctorResult(root = process.cwd()): Promise<DoctorR
         createDiagnostic(
           'settings-invalid-json',
           'error',
-          `.inspecto/${fileName} has invalid JSON`,
+          `${settingsLabel} has invalid JSON`,
           [
             'Fix: Manually correct the syntax errors, or delete the file and re-run npx @inspecto-dev/cli init',
           ],

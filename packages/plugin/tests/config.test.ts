@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import * as fs from 'node:fs'
 import path from 'node:path'
+import os from 'node:os'
 import {
   loadUserConfigSync,
   loadPromptsConfig,
@@ -88,7 +89,7 @@ describe('config resolution', () => {
       expect(config['provider.default']).toBe('copilot.extension')
     })
 
-    it('cwd config wins over gitRoot config', () => {
+    it('uses the nearest .inspecto as the settings root without inheriting gitRoot settings', () => {
       const root = '/users/me/projects/monorepo'
       const cwd = `${root}/apps/web`
 
@@ -105,18 +106,21 @@ describe('config resolution', () => {
 
       const config = freshLoad(cwd, root)
 
-      // Inherits gitRoot setting
-      expect(config['provider.default']).toBe('copilot.extension')
-      // Overrides/merges cwd setting
       expect(config['provider.claude-code.cli.bin']).toBe('claude')
+      expect(config['provider.default']).toBeUndefined()
     })
 
-    it('intermediate directory config is picked up between cwd and gitRoot', () => {
+    it('uses the nearest ancestor .inspecto when cwd has no config directory', () => {
       const root = '/users/me/projects/monorepo'
       const intermediate = `${root}/apps`
       const cwd = `${intermediate}/web`
 
-      vi.mocked(fs.existsSync).mockReturnValue(true)
+      vi.mocked(fs.existsSync).mockImplementation((p: fs.PathLike) => {
+        return (
+          p.toString() === path.join(intermediate, '.inspecto') ||
+          p.toString() === path.join(intermediate, '.inspecto', 'settings.json')
+        )
+      })
       vi.mocked(fs.readFileSync).mockImplementation((p: fs.PathOrFileDescriptor) => {
         if (p.toString() === path.join(intermediate, '.inspecto', 'settings.json')) {
           return JSON.stringify({ 'provider.default': 'claude-code.cli' })
@@ -164,13 +168,13 @@ describe('config resolution', () => {
       expect(config['provider.default']).toBe('claude-code.cli')
     })
 
-    it('deep-merges providers across layers', () => {
-      const root = '/projects/monorepo'
-      const cwd = `${root}/apps/web`
+    it('deep-merges local, shared, and user settings within the selected settings root', () => {
+      const cwd = '/projects/app'
+      const homeSettings = path.join(os.homedir(), '.inspecto', 'settings.json')
 
       vi.mocked(fs.existsSync).mockReturnValue(true)
       vi.mocked(fs.readFileSync).mockImplementation((p: fs.PathOrFileDescriptor) => {
-        if (p.toString() === path.join(root, '.inspecto', 'settings.json')) {
+        if (p.toString() === homeSettings) {
           return JSON.stringify({
             ide: 'vscode',
             autoSend: true,
@@ -186,11 +190,11 @@ describe('config resolution', () => {
         return '{}'
       })
 
-      const config = freshLoad(cwd, root)
+      const config = freshLoad(cwd, cwd)
 
-      expect(config.ide).toBe('vscode') // Overridden by cwd
-      expect(config.autoSend).toBe(false) // Overridden by cwd
-      expect(config['provider.claude-code.cli.bin']).toBe('claude') // Added by cwd
+      expect(config.ide).toBe('vscode')
+      expect(config.autoSend).toBe(false)
+      expect(config['provider.claude-code.cli.bin']).toBe('claude')
     })
 
     it('cwd above gitRoot falls back to checking only cwd', () => {

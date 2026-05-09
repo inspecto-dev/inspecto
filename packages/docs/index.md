@@ -21,9 +21,9 @@ hero:
 
 features:
   - title: Inspect mode
-    details: 'Inspect a single component, automatically attach the right context, and ask AI instantly.'
+    details: 'Inspect a single component, automatically attach the right context, and hand it off through your configured assistant path.'
   - title: Annotate mode
-    details: 'Select multiple UI notes across components, add one overall goal, and send them as a single batch to AI.'
+    details: 'Select multiple UI notes across components, add one overall goal, and submit them as one batch through your configured assistant path.'
   - title: Quick jump
     details: 'Hold `Alt` + `Click` on any element to instantly open the exact source location in your editor, skipping manual search.'
   - title: Assistant-first setup
@@ -58,12 +58,12 @@ import HeroArchitecture from './components/HeroArchitecture.vue'
   <div class="mode-card">
     <img :src="'/inspecto/inspect-mode.gif'" alt="Inspect mode workflow" />
     <h3>Inspect mode</h3>
-    <p>Inspect a single component, automatically attach the right context, and ask AI instantly.</p>
+    <p>Inspect a single component, automatically attach the right context, and hand it off through your configured assistant path.</p>
   </div>
   <div class="mode-card">
     <img :src="'/inspecto/annotate-mode.gif'" alt="Annotate mode workflow" />
     <h3>Annotate mode</h3>
-    <p>Select multiple UI notes across components, add one overall goal, and send them as a single batch to AI.</p>
+    <p>Select multiple UI notes across components, add one overall goal, and submit them as one batch through your configured assistant path.</p>
   </div>
   <div class="mode-card">
     <img :src="'/inspecto/quick-jump.gif'" alt="Quick jump workflow" />

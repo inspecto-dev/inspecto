@@ -42,9 +42,9 @@ function normalizeIdeToken(value: string | undefined): string {
 }
 
 export function resolvePromptDispatchRuntime(
-  state: Pick<ServerState, 'projectRoot' | 'cwd' | 'ideInfo'>,
+  state: Pick<ServerState, 'projectRoot' | 'configRoot' | 'cwd' | 'ideInfo'>,
 ): PromptDispatchRuntime {
-  const userConfig = loadUserConfigSync(false, state.cwd, state.projectRoot)
+  const userConfig = loadUserConfigSync(false, state.cwd, state.configRoot)
   const resolvedTarget = resolveTargetTool(userConfig)
   const finalIde = resolveFinalIde(userConfig.ide, state.ideInfo?.ide, state.ideInfo?.scheme)
   const mode = resolveProviderMode(resolvedTarget, finalIde as IdeType, userConfig)

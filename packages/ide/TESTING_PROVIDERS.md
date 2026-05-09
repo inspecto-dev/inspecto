@@ -46,7 +46,7 @@
 
 **验证标准**：
 
-- 当点击浏览器页面中的 “Ask AI” 意图时，VS Code 唤起指定的 AI Chat 面板后，输入框内容**应自动提交/发送**给大模型。
+- 当点击浏览器页面中的 `Inspect` 菜单 AI 意图，或在 `annotate.channel = "ide"` 时点击标注面板里的 “Ask AI” 后，VS Code 唤起指定的 AI Chat 面板，输入框内容**应自动提交/发送**给大模型。
 - 将 `"autoSend": false` 后重试，内容仅填入输入框，**不应该**自动发送。
 
 ---
@@ -74,7 +74,7 @@
 **测试步骤**：
 
 1. 确保 VS Code Host 中已安装并启用了 **GitHub Copilot Chat** 插件。
-2. 在浏览器中选中某个组件，点击面板上的 “Ask AI”。
+2. 在浏览器中选中某个组件，点击 Inspect 菜单中的 AI 意图。
 3. **验证标准**：
    - VS Code 应自动聚焦并打开 Copilot Chat 面板。
    - 输入框中自动填入了包含代码片段、文件路径及行号的 Prompt。
@@ -98,7 +98,7 @@
 **测试步骤**：
 
 1. 确保 VS Code 中安装了 Claude Code 官方插件。
-2. 浏览器触发 “Ask AI”。
+2. 浏览器触发 Inspect 菜单 AI 意图。
 3. **验证标准**：VS Code 的 Claude 面板被激活，Prompt 成功填入。
 
 **场景 B：CLI 模式**
@@ -114,7 +114,7 @@
 **测试步骤**：
 
 1. 确保环境可通过终端执行 `claude` 命令。
-2. 浏览器触发 “Ask AI”。
+2. 浏览器触发 Inspect 菜单 AI 意图。
 3. **验证标准**：
    - VS Code 应自动打开/创建一个新的集成终端（Terminal），并启动 `claude` 命令。
    - Prompt 上下文已自动粘贴或作为参数传送到了 CLI。
@@ -137,7 +137,7 @@
 **测试步骤**：
 
 1. 确保安装并启用了 Google Gemini IDE 插件。
-2. 触发 “Ask AI”。
+2. 触发 Inspect 菜单 AI 意图。
 3. **验证标准**：Gemini 面板自动激活并接收到包含文件上下文的 Prompt。
 
 **场景 B：CLI 模式**
@@ -189,7 +189,7 @@
 **测试步骤**：
 
 1. 环境中需要能运行 Coco 命令行。
-2. 浏览器触发 “Ask AI”。
+2. 浏览器触发 Inspect 菜单 AI 意图。
 3. **验证标准**：
    - 由于 Coco 不支持 `extension`，插件应创建并聚焦到 Terminal。
    - 终端中执行 Coco 命令并携带代码上下文（或者通过复制/粘贴机制送入终端）。

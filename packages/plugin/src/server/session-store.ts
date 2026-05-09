@@ -17,6 +17,7 @@ export interface AnnotationSessionListOptions {
 
 export interface ClaimNextAnnotationSessionOptions {
   timeoutMs?: number
+  source?: 'annotation' | 'workflow'
 }
 
 export interface ClaimNextAnnotationSessionResult {
@@ -53,10 +54,15 @@ export function createAnnotationSessionStore(
 
   function findNewestMatchingSession(
     statuses: Set<AnnotationSessionStatus> | null,
+    source?: 'annotation' | 'workflow',
   ): AnnotationWorkSession | null {
     return (
       [...sessions.values()]
-        .filter(session => (statuses ? statuses.has(session.status) : true))
+        .filter(session => {
+          if (statuses && !statuses.has(session.status)) return false
+          if (source && session.source !== source) return false
+          return true
+        })
         .sort((left, right) => right.updatedAt - left.updatedAt)[0] ?? null
     )
   }
@@ -140,7 +146,7 @@ export function createAnnotationSessionStore(
 
     async claimNextSession(options = {}) {
       const statuses = normalizeStatuses(DEFAULT_STATUS)
-      const existingSession = findNewestMatchingSession(statuses)
+      const existingSession = findNewestMatchingSession(statuses, options.source)
       if (existingSession) {
         return {
           session: claimSession(existingSession.id, statuses),

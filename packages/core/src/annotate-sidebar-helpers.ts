@@ -20,6 +20,14 @@ export type InstructionSegment =
       id: string
     }
 
+export type AnnotateSendScope = 'quick-ask' | 'create-task' | `workflow:${string}` | null
+
+export function isStandardAnnotateSendScope(
+  scope: AnnotateSendScope,
+): scope is 'quick-ask' | 'create-task' {
+  return scope === 'quick-ask' || scope === 'create-task'
+}
+
 export function createSidebarButton(
   label: string,
   className: string,
@@ -38,13 +46,16 @@ export function createSidebarButton(
 
 export function getLiveStatusMessage(input: {
   isSending: boolean
-  sendingScope: 'quick-ask' | 'create-task' | null
+  sendingScope: AnnotateSendScope
   successScope: 'quick-ask' | 'create-task' | null
 }): string {
   if (input.isSending && input.sendingScope === 'quick-ask') {
     return t('annotate.liveStatus.quickAskSending')
   }
   if (input.isSending && input.sendingScope === 'create-task') {
+    return t('annotate.liveStatus.createTaskSending')
+  }
+  if (input.isSending && input.sendingScope?.startsWith('workflow:')) {
     return t('annotate.liveStatus.createTaskSending')
   }
   if (!input.isSending && input.successScope === 'quick-ask') {

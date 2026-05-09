@@ -83,7 +83,7 @@ Here is a full list of supported assistants and where their integrations are ins
 
 All onboarding integrations will by default write configuration into local-only files (`.inspecto/settings.local.json` and `.inspecto/prompts.local.json`), keeping your repository clean.
 
-For Codex installs, the CLI installs both the onboarding skill and the `inspecto-agent` skill. MCP server configuration still needs to be added separately, so the daily `Annotate mode` workflow will not switch to task-first until MCP is configured. Once MCP is connected and `.inspecto/settings.local.json` uses `"annotate.deliveryMode": "agent"`, the default follow-up is:
+For Codex installs, the CLI installs both the onboarding skill and the `inspecto-agent` skill. MCP server configuration still needs to be added separately, so the daily `Annotate mode` workflow will not switch to task-first until MCP is configured. Once MCP is connected and `.inspecto/settings.local.json` uses `"annotate.channel": "mcp"`, the default follow-up is:
 
 ```text
 Use $inspecto-agent to claim Inspecto tasks continuously
@@ -143,7 +143,7 @@ The integrations work by exposing Inspecto's structured CLI onboarding contract 
 4. Guides you through installing the IDE extension (if using IDE mode).
 5. Confirms the dev server start command.
 
-When onboarding configures `annotate.deliveryMode: "agent"`, the structured onboarding result can also include a `handoff.dailyUsage` payload. Assistant integrations should prefer that field over hard-coded follow-up wording when pointing users to the installed `inspecto-agent` skill for daily MCP-driven annotation work.
+When onboarding configures `annotate.channel: "mcp"`, the structured onboarding result can also include a `handoff.dailyUsage` payload. Assistant integrations should prefer that field over hard-coded follow-up wording when pointing users to the installed `inspecto-agent` skill for daily MCP-driven annotation work.
 
 This guarantees that the actual file modifications are always safely performed by the Inspecto CLI parser, rather than relying on the assistant to hand-edit your configuration files.
 

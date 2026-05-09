@@ -54,11 +54,11 @@
       "description": "Whether to inject the raw code snippet into the prompt. Default is false (saves tokens, lets IDE AI read the file directly).",
       "default": false
     },
-    "annotate.deliveryMode": {
+    "annotate.channel": {
       "type": "string",
-      "enum": ["ide", "agent", "both"],
-      "description": "Controls which action Inspecto emphasizes in Annotate mode.",
-      "default": "both"
+      "enum": ["ide", "mcp"],
+      "description": "Controls which channel Inspecto uses for Annotate submissions.",
+      "default": "mcp"
     },
     "prompt.runtimeContext": {
       "type": "boolean",
@@ -68,7 +68,7 @@
     "server.host": {
       "type": "string",
       "description": "Host for the local inspecto server. Set to '0.0.0.0' to allow external connections.",
-      "default": "localhost"
+      "default": "127.0.0.1"
     },
     "server.publicUrl": {
       "type": "string",

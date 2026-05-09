@@ -39,7 +39,7 @@ Run these checks for each platform + IDE pair.
 
 - In annotate mode, type into the sidebar instruction field.
 - Confirm the launcher eyes avert while typing.
-- Confirm `Ask AI` remains the only send action.
+- Confirm only one primary submit action is visible for the configured delivery mode.
 - Confirm `Quick capture`, `Pause selection`, and `Resume selection` work as expected.
 
 ### 6. Raw prompt preview
