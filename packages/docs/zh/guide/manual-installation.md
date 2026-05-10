@@ -12,6 +12,72 @@ npx @inspecto-dev/cli integrations install <assistant> --host-ide <vscode|cursor
 
 只有当这条路径不适合你的环境时，再使用手动安装。
 
+## 选择你要开启的能力
+
+手动安装时，直接看“必须安装 / 配置什么”会更清楚。选择第一个符合你目标的场景即可：
+
+### A. 我只想高亮组件并复制上下文
+
+需要安装 / 配置：
+
+1. 安装 `@inspecto-dev/plugin`。
+2. 安装 `@inspecto-dev/core`。
+3. 在构建工具中启用 Inspecto plugin。
+
+阅读：[1. 安装插件依赖](#_1-安装插件依赖) → [2. 配置构建工具](#_2-配置构建工具)
+
+### B. 我想用 `Alt` / `Option` + 点击打开源码
+
+需要安装 / 配置：
+
+1. 完成 **A** 的全部内容。
+2. 本机已经安装编辑器，例如 VS Code、Cursor、Trae 或 CodeBuddy。
+3. 可选：如果 Inspecto 打开了错误的编辑器，在 `.inspecto/settings.local.json` 中设置 `ide`。
+
+源码跳转**不需要**安装 Inspecto IDE 扩展。
+
+### C. 我想把 Inspect / Annotate 的 prompt 发送到 IDE 助手
+
+需要安装 / 配置：
+
+1. 完成 **B** 的全部内容。
+2. 为你的编辑器安装 Inspecto IDE 扩展。
+3. 配置 `provider.default`；或者直接运行自动化的 `integrations install` 命令，不必手动配置。
+
+阅读：[3. 为助手交接安装 IDE 扩展](#_3-为助手交接安装-ide-扩展-可选) → [4. 配置项目参数](#_4-配置项目参数)
+
+### D. 我想使用 MCP Agent session，不接 IDE 助手
+
+需要安装 / 配置：
+
+1. 完成 **A** 的全部内容。
+2. 在 `.inspecto/settings.local.json` 中设置 `"annotate.channel": "mcp"`。
+3. 在你的 Agent 中添加 Inspecto MCP server。
+
+阅读：[4. 配置项目参数](#_4-配置项目参数) → [MCP 集成](../integrations/mcp.md)
+
+### E. 我想增加 deploy、PR 或 release 这样的自定义 workflow 按钮
+
+需要安装 / 配置：
+
+1. 完成 **A** 的全部内容。
+2. 在 `.inspecto/prompts.json` 中增加 `kind: "workflow"` 条目，例如 `Deploy Preview` 或 `Review & PR`。
+3. 选择 workflow 要发送到哪里：
+   - 如果希望 MCP Agent 利用自身 skill、MCP server 和 tool 执行：完成 **D**。
+   - 如果只想交给 IDE 助手：完成 **C**。
+
+更推荐使用 MCP route 执行 workflow 自动化，因为 Inspecto 可以创建可持久化的 workflow session，追加项目元信息，并在浏览器 timeline 中展示 Agent 进度。
+
+### F. 我想全部一起使用
+
+需要安装 / 配置：
+
+1. 完成 **C** 的全部内容。
+2. 完成 **D** 的全部内容。
+3. 可选：如果需要项目专属 workflow 按钮，完成 **E**。
+
+关键区别很简单：**源码跳转**只需要本地 dev server 调用编辑器打开文件；**IDE 助手交接**才需要 Inspecto IDE 扩展把 prompt 送进助手面板；**MCP route** 负责创建可持久化的标注和 workflow session 让 Agent 领取；**workflow 按钮**则是可配置 prompt，让 Agent 利用自身 skill、MCP server 和 tool 执行项目级指令。这几条路线可以组合，但互不依赖。
+
 这页不包含 assistant onboarding 自动化。它不会：
 
 - 自动为你安装 Inspecto IDE 插件
@@ -122,9 +188,11 @@ export default {
 }
 ```
 
-## 3. 安装 IDE 扩展（可选）
+## 3. 为助手交接安装 IDE 扩展（可选）
 
-如果你希望浏览器通过 URI scheme 直接把代码发送到你的 IDE，请安装 Inspecto 配套扩展。没有这个扩展，你仍然可以使用 MCP 或"复制上下文"按钮。
+源码跳转本身**不需要**安装 Inspecto IDE 扩展。`Alt` / `Option` + 点击由本地 Inspecto dev server 处理，它会通过编辑器自带的 URI scheme 或命令行 launcher 打开目标源码文件。
+
+只有当你希望 Inspect / Annotate 操作把 AI prompt 直接发送到 Copilot、Cursor、Trae 或 CodeBuddy 这类 IDE 助手时，才需要安装 Inspecto 配套扩展。没有这个扩展，你仍然可以使用源码跳转、MCP 或“复制上下文”按钮。
 
 请参考 [IDE 扩展集成指南](../integrations/ide.md) 完成 VS Code、Cursor、Trae 或 CodeBuddy 中插件的安装。
 

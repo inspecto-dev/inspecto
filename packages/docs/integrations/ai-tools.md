@@ -47,6 +47,17 @@ If `handoff.dailyUsage` is present, prefer it over hard-coded follow-up wording.
 
 ## Interaction Modes
 
+Use the mode names as delivery routes:
+
+| Route                    | Best for                                                        | Requires IDE extension?                  |
+| :----------------------- | :-------------------------------------------------------------- | :--------------------------------------- |
+| IDE route                | Immediate Inspect / Annotate prompt handoff to an AI panel      | Yes, except built-in IDE targets         |
+| CLI route                | Sending prompts into a terminal-based assistant                 | Usually yes, to open/manage the terminal |
+| MCP route                | Durable annotation sessions, browser timeline, custom workflows | No                                       |
+| Browser-only / Clipboard | Copying context manually or using unsupported editors           | No                                       |
+
+If you want custom workflow buttons such as deploy, PR, release, or test automation, prefer the MCP route. It lets Inspecto queue a workflow session and lets the agent execute it with its own skills, MCP servers, and tools.
+
 ### 1. Extension Mode
 
 The AI tool is installed as an IDE extension (e.g., in VS Code). Inspecto will use the IDE's custom URI schemes to dispatch the prompt to the AI chat panel.

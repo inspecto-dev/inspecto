@@ -2604,6 +2604,18 @@ describe('annotate mode integration', () => {
     expect(shadowRoot.textContent).toContain('◔ in progress')
     expect(shadowRoot.textContent).toContain('Working on it now.')
 
+    const showUpdatesButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Show updates',
+    ) as HTMLButtonElement
+
+    expect(showUpdatesButton).toBeTruthy()
+    showUpdatesButton.click()
+    await Promise.resolve()
+
+    expect(shadowRoot.textContent).toContain('Updates')
+    expect(shadowRoot.textContent).toContain('Created from annotate mode')
+    expect(shadowRoot.textContent).toContain('Agent: Working on it now.')
+
     FakeEventSource.instances[0]?.emit('session-status-updated', {
       type: 'session-status-updated',
       session: {
@@ -2628,6 +2640,87 @@ describe('annotate mode integration', () => {
 
     expect(FakeEventSource.instances[0]?.closed).toBe(true)
     expect(shadowRoot.textContent).toContain('complete')
+  })
+
+  it('shows all agent replies in the expanded session timeline', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(configResponse())
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+          },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-1',
+            status: 'pending',
+            createdAt: 100,
+            updatedAt: 100,
+            instruction: '',
+            annotations: [],
+            messages: [],
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.stubGlobal('EventSource', FakeEventSource as unknown as typeof EventSource)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    const createTask = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Create Task',
+    ) as HTMLButtonElement
+    createTask.click()
+    await vi.waitFor(() => expect(FakeEventSource.instances).toHaveLength(1))
+
+    FakeEventSource.instances[0]?.emit('session-message-appended', {
+      type: 'session-message-appended',
+      session: {
+        id: 'session-1',
+        status: 'in_progress',
+        createdAt: 100,
+        updatedAt: 140,
+        acknowledgedAt: 110,
+        instruction: '',
+        annotations: [],
+        messages: [
+          { id: 'message-1', role: 'agent', text: 'First update.', createdAt: 120 },
+          { id: 'message-2', role: 'agent', text: 'Second update.', createdAt: 140 },
+        ],
+      },
+    })
+    await Promise.resolve()
+
+    const showUpdatesButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Show updates',
+    ) as HTMLButtonElement
+    showUpdatesButton.click()
+    await Promise.resolve()
+
+    expect(shadowRoot.textContent).toContain('Agent claimed this session')
+    expect(shadowRoot.textContent).toContain('Agent: First update.')
+    expect(shadowRoot.textContent).toContain('Agent: Second update.')
   })
 
   it('shows a task-created status after creating an agent task', async () => {

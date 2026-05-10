@@ -7,8 +7,8 @@ English | [简体中文](./README.zh-CN.md)
 [![@inspecto-dev/cli](https://img.shields.io/npm/v/@inspecto-dev/cli?label=@inspecto-dev/cli)](https://www.npmjs.com/package/@inspecto-dev/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> Say goodbye to context switching between browser, DevTools, editor, and AI assistant.
-> Inspecto shortens the loop. Start from the webpage, and instantly hand off the right context to your code or your configured assistant path.
+> Click UI, jump to source, and let AI fix it or run your custom workflow with the exact frontend context.
+> Inspecto turns browser-visible UI issues into source-aware AI handoffs, annotation tasks, custom prompt workflows, and MCP agent sessions you can track from the page.
 
 👉 **[Read the full documentation at inspecto-dev.github.io/inspecto](https://inspecto-dev.github.io/inspecto/)**
 
@@ -25,7 +25,7 @@ English | [简体中文](./README.zh-CN.md)
         <img src="packages/docs/public/annotate-mode.gif" width="100%" alt="Annotate mode workflow" />
         <br/>
         <b>Annotate mode</b><br/>
-        Collect notes across components, submit one batch
+        Collect UI notes, create agent tasks, and follow progress
       </td>
       <td width="33%" align="center">
         <img src="packages/docs/public/quick-jump.gif" width="100%" alt="Quick jump workflow" />
@@ -39,7 +39,11 @@ English | [简体中文](./README.zh-CN.md)
 
 ## Quick Start
 
-To install Inspecto and connect it to your AI assistant, navigate to your project root and run **one** of the commands below based on your setup:
+If this is your first time using Inspecto, you do not need to understand MCP, IDE routes, or setup layers yet. Do one thing: **pick the editor / AI assistant you already use, then run one command**.
+
+That command sets up the common full experience: click a browser component, open source with `Alt + Click`, and send Inspect / Annotate context to your AI assistant.
+
+From your project root, run **one** command:
 
 ```bash
 # VS Code + Copilot
@@ -69,11 +73,20 @@ npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 
 _(Prefer `pnpm dlx`, `yarn dlx`, or `bunx` instead of `npx` if you use them)._
 
+Not sure which one to pick?
+
+- VS Code + Copilot: choose `Copilot`
+- Cursor: choose `Cursor`
+- Trae CN: choose `Trae`; if you use Coco, choose `Coco`
+- CodeBuddy: choose `CodeBuddy`
+- Only want source jump without AI: see the [Installation Guide](https://inspecto-dev.github.io/inspecto/guide/manual-installation)
+- Only want a standalone MCP agent without an IDE extension: see [MCP Integration](https://inspecto-dev.github.io/inspecto/integrations/mcp)
+
 Once run, Inspecto will attempt to open an onboarding session in your IDE. **If it doesn't open automatically**, open a chat with your AI assistant and say:
 
 > _"Set up Inspecto in this project"_
 
-Need manual installation? Check out the [Installation Guide](https://inspecto-dev.github.io/inspecto/guide/manual-installation).
+Want to know what the automated setup does? See the [Official Documentation](https://inspecto-dev.github.io/inspecto/).
 
 ## Use It
 
@@ -81,11 +94,16 @@ Need manual installation? Check out the [Installation Guide](https://inspecto-de
 2. Use the launcher for `Inspect mode` or `Annotate mode`.
 3. Use **`Alt` + `Click`** anytime for `Quick jump`.
 
+For agent-driven fixes, switch annotate to MCP mode, collect UI notes, click **Create Task**, and let your assistant process the session queue. The sidebar shows the latest task status, progress updates, and an expandable timeline of every agent reply.
+
+You can also define custom workflow buttons in `.inspecto/prompts.json`. For example, add a `kind: "workflow"` prompt such as `Deploy Preview`, click it from Annotate mode, and let the agent use its own skills, MCP servers, and tools to deploy the current branch while reporting progress back to Inspecto.
+
 Success looks like this:
 
 - components highlight in the browser
 - `Inspect mode` opens the Inspecto menu
 - `Quick jump` opens the source location
+- `Annotate mode` can create MCP agent tasks and show live browser-side progress
 
 If highlighting works but nothing reaches your editor, verify your IDE configuration or use the "Copy Context" action. If using MCP or Standalone mode (`ide: "none"`), the IDE extension is not required, see [MCP Integration](https://inspecto-dev.github.io/inspecto/integrations/mcp).
 

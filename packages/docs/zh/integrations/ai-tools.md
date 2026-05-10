@@ -30,6 +30,17 @@ Inspecto 负责连接你的浏览器和 AI 助手。根据你的 AI 工具架构
 
 ## 交互模式
 
+你可以把下面这些模式理解成不同的交付路线：
+
+| 路线                    | 适合场景                                               | 是否需要 IDE 插件           |
+| :---------------------- | :----------------------------------------------------- | :-------------------------- |
+| IDE route               | 把 Inspect / Annotate prompt 立即交给 AI 面板          | 通常需要；内置 IDE 目标除外 |
+| CLI route               | 把 prompt 发送给终端里的 assistant                     | 通常需要，用于打开/管理终端 |
+| MCP route               | 可持久化标注 session、浏览器 timeline、自定义 workflow | 不需要                      |
+| 纯浏览器 / 剪贴板 route | 手动复制上下文，或配合暂未支持的编辑器                 | 不需要                      |
+
+如果你想使用 deploy、PR、release、测试自动化等自定义 workflow 按钮，优先选择 MCP route。它可以让 Inspecto 创建 workflow session，并让 Agent 使用自身已有的 skill、MCP server 和 tool 执行。
+
 ### 1. 插件模式 (Extension Mode)
 
 AI 工具作为 IDE 插件安装（例如在 VS Code 中）。Inspecto 将使用 IDE 自定义的 URI scheme 将提示词分发到 AI 聊天面板。

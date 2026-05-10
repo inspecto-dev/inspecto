@@ -85,13 +85,13 @@ Inspecto looks for configuration files in your project directory in the followin
 - **Default:** `false`
 - **Description:** Submit the prompt automatically without waiting for user review or pressing Enter. Only supported by some assistant and IDE combinations. Unsupported targets may still open the prompt without submitting it.
 
-### Inspect Menu Customization (`prompts.json`)
+### Inspect Menu and Workflow Customization (`prompts.json`)
 
 To keep configurations tidy, the intent menu popup configurations are kept in a separate file: `.inspecto/prompts.json` (and `.inspecto/prompts.local.json`).
 
 - **Type:** `Array<string | IntentConfig> | { $replace: true, items: Array<string | IntentConfig> }`
 - **Default:** Built-in list of common prompts
-- **Description:** Customize the built-in AI actions shown inside the inspect menu after you select a component in `Inspect mode`.
+- **Description:** Customize the built-in AI actions shown inside the inspect menu after you select a component in `Inspect mode`, and define project-specific workflow buttons shown in `Annotate mode`.
 
 **IntentConfig Structure:**
 
@@ -102,6 +102,17 @@ To keep configurations tidy, the intent menu popup configurations are kept in a 
 - `prependPrompt` (string, optional): Text to prepend to the base prompt (concatenated with newlines).
 - `appendPrompt` (string, optional): Text to append to the base prompt.
 - `enabled` (boolean, optional): Set to `false` to hide this item without removing its configuration.
+
+**WorkflowConfig Structure:**
+
+- `kind` (`"workflow"`): Marks this item as an Annotate mode workflow button instead of an Inspect mode prompt.
+- `id` (string): Unique workflow identifier.
+- `label` (string, optional): Text displayed on the workflow button. Defaults to `id`.
+- `prompt` (string): The instruction sent to the agent.
+- `confirm` (boolean, optional): Whether to ask for confirmation before dispatch. Defaults to `false`.
+- `enabled` (boolean, optional): Set to `false` to hide this workflow.
+
+Workflow buttons are designed for project-level automation, not just component-level fixes. For example, a `Deploy Preview` workflow can ask the agent to use its own deploy skill, MCP servers, or shell tools to deploy the current branch and report the preview URL back through the Inspecto session timeline.
 
 Source jumping is not configured through `prompts.json`. `Open in Editor` remains a built-in inspect action exposed from the menu header.
 
@@ -129,6 +140,13 @@ Export an array directly in `prompts.json`. Your configuration will append to or
     "label": "Explain in Chinese",
     "aiIntent": "ask",
     "prependPrompt": "You are a Frontend Expert. Reply in Chinese."
+  },
+  {
+    "id": "deploy-preview",
+    "kind": "workflow",
+    "label": "Deploy Preview",
+    "prompt": "Deploy the current branch to the preview environment using the available deploy skill, MCP servers, or CLI tools. Reply with the preview URL and resolve the Inspecto session when finished.",
+    "confirm": true
   }
 ]
 ```
@@ -160,6 +178,48 @@ Export an object with `$replace: true` in `prompts.json` to completely discard t
 - `{{name}}`: Component name (e.g., the "Button" in `Button.tsx`, or inferred from snippet)
 - `{{ext}}`: File extension (e.g., `tsx`, `vue`)
 - `{{framework}}`: Auto-inferred framework name (e.g., `React`, `Vue`, `Svelte`)
+
+For `kind: "workflow"` entries sent through MCP, Inspecto also appends project metadata such as project root, git branch, and git status to the queued session so the agent can execute macro automation safely.
+
+**Common Recipes:**
+
+::: code-group
+
+```json [Add an Inspect action]
+[
+  {
+    "id": "add-i18n",
+    "label": "Add i18n",
+    "aiIntent": "review",
+    "prompt": "Please extract the hardcoded text in {{file}} and use i18next for internationalization."
+  }
+]
+```
+
+```json [Override a built-in prompt]
+[
+  {
+    "id": "explain",
+    "label": "Explain in Chinese",
+    "aiIntent": "ask",
+    "prependPrompt": "You are a frontend expert. Reply in Chinese and keep the answer concise."
+  }
+]
+```
+
+```json [Add a workflow button]
+[
+  {
+    "id": "review-pr",
+    "kind": "workflow",
+    "label": "Review & PR",
+    "prompt": "Review the current branch, run the appropriate checks, and create a PR if everything is safe. Ask before pushing or merging.",
+    "confirm": true
+  }
+]
+```
+
+:::
 
 ---
 

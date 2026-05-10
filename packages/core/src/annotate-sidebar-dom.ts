@@ -44,6 +44,9 @@ export interface AnnotateSidebarDom {
   latestSessionMessage: HTMLDivElement
   latestSessionHint: HTMLDivElement
   latestSessionRefreshButton: HTMLButtonElement
+  latestSessionTimelineToggle: HTMLButtonElement
+  latestSessionTimelineTitle: HTMLDivElement
+  latestSessionTimelineContainer: HTMLDivElement
   latestSessionError: HTMLDivElement
   footer: HTMLElement
   footerLeftActions: HTMLDivElement
@@ -326,6 +329,30 @@ export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSideba
   latestSessionHint.style.border = 'none'
   latestSessionHint.style.display = 'none'
 
+  const latestSessionTimelineToggle = createSidebarButton(
+    t('annotate.latestSession.expandTimeline'),
+    annotateSidebarButtonClass,
+  )
+  latestSessionTimelineToggle.dataset.role = 'latest-session-timeline-toggle'
+  latestSessionTimelineToggle.style.alignSelf = 'flex-start'
+  latestSessionTimelineToggle.style.marginTop = '4px'
+  latestSessionTimelineToggle.style.fontSize = '11px'
+
+  const latestSessionTimelineTitle = document.createElement('div')
+  latestSessionTimelineTitle.className = annotateSidebarQueueMetaClass
+  latestSessionTimelineTitle.textContent = t('annotate.timeline.title')
+  latestSessionTimelineTitle.style.display = 'none'
+  latestSessionTimelineTitle.style.marginTop = '8px'
+
+  const latestSessionTimelineContainer = document.createElement('div')
+  latestSessionTimelineContainer.dataset.inspectoSessionTimeline = 'true'
+  latestSessionTimelineContainer.style.display = 'none'
+  latestSessionTimelineContainer.style.maxHeight = '220px'
+  latestSessionTimelineContainer.style.overflow = 'auto'
+  latestSessionTimelineContainer.style.marginTop = '4px'
+  latestSessionTimelineContainer.style.padding = '6px 0 0'
+  latestSessionTimelineContainer.style.borderTop = '1px solid rgba(255, 255, 255, 0.08)'
+
   const latestSessionError = document.createElement('div')
   latestSessionError.className = errorMsgClass
   latestSessionError.style.display = 'none'
@@ -334,6 +361,9 @@ export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSideba
     latestSessionHeader,
     latestSessionMessage,
     latestSessionHint,
+    latestSessionTimelineToggle,
+    latestSessionTimelineTitle,
+    latestSessionTimelineContainer,
     latestSessionError,
   )
 
@@ -585,6 +615,9 @@ export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSideba
     latestSessionMessage,
     latestSessionHint,
     latestSessionRefreshButton,
+    latestSessionTimelineToggle,
+    latestSessionTimelineTitle,
+    latestSessionTimelineContainer,
     latestSessionError,
     footer,
     footerLeftActions,

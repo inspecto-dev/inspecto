@@ -1,6 +1,6 @@
 {
   "name": "@inspecto-dev/core",
-  "version": "0.3.12",
+  "version": "0.3.13",
   "description": "Core browser runtime and server logic for Inspecto",
   "license": "MIT",
   "type": "module",

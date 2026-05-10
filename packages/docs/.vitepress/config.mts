@@ -4,7 +4,7 @@ export default defineConfig({
   base: '/inspecto/',
   title: 'Inspecto',
   description:
-    'Inspect frontend components in the browser, annotate batches of UI issues, and jump straight back to source.',
+    'Inspect frontend components in the browser, turn UI annotations into agent-ready tasks, trigger custom workflows, and track MCP session progress from the page.',
 
   head: [
     ['link', { rel: 'icon', type: 'image/png', href: '/inspecto/favicon.png' }],
@@ -39,7 +39,7 @@ export default defineConfig({
               { text: '简介', link: '/zh/guide/introduction' },
               { text: '兼容性清单', link: '/zh/guide/compatibility-checklist' },
               { text: '手动安装', link: '/zh/guide/manual-installation' },
-              { text: '常见问题 (FAQ)', link: '/zh/guide/faq' }
+              { text: '常见问题 (FAQ)', link: '/zh/guide/faq' },
             ],
           },
           {
@@ -102,7 +102,7 @@ export default defineConfig({
           { text: 'Introduction', link: '/guide/introduction' },
           { text: 'Compatibility Checklist', link: '/guide/compatibility-checklist' },
           { text: 'Manual Installation', link: '/guide/manual-installation' },
-          { text: 'Troubleshooting (FAQ)', link: '/guide/faq' }
+          { text: 'Troubleshooting (FAQ)', link: '/guide/faq' },
         ],
       },
       {

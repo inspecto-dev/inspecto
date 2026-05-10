@@ -12,6 +12,72 @@ npx @inspecto-dev/cli integrations install <assistant> --host-ide <vscode|cursor
 
 Use manual installation only when that path does not fit your environment.
 
+## Choose What You Want to Enable
+
+Manual setup is easiest when the required pieces are listed directly. Pick the first goal that matches what you want:
+
+### A. I only want to highlight components and copy context
+
+Install / configure:
+
+1. Install `@inspecto-dev/plugin`.
+2. Install `@inspecto-dev/core`.
+3. Add the Inspecto plugin to your build tool.
+
+Follow: [1. Install the Plugin](#_1-install-the-plugin) → [2. Configure Build Tool](#_2-configure-build-tool)
+
+### B. I want `Alt` / `Option` + click to open source files
+
+Install / configure:
+
+1. Everything in **A**.
+2. Make sure your editor is installed locally, such as VS Code, Cursor, Trae, or CodeBuddy.
+3. Optional: set `ide` in `.inspecto/settings.local.json` if Inspecto opens the wrong editor.
+
+You do **not** need the Inspecto IDE extension for source jump.
+
+### C. I want Inspect / Annotate to send prompts into an IDE assistant
+
+Install / configure:
+
+1. Everything in **B**.
+2. Install the Inspecto IDE extension for your editor.
+3. Configure `provider.default`, or run the automated `integrations install` command instead of doing this manually.
+
+Follow: [3. Install IDE Extension for Assistant Handoff](#_3-install-ide-extension-for-assistant-handoff-optional) → [4. Configure Project Settings](#_4-configure-project-settings)
+
+### D. I want MCP agent sessions without an IDE assistant
+
+Install / configure:
+
+1. Everything in **A**.
+2. Set `"annotate.channel": "mcp"` in `.inspecto/settings.local.json`.
+3. Add the Inspecto MCP server to your agent.
+
+Follow: [4. Configure Project Settings](#_4-configure-project-settings) → [MCP Integration](../integrations/mcp.md)
+
+### E. I want custom workflow buttons like deploy, PR, or release
+
+Install / configure:
+
+1. Everything in **A**.
+2. Add `kind: "workflow"` entries to `.inspecto/prompts.json`, such as `Deploy Preview` or `Review & PR`.
+3. Choose where the workflow should go:
+   - For an MCP agent that can use skills, MCP servers, and tools: complete **D**.
+   - For an IDE assistant handoff: complete **C**.
+
+MCP is the recommended route for workflow automation because Inspecto can create a durable workflow session, append project metadata, and show agent progress in the browser timeline.
+
+### F. I want everything
+
+Install / configure:
+
+1. Everything in **C**.
+2. Everything in **D**.
+3. Optional: everything in **E** if you want project-specific workflow buttons.
+
+The important split is simple: **source jump** only needs the local dev server to open a file in your editor; the **IDE assistant route** needs the Inspecto IDE extension to send prompts into an assistant panel; the **MCP route** creates durable annotation and workflow sessions for an agent; **workflow buttons** are configured prompts that let the agent use its own skills, MCP servers, and tools for project-level commands. These routes can be used together, but they do not require each other.
+
 This page does not cover assistant onboarding automation. It will not:
 
 - install the Inspecto IDE extension for you
@@ -123,9 +189,11 @@ export default {
 }
 ```
 
-## 3. Install IDE Extension (Optional)
+## 3. Install IDE Extension for Assistant Handoff (Optional)
 
-If you want the browser to send code directly to your IDE via URI schemes, install the Inspecto companion extension for your editor. Without this extension, you can still use MCP or the "Copy Context" button.
+Quick source jump does **not** require the Inspecto IDE extension. `Alt` / `Option` + click is handled by the local Inspecto dev server, which opens the target file through your editor's normal URI scheme or command-line launcher.
+
+Install the Inspecto companion extension only if you want Inspect / Annotate actions to send AI prompts directly into an IDE assistant such as Copilot, Cursor, Trae, or CodeBuddy. Without this extension, you can still use source jump, MCP, or the "Copy Context" button.
 
 Please refer to the [IDE Extensions Guide](../integrations/ide.md) for instructions on installing the plugin in VS Code, Cursor, Trae, or CodeBuddy.
 
