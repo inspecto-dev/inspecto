@@ -7,6 +7,21 @@ import {
 
 vi.mock('node:child_process', () => ({
   execSync: vi.fn(() => `${process.cwd()}\n`),
+  exec: vi.fn((cmd, options, callback) => {
+    if (typeof options === 'function') {
+      callback = options
+    }
+    if (callback) {
+      if (cmd.includes('branch')) {
+        callback(null, { stdout: 'main\n', stderr: '' })
+      } else if (cmd.includes('status')) {
+        callback(null, { stdout: ' M file.ts\n?? new.ts\n', stderr: '' })
+      } else {
+        callback(null, { stdout: `${process.cwd()}\n`, stderr: '' })
+      }
+    }
+    return {}
+  }),
   execFileSync: vi.fn(),
   spawn: vi.fn(() => ({
     once: vi.fn(),
@@ -27,6 +42,7 @@ vi.mock('../src/config.js', () => ({
   resolveTargetTool: vi.fn(() => 'codex'),
   getGlobalLogLevel: vi.fn(() => 'silent'),
   resolveIntents: vi.fn(() => []),
+  resolveWorkflowSlots: vi.fn(() => []),
 }))
 
 describe('annotation batch dispatch', () => {
@@ -87,6 +103,20 @@ describe('annotation batch dispatch', () => {
     expect(prompt).not.toContain('Annotations:')
     expect(prompt).not.toContain('Intent: fix')
     expect(prompt).not.toContain('selector=#email')
+  })
+
+  it('uses configRoot rather than projectRoot when resolving dispatch settings', async () => {
+    const config = await import('../src/config.js')
+    const { resolvePromptDispatchRuntime } = await import('../src/server/dispatch-runtime.js')
+
+    resolvePromptDispatchRuntime({
+      cwd: '/repo/apps/web/src',
+      projectRoot: '/repo/apps/web',
+      configRoot: '/repo',
+      ideInfo: { ide: 'vscode', scheme: 'vscode', workspaceRoot: '/repo' },
+    } as any)
+
+    expect(config.loadUserConfigSync).toHaveBeenCalledWith(false, '/repo/apps/web/src', '/repo')
   })
 
   it('lists all targets when a single annotation spans multiple elements', async () => {
@@ -742,7 +772,7 @@ describe('annotation batch dispatch', () => {
 
     const file = `${process.cwd()}/packages/plugin/src/index.ts`
     const createReq: SendAnnotationsToAiRequest = {
-      deliveryMode: 'agent',
+      deliveryMode: 'mcp',
       annotations: [
         {
           note: 'Review the claim flow.',
@@ -997,7 +1027,7 @@ describe('annotation batch dispatch', () => {
 
     const req: SendAnnotationsToAiRequest = {
       instruction: 'Create an agent task for these notes.',
-      deliveryMode: 'agent',
+      deliveryMode: 'mcp',
       annotations: [
         {
           note: 'Review this onboarding surface.',
@@ -1033,7 +1063,7 @@ describe('annotation batch dispatch', () => {
     expect(spawn).not.toHaveBeenCalled()
     expect(annotationSessionStore.getSession(response.jsonBody.session.id)?.status).toBe('pending')
     expect(annotationSessionStore.getSession(response.jsonBody.session.id)?.deliveryMode).toBe(
-      'agent',
+      'mcp',
     )
     expect(annotationSessionStore.getSession(response.jsonBody.session.id)?.messages).toEqual([])
   })
@@ -1047,7 +1077,7 @@ describe('annotation batch dispatch', () => {
 
     const req: SendAnnotationsToAiRequest = {
       instruction: 'Create an agent task for these notes.',
-      deliveryMode: 'agent',
+      deliveryMode: 'mcp',
       annotations: [
         {
           note: 'Review this onboarding surface.',
@@ -1089,7 +1119,7 @@ describe('annotation batch dispatch', () => {
       ide: 'vscode',
       'provider.default': 'codex.cli',
       'prompt.autoSend': false,
-      'annotate.deliveryMode': 'both',
+      'annotate.channel': 'mcp',
     })
 
     serverState.projectRoot = process.cwd()
@@ -1104,7 +1134,7 @@ describe('annotation batch dispatch', () => {
     await pending
 
     expect(response.statusCode).toBe(200)
-    expect(response.jsonBody.annotateDeliveryMode).toBe('both')
+    expect(response.jsonBody.annotateChannel).toBe('mcp')
     expect(response.jsonBody.runtimeContext).toEqual({
       enabled: true,
       preview: true,

@@ -121,7 +121,7 @@ export default function App() {
             steps={[
               'Choose Annotate from the launcher.',
               'Click several cards and save notes.',
-              'Add an overall goal in the sidebar, then Ask AI once.',
+              'Add an overall goal in the sidebar, then submit the batch.',
             ]}
           />
           <ModeCard
@@ -268,7 +268,7 @@ export default function App() {
                   >
                     <option value="timeout">setTimeout(0)</option>
                     <option value="raf">requestAnimationFrame</option>
-                    <option value="both">both</option>
+                    <option value="both">timeout + rAF</option>
                   </select>
                 </label>
 

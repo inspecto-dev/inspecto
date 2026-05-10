@@ -12,7 +12,7 @@ Inspecto keeps `Inspect mode` for single-target immediate actions and uses `Anno
 - one clicked component creates or reopens one `FeedbackRecord`
 - the sidebar collects many saved records
 - the freeform instruction field provides optional batch-level intent
-- the user sends everything through one action: `Ask AI`
+- the user submits the batch through one primary action determined by `annotate.channel`
 
 This keeps annotate aligned with the current UI while avoiding a second send path.
 
@@ -38,7 +38,7 @@ This keeps annotate aligned with the current UI while avoiding a second send pat
 3. `Annotate mode` is for collecting many target-level notes into one AI batch.
 4. The smallest editable unit in annotate is one target-specific record.
 5. Relationship between records is expressed by the batch instruction, not by a second send mode.
-6. The send surface must stay singular: `Ask AI`.
+6. The send surface must stay singular for the chosen delivery mode.
 
 ## Mode Boundaries
 
@@ -53,7 +53,7 @@ Recommended launcher entries:
 - `Inspect`
   `Click one component to inspect or ask AI`
 - `Annotate`
-  `Capture notes across components, then Ask AI once`
+  `Capture notes across components, then submit the batch`
 
 Recommended launcher panel structure:
 
@@ -126,7 +126,7 @@ The annotate header should also expose the current capture state in plain langua
 When the batch is empty, annotate should show a lightweight empty state before the composer body:
 
 - `Start by clicking a component`
-- `Each click opens one note. Save a few notes first, then add an overall goal and Ask AI once.`
+- `Each click opens one note. Save a few notes first, then add an overall goal and submit the batch.`
 
 This keeps the first action unambiguous and prevents the empty sidebar from feeling like a blank form.
 
@@ -156,7 +156,7 @@ Each item should expose:
 
 ### Footer
 
-- one primary action: `Ask AI`
+- one primary action determined by `annotate.channel`: `Ask AI` or `Create Task`
 
 ## Core Workflow
 
@@ -169,7 +169,7 @@ Each item should expose:
 7. The record is saved into the batch stream.
 8. User repeats this across any number of components.
 9. User optionally writes or edits the batch instruction.
-10. User clicks `Ask AI`.
+10. User clicks the current primary action.
 11. Inspecto sends the current draft, if any, plus all saved records in one batch request.
 
 ## User Scenarios
@@ -179,14 +179,14 @@ Each item should expose:
 - User marks several unrelated components.
 - Each record keeps its own note and intent.
 - Batch instruction can stay empty.
-- `Ask AI` sends all records as one batch.
+- The current primary action sends all records as one batch.
 
 ### Related Batch Review
 
 - User marks several components that participate in one broader issue.
 - Each record still keeps its local note.
 - User adds a batch instruction describing the shared intent.
-- `Ask AI` sends the same record list, now with stronger batch-level guidance.
+- The current primary action sends the same record list, now with stronger batch-level guidance.
 
 The UI does not branch between these scenarios. Only the instruction changes.
 
@@ -199,7 +199,7 @@ The ideal end-to-end flow is:
 3. In annotate, rely on the header status text to know whether clicks are currently being captured.
 4. Use `Pause selection` only as a secondary utility when normal page interaction is needed.
 5. Use `Quick capture` only to speed up note collection inside annotate.
-6. Finish with one `Ask AI`.
+6. Finish with one batch submission.
 
 ## Data Model
 
@@ -300,7 +300,7 @@ Cross-mode evidence matrix:
 
 Details:
 
-- runtime context is collected across the outgoing batch and sent once with `Ask AI`
+- runtime context is collected across the outgoing batch and sent once with the chosen primary action
 - CSS context follows the current record and is attached per annotated component
 - screenshot context remains intentionally hidden until cross-assistant handling is ready
 
@@ -317,7 +317,7 @@ Current annotate semantics should remain:
 
 - click target -> open or restore one record draft
 - save draft -> append one record
-- `Ask AI` -> send all included records through one batch request
+- Primary action -> send all included records through one batch request
 
 ## Decision
 
@@ -330,4 +330,4 @@ Do not reintroduce:
 - multiple send buttons
 - separate grouped transport composition in the UI layer
 
-If a richer relation model is needed later, it should be added on top of this flow without breaking the single `Ask AI` path.
+If a richer relation model is needed later, it should be added on top of this flow without breaking the single primary-action path.

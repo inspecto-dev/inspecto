@@ -27,7 +27,7 @@ Inspecto looks for configuration files in your project directory in the followin
   "inspector.hotKey": "alt",
   "ide": "vscode",
   "provider.default": "copilot.extension",
-  "annotate.deliveryMode": "both",
+  "annotate.channel": "mcp",
   "prompt.includeSnippet": false,
   "prompt.autoSend": false,
   "provider.claude-code.cli.bin": "claude",
@@ -55,11 +55,11 @@ Inspecto looks for configuration files in your project directory in the followin
 - **Example:** `"copilot.extension"`, `"claude-code.cli"`, `"trae.builtin"`, `"codebuddy.builtin"`
 - **Description:** The default AI tool and mode to dispatch the code context to. Assistant-first onboarding can often resolve this automatically, so most users do not need to set it before first use.
 
-### `annotate.deliveryMode`
+### `annotate.channel`
 
-- **Type:** `"ide" | "agent" | "both"`
-- **Default:** `"both"`
-- **Description:** Controls which action Inspecto emphasizes in `Annotate mode`. `"agent"` makes `Create Task` the primary action and is the canonical setting for hands-free MCP workflows. `"ide"` makes `Ask AI` the primary action for immediate IDE handoff flows. `"both"` will show both buttons.
+- **Type:** `"ide" | "mcp"`
+- **Default:** `"mcp"`
+- **Description:** Controls which channel Inspecto uses for `Annotate mode` submissions. `"mcp"` shows `Create Task` and is the canonical setting for hands-free MCP workflows. `"ide"` shows `Ask AI` for immediate IDE handoff flows.
 
 ### `server.host`
 

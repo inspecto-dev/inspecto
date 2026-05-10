@@ -1,4 +1,4 @@
-import type { IntentConfig, RuntimeContextEnvelope, SourceLocation } from '@inspecto-dev/types'
+import type { AiIntentConfig, RuntimeContextEnvelope, SourceLocation } from '@inspecto-dev/types'
 import { appendCssContextToPrompt } from './css-context.js'
 import { buildPromptForIntent } from './fix-bug-prompt.js'
 import { fetchSnippet } from './http.js'
@@ -7,14 +7,14 @@ import { isFixUiIntent } from './menu-helpers.js'
 import { menuItemClass } from './styles.js'
 
 export function createIntentActionButtons(input: {
-  intents: IntentConfig[]
+  intents: AiIntentConfig[]
   location: SourceLocation
   includeSnippet: boolean
   maxSnippetLines: number
   resolveRuntimeContext: (
-    intent: Pick<IntentConfig, 'id' | 'aiIntent'>,
+    intent: Pick<AiIntentConfig, 'id' | 'aiIntent'>,
   ) => RuntimeContextEnvelope | null
-  resolveCssContextPrompt: (intent?: Pick<IntentConfig, 'id'>) => string | null
+  resolveCssContextPrompt: (intent?: Pick<AiIntentConfig, 'id'>) => string | null
   onSend: (payload: {
     label: string
     button: HTMLButtonElement

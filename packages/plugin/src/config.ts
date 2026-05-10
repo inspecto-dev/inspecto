@@ -15,7 +15,9 @@ import {
   DEFAULT_PROVIDER_MODE,
   VALID_MODES,
   DEFAULT_INTENTS,
-  IntentConfig,
+  type IntentConfig,
+  type WorkflowConfig,
+  isWorkflowConfig,
 } from '@inspecto-dev/types'
 import { createLogger, setLoggerGlobalLevel } from './utils/logger.js'
 
@@ -46,51 +48,46 @@ export function getGlobalLogLevel() {
 }
 
 /**
- * Walk from cwd up to gitRoot (inclusive), collecting directories that contain
- * a .inspecto/ subdirectory. Returns them ordered highest-priority first
- * (closest to cwd first).
+ * Walk from cwd up to boundaryRoot (inclusive) and return the nearest directory
+ * that contains a .inspecto/ subdirectory. This keeps settings resolution scoped
+ * to a single project root instead of implicitly merging every ancestor layer.
  *
- * If cwd is not under gitRoot, only cwd itself is checked.
+ * If cwd is not under boundaryRoot, only cwd itself is checked.
  */
-export function resolveConfigRoots(cwd: string, gitRoot: string): string[] {
-  const roots: string[] = []
+export function resolveConfigRoots(cwd: string, boundaryRoot: string): string[] {
   let current = cwd
 
-  // Ensure we don't walk past gitRoot (handles cwd above gitRoot case)
-  const isUnderOrEqual = current === gitRoot || current.startsWith(gitRoot + path.sep)
+  // Ensure we don't walk past boundaryRoot (handles cwd above boundaryRoot case)
+  const isUnderOrEqual = current === boundaryRoot || current.startsWith(boundaryRoot + path.sep)
   if (!isUnderOrEqual) {
-    // cwd is not under gitRoot — only check cwd
-    if (fs.existsSync(path.join(cwd, '.inspecto'))) roots.push(cwd)
-    return roots
+    // cwd is not under boundaryRoot — only check cwd
+    return fs.existsSync(path.join(cwd, '.inspecto')) ? [cwd] : []
   }
 
   while (true) {
     if (fs.existsSync(path.join(current, '.inspecto'))) {
-      roots.push(current)
+      return [current]
     }
-    if (current === gitRoot) break
+    if (current === boundaryRoot) break
     const parent = path.dirname(current)
     if (parent === current) break // filesystem root guard
     current = parent
   }
 
-  return roots
+  return []
 }
 
 /**
- * Load and merge user config from all discovered .inspecto/ layers:
+ * Load and merge user config from the selected project .inspecto/ layer:
  *
  * Priority (highest → lowest):
- *   <cwd>/.inspecto/settings.local.json
- *   <cwd>/.inspecto/settings.json
- *   ...intermediate dirs...
- *   <gitRoot>/.inspecto/settings.local.json
- *   <gitRoot>/.inspecto/settings.json
+ *   <settingsRoot>/.inspecto/settings.local.json
+ *   <settingsRoot>/.inspecto/settings.json
  *   ~/.inspecto/settings.json
  *
  * @param force    Bust cache and re-read from disk
  * @param cwd      Working directory to start resolution from (default: process.cwd())
- * @param gitRoot  Git repository root — upward traversal stops here (optional)
+ * @param gitRoot  Project/config boundary — upward traversal stops here (optional)
  */
 export function loadUserConfigSync(
   force = false,
@@ -117,17 +114,14 @@ export function loadUserConfigSync(
 }
 
 /**
- * Load and merge prompts config from all discovered .inspecto/ layers:
+ * Load prompts config from the selected project .inspecto/ layer:
  *
  * Priority (highest → lowest):
- *   <cwd>/.inspecto/prompts.local.json
- *   <cwd>/.inspecto/prompts.json
- *   ...intermediate dirs...
- *   <gitRoot>/.inspecto/prompts.local.json
- *   <gitRoot>/.inspecto/prompts.json
+ *   <settingsRoot>/.inspecto/prompts.local.json
+ *   <settingsRoot>/.inspecto/prompts.json
  *   ~/.inspecto/prompts.json
  *
- * Arrays in custom configurations are replaced instead of merged.
+ * Highest-priority non-empty prompts config wins; prompts are not merged across layers.
  */
 export async function loadPromptsConfig(
   force = false,
@@ -328,13 +322,28 @@ export function resolveIntents(serverPrompts?: InspectoPromptsConfig): IntentCon
           )
           continue
         }
-        if (!item.aiIntent) {
-          configLogger.warn(`Intent "${item.id}" is missing required "aiIntent".`)
-          continue
+        if (item.kind === 'workflow') {
+          if (!item.prompt) {
+            configLogger.warn(`Workflow "${item.id}" missing required "prompt", skipping`)
+            continue
+          }
+          result.push({
+            kind: 'workflow',
+            id: item.id,
+            label: item.label ?? item.id,
+            prompt: item.prompt,
+            confirm: item.confirm ?? false,
+            enabled: item.enabled ?? true,
+          } as WorkflowConfig)
+        } else {
+          if (!item.aiIntent) {
+            configLogger.warn(`Intent "${item.id}" is missing required "aiIntent".`)
+            continue
+          }
+          result.push(
+            (baseMap.has(item.id) ? { ...baseMap.get(item.id)!, ...item } : item) as IntentConfig,
+          )
         }
-        result.push(
-          (baseMap.has(item.id) ? { ...baseMap.get(item.id)!, ...item } : item) as IntentConfig,
-        )
       }
     }
     return result
@@ -362,26 +371,67 @@ export function resolveIntents(serverPrompts?: InspectoPromptsConfig): IntentCon
         configLogger.warn('Intent object missing required "id" field, skipping.')
         continue
       }
-      if (!item.aiIntent) {
-        configLogger.warn(`Intent "${item.id}" is missing required "aiIntent".`)
-        continue
-      }
-      const existingIdx = merged.findIndex(i => i.id === item.id)
-      if (existingIdx !== -1) {
-        if (item.enabled === false) {
-          merged.splice(existingIdx, 1)
+      if (item.kind === 'workflow') {
+        if (!item.prompt) {
+          configLogger.warn(`Workflow "${item.id}" missing required "prompt", skipping`)
+          continue
+        }
+        const wfConfig: WorkflowConfig = {
+          kind: 'workflow',
+          id: item.id,
+          label: item.label ?? item.id,
+          prompt: item.prompt,
+          confirm: item.confirm ?? false,
+          enabled: item.enabled ?? true,
+        }
+        const existingIdx = merged.findIndex(i => i.id === item.id)
+        if (existingIdx !== -1) {
+          if (item.enabled === false) {
+            merged.splice(existingIdx, 1)
+          } else {
+            merged[existingIdx] = wfConfig
+          }
         } else {
-          merged[existingIdx] = { ...merged[existingIdx], ...item } as IntentConfig
+          if (item.enabled !== false) {
+            merged.push(wfConfig)
+          }
         }
       } else {
-        if (item.enabled !== false) {
-          merged.push(item as IntentConfig)
+        if (!item.aiIntent) {
+          configLogger.warn(`Intent "${item.id}" is missing required "aiIntent".`)
+          continue
+        }
+        const existingIdx = merged.findIndex(i => i.id === item.id)
+        if (existingIdx !== -1) {
+          if (item.enabled === false) {
+            merged.splice(existingIdx, 1)
+          } else {
+            merged[existingIdx] = { ...merged[existingIdx], ...item } as IntentConfig
+          }
+        } else {
+          if (item.enabled !== false) {
+            merged.push(item as IntentConfig)
+          }
         }
       }
     }
   }
 
   return merged
+}
+
+export function resolveWorkflowSlots(
+  intents: IntentConfig[],
+): import('@inspecto-dev/types').WorkflowSlotOption[] {
+  return intents
+    .filter(isWorkflowConfig)
+    .filter(w => w.enabled !== false)
+    .map(w => ({
+      id: w.id,
+      label: w.label ?? w.id,
+      prompt: w.prompt,
+      confirm: w.confirm ?? false,
+    }))
 }
 
 let watchers: fs.FSWatcher[] = []

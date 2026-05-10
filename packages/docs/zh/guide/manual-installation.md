@@ -140,12 +140,12 @@ export default {
 {
   "ide": "vscode",
   "provider.default": "copilot.extension",
-  "annotate.deliveryMode": "agent",
+  "annotate.channel": "mcp",
   "server.publicUrl": "http://127.0.0.1:5678"
 }
 ```
 
-- `annotate.deliveryMode`: 如果使用 MCP，请设为 `"agent"` 或 `"both"`；如果只走 IDE 派发，可省略或使用 `"ide"`
+- `annotate.channel`: 如果使用 MCP，请设为 `"mcp"`；如果只走 IDE 派发，可省略或使用 `"ide"`
 - `server.publicUrl`: 可选的浏览器可访问 Inspecto 服务地址。当服务端监听地址和浏览器实际访问地址不一致时使用，例如 devbox、端口转发、远程容器或 tunnel 场景。
 
 > **重要**：添加完配置文件后，请务必**重启你的开发服务器（Dev Server）**，以便插件读取到你的自定义配置。

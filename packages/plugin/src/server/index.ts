@@ -25,7 +25,7 @@ import { dispatchPromptThroughIde, resolvePromptDispatchRuntime } from './dispat
 import { assertPathWithinProject, resolveWorkspacePath } from './path-guards.js'
 import { buildClientConfig } from './client-config.js'
 import { handleOpenFileRequest } from './open-file.js'
-import { resolveProjectRoot } from './project-root.js'
+import { resolveProjectRoot, resolveWorkspaceRoot } from './project-root.js'
 import { resolveServerHost } from './server-url.js'
 import { annotationSessionStore, hasAgentReply } from './session-store.js'
 import { watchConfig, unwatchConfig, getGlobalLogLevel } from '../config.js'
@@ -98,7 +98,7 @@ export async function startServer(): Promise<number> {
   // Resolve project root at server start time so process.cwd() reflects the
   // actual project directory, not the module load-time cwd.
   serverState.projectRoot = resolveProjectRoot()
-  serverState.configRoot = serverState.projectRoot
+  serverState.configRoot = resolveWorkspaceRoot()
   serverState.cwd = process.cwd()
   const serverHost = resolveServerHost(serverState.cwd, serverState.configRoot)
 
@@ -639,16 +639,29 @@ async function dispatchToAi(
 ): Promise<SendToAiResponse & { fallbackPayload?: { prompt: string; file: string } }> {
   const { location, snippet, prompt } = req
 
-  const formattedPrompt =
-    prompt ??
-    `Please help me with this code from \`${location.file}\` (line ${location.line}):\n\n\`\`\`\n${snippet}\n\`\`\`\n`
+  if (prompt?.trim()) {
+    const runtime = resolvePromptDispatchRuntime(serverState)
+    return dispatchPromptThroughIde(runtime, {
+      prompt: prompt.trim(),
+    }) as SendToAiResponse & { fallbackPayload?: { prompt: string; file: string } }
+  }
+
+  if (!location) {
+    return {
+      success: false,
+      error: 'Source location is required when prompt is omitted.',
+      errorCode: 'INVALID_REQUEST',
+    }
+  }
+
+  const formattedPrompt = `Please help me with this code from \`${location.file}\` (line ${location.line}):\n\n\`\`\`\n${snippet ?? ''}\n\`\`\`\n`
   const runtime = resolvePromptDispatchRuntime(serverState)
   return dispatchPromptThroughIde(runtime, {
     prompt: formattedPrompt,
     filePath: location.file,
     line: location.line,
     column: location.column,
-    snippet,
+    ...(snippet !== undefined ? { snippet } : {}),
   }) as SendToAiResponse & { fallbackPayload?: { prompt: string; file: string } }
 }
 

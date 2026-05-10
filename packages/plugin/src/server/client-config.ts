@@ -1,5 +1,11 @@
 import type { IdeType, InspectoConfig, ServerState } from '@inspecto-dev/types'
-import { loadPromptsConfig, loadUserConfigSync, resolveIntents } from '../config.js'
+import { isAiIntentConfig } from '@inspecto-dev/types'
+import {
+  loadPromptsConfig,
+  loadUserConfigSync,
+  resolveIntents,
+  resolveWorkflowSlots,
+} from '../config.js'
 
 export async function buildClientConfig(
   serverState: ServerState,
@@ -16,11 +22,14 @@ export async function buildClientConfig(
     info = rest
   }
 
+  const allIntents = resolveIntents(promptsConfig)
+
   return {
     ...info,
-    prompts: resolveIntents(promptsConfig),
+    prompts: allIntents.filter(isAiIntentConfig),
+    workflows: resolveWorkflowSlots(allIntents),
     hotKeys: userConfig['inspector.hotKey'] ?? 'alt',
-    annotateDeliveryMode: userConfig['annotate.deliveryMode'] ?? 'both',
+    annotateChannel: userConfig['annotate.channel'] ?? 'mcp',
     includeSnippet: userConfig['prompt.includeSnippet'] ?? false,
     runtimeContext: {
       enabled: true,

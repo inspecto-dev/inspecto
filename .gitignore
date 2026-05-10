@@ -110,3 +110,6 @@ packages/docs/.vitepress/cache
 
 # Inspecto
 .inspecto/dev.json
+
+# coco test
+.coco

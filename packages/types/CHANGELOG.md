@@ -1,5 +1,17 @@
 # @inspecto-dev/types
 
+## 0.3.12
+
+### Patch Changes
+
+- release 0.3.12
+
+## 0.3.11
+
+### Patch Changes
+
+- release 0.3.11
+
 ## 0.3.10
 
 ### Patch Changes

@@ -1,5 +1,6 @@
 import {
   annotateBadgeClass,
+  annotateConfirmDialogClass,
   annotateQueueListClass,
   annotateSidebarActionsClass,
   annotateSidebarButtonClass,
@@ -363,7 +364,7 @@ export const annotateStyles = `
   .${annotateSidebarSectionClass}[data-variant="modes"] .${annotateSidebarButtonClass}[data-role="mode"] { flex: 1 1 0; justify-content: center; padding: 8px 10px; background: transparent; border-color: transparent; color: var(--inspecto-text-secondary); }
   .${annotateSidebarHeaderClass} .${annotateSidebarButtonClass} { width: 30px; height: 30px; padding: 0; border-radius: var(--inspecto-radius-pill); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1; flex: 0 0 auto; }
   .${annotateSidebarHeaderClass} .${runtimeToggleClass} { overflow: visible; }
-  .${annotateSidebarHeaderClass} [data-inspecto-annotate-header-actions="true"] { padding: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.05); gap: 4px; flex-wrap: nowrap; flex: 0 0 auto; margin-top: 1px; }
+  .${annotateSidebarHeaderClass} [data-inspecto-annotate-header-actions-left="true"], .${annotateSidebarHeaderClass} [data-inspecto-annotate-header-actions-right="true"] { padding: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.05); gap: 4px; flex-wrap: nowrap; flex: 0 0 auto; margin-top: 1px; }
   .${annotateSidebarButtonClass}:hover { background: var(--inspecto-surface-hover); color: #ffffff; border-color: rgba(148, 163, 184, 0.12); transform: translateY(-1px); }
   .${annotateSidebarButtonClass}:disabled { opacity: 0.5; cursor: not-allowed; }
   .${annotateSidebarClass} .${annotateSidebarButtonClass}.primary {
@@ -443,4 +444,71 @@ export const annotateStyles = `
   .${annotateSidebarSectionClass}[data-variant="full-prompt"] > summary { list-style: none; cursor: pointer; font-size: 10px; font-weight: 600; color: var(--inspecto-text-tertiary); text-transform: none; letter-spacing: 0.01em; }
   .${annotateSidebarSectionClass}[data-variant="full-prompt"] > summary::-webkit-details-marker { display: none; }
   .${annotateSidebarTextClass}[data-variant="full-prompt"] { margin: 6px 0 0; padding: 9px 10px; border: 1px solid var(--inspecto-border-muted); border-radius: var(--inspecto-radius-sm); background: rgba(255, 255, 255, 0.02); color: var(--inspecto-text-secondary); font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace; font-size: 10px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; max-height: 220px; overflow: auto; }
+  
+  .${annotateConfirmDialogClass} {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(13, 20, 31, 0.5);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-radius: 28px;
+  }
+  .${annotateConfirmDialogClass} .content {
+    width: calc(100% - 48px);
+    background: rgba(30, 35, 45, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .${annotateConfirmDialogClass} p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.9);
+  }
+  .${annotateConfirmDialogClass} .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  @keyframes inspecto-fade-out {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-4px); pointer-events: none; }
+  }
+  
+  .inspecto-workflow-toast {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(28, 28, 28, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--inspecto-radius-pill);
+    box-shadow: var(--inspecto-shadow-floating);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 6px 14px;
+    z-index: 100;
+    font-size: 11px;
+    font-weight: 600;
+    color: #5ad496;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+    animation: inspecto-fade-out 0.3s ease 1.7s forwards;
+  }
+  .inspecto-workflow-toast::before {
+    content: '✓';
+    font-size: 12px;
+  }
 `

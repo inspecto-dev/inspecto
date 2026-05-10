@@ -27,7 +27,7 @@ export interface InspectoSettings {
   ide?: IdeType
   [key: `provider.${string}`]: string | string[] | boolean | undefined
   'inspector.hotKey'?: HotKeys
-  'annotate.deliveryMode'?: 'ide' | 'agent' | 'both'
+  'annotate.channel'?: 'ide' | 'mcp'
   'server.host'?: string
   'server.publicUrl'?: string
   'prompt.includeSnippet'?: boolean
@@ -147,13 +147,21 @@ export interface IdeInfo {
   providers: Record<Provider, ProviderInfo>
 }
 
+export interface WorkflowSlotOption {
+  id: string
+  label: string
+  prompt: string
+  confirm: boolean
+}
+
 export interface InspectoConfig {
   ide: IdeType
   providers?: Record<Provider, ProviderInfo>
-  prompts?: import('./prompts.js').IntentConfig[]
+  prompts?: import('./prompts.js').AiIntentConfig[]
+  workflows?: WorkflowSlotOption[]
   hotKeys?: HotKeys
   theme?: 'light' | 'dark' | 'auto'
-  annotateDeliveryMode?: 'ide' | 'agent' | 'both'
+  annotateChannel?: 'ide' | 'mcp'
   includeSnippet?: boolean
   runtimeContext?: RuntimeContextConfig
 }

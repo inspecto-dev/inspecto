@@ -1,5 +1,5 @@
 import type {
-  IntentConfig,
+  AiIntentConfig,
   SnippetResponse,
   RuntimeContextEnvelope,
   RuntimeEvidenceRecord,
@@ -59,7 +59,7 @@ export function buildFixBugPrompt(input: BuildFixBugPromptInput): string {
 }
 
 export function buildPromptForIntent(
-  intent: Pick<IntentConfig, 'id' | 'prompt' | 'prependPrompt' | 'appendPrompt'>,
+  intent: Pick<AiIntentConfig, 'id' | 'prompt' | 'prependPrompt' | 'appendPrompt'>,
   location: SourceLocation,
   snippetResult?: SnippetResponse | null,
   runtimeContext?: RuntimeContextEnvelope | null,
@@ -95,7 +95,7 @@ function buildSourceContextSection(location: SourceLocation, snippet?: string): 
 }
 
 function assembleIntentPromptTemplate(
-  intent: Pick<IntentConfig, 'prompt' | 'prependPrompt' | 'appendPrompt'>,
+  intent: Pick<AiIntentConfig, 'prompt' | 'prependPrompt' | 'appendPrompt'>,
 ): string {
   let fullPromptTemplate = intent.prompt ?? ''
   if (intent.prependPrompt) {
@@ -108,7 +108,7 @@ function assembleIntentPromptTemplate(
 }
 
 function assembleFixBugAdditionalGuidance(
-  intent: Pick<IntentConfig, 'prependPrompt' | 'appendPrompt'>,
+  intent: Pick<AiIntentConfig, 'prependPrompt' | 'appendPrompt'>,
 ): string {
   return [intent.prependPrompt, intent.appendPrompt].filter(Boolean).join('\n\n')
 }

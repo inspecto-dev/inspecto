@@ -37,11 +37,11 @@
         <article class="panel mode-card">
           <span class="eyebrow">Mode</span>
           <h3>Annotate</h3>
-          <p>Capture several notes, define an overall goal, and send a single batch to AI.</p>
+          <p>Capture several notes, define an overall goal, and submit a single batch through the configured assistant path.</p>
           <ol>
             <li>Choose Annotate from the launcher.</li>
             <li>Click multiple cards and save notes.</li>
-            <li>Use the sidebar goal field, then Ask AI once.</li>
+            <li>Use the sidebar goal field, then submit the batch.</li>
           </ol>
         </article>
 

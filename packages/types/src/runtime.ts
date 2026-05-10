@@ -137,6 +137,8 @@ export interface AnnotationThreadMessage {
 
 export interface AnnotationWorkSession {
   id: string
+  source?: 'annotation' | 'workflow'
+  workflowId?: string
   instruction: string
   annotations: Annotation[]
   deliveryMode?: AnnotationDeliveryMode
@@ -160,6 +162,8 @@ export interface AnnotationWorkSessionSummary {
 }
 
 export interface CreateAnnotationWorkSessionInput {
+  source?: 'annotation' | 'workflow'
+  workflowId?: string
   instruction?: string
   annotations: Annotation[]
   deliveryMode?: AnnotationDeliveryMode
@@ -211,9 +215,11 @@ export interface AnnotationTransport {
   targets: AnnotationTransportTarget[]
 }
 
-export type AnnotationDeliveryMode = 'ide' | 'agent'
+export type AnnotationDeliveryMode = 'ide' | 'mcp'
 
 export interface SendAnnotationsToAiRequest {
+  source?: 'annotation' | 'workflow'
+  workflowId?: string
   instruction?: string
   annotations: AnnotationTransport[]
   runtimeContext?: RuntimeContextEnvelope

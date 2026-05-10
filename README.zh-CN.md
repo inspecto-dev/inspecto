@@ -8,7 +8,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > 告别浏览器、DevTools、编辑器与 AI Assistant 之间的繁琐切换。
-> Inspecto 缩短了整个链路：直接从网页开始，顺滑无缝地把准确的上下文交给源码或 AI。
+> Inspecto 缩短了整个链路：直接从网页开始，顺滑无缝地把准确的上下文交给源码或当前配置的助手链路。
 
 👉 **[前往 inspecto-dev.github.io/inspecto 阅读完整文档](https://inspecto-dev.github.io/inspecto/zh/)**
 
@@ -25,7 +25,7 @@
         <img src="packages/docs/public/annotate-mode.gif" width="100%" alt="Annotate mode workflow" />
         <br/>
         <b>Annotate mode</b><br/>
-        跨组件记录，打包一次发送
+        跨组件记录，整理后统一提交
       </td>
       <td width="33%" align="center">
         <img src="packages/docs/public/quick-jump.gif" width="100%" alt="Quick jump workflow" />

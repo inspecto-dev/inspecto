@@ -1,15 +1,15 @@
 import { loadUserConfigSync } from '../config.js'
 
 export function resolveServerHost(cwd: string, configRoot: string): string {
-  const userConfig = loadUserConfigSync(false, cwd, configRoot)
-  const configuredHost = userConfig['server.host']?.trim()
-  if (configuredHost) return configuredHost
-
   // Vitest sandbox environments can reject binding 0.0.0.0 even when the
   // same process can bind loopback successfully. Prefer loopback for tests so
   // plugin e2e coverage reflects real runtime behavior instead of sandbox
   // policy noise.
   if (process.env['VITEST']) return '127.0.0.1'
+
+  const userConfig = loadUserConfigSync(false, cwd, configRoot)
+  const configuredHost = userConfig['server.host']?.trim()
+  if (configuredHost) return configuredHost
   return '127.0.0.1'
 }
 

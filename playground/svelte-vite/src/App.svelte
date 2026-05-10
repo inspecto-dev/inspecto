@@ -65,7 +65,7 @@ extremely_long_navigation_header_selector_that_should_wrap_properly"
         steps={[
           'Choose Annotate from the launcher.',
           'Click several cards and save notes.',
-          'Add an overall goal in the sidebar, then Ask AI once.',
+          'Add an overall goal in the sidebar, then submit the batch.',
         ]}
       />
       <ModeCard

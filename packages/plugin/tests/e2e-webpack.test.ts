@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import webpack from 'webpack'
 import { webpackPlugin } from '../src/index.js'
 import path from 'path'
@@ -8,6 +8,33 @@ import fs from 'node:fs'
 import os from 'node:os'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const pluginPackageRoot = path.resolve(__dirname, '..')
+
+vi.mock('../src/server/server-url.js', async () => {
+  const actual = await vi.importActual<typeof import('../src/server/server-url.js')>(
+    '../src/server/server-url.js',
+  )
+  return {
+    ...actual,
+    resolveServerHost: () => '127.0.0.1',
+  }
+})
+
+vi.mock('../src/server/index.js', async () => {
+  const actual =
+    await vi.importActual<typeof import('../src/server/index.js')>('../src/server/index.js')
+  return {
+    ...actual,
+    startServer: vi.fn(async () => 5678),
+    serverState: {
+      port: 5678,
+      running: true,
+      projectRoot: process.cwd(),
+      configRoot: process.cwd(),
+      cwd: process.cwd(),
+    },
+  }
+})
 
 const sanitizeSnapshot = (code: string) => {
   const rootDir = path.resolve(__dirname, '../../..')
@@ -23,6 +50,12 @@ describe('E2E Build Integration - Webpack', () => {
     const isolatedHome = fs.mkdtempSync(path.join(os.tmpdir(), 'inspecto-plugin-home-'))
     process.env.NODE_ENV = 'development'
     process.env.HOME = isolatedHome
+    fs.mkdirSync(path.join(isolatedHome, '.inspecto'), { recursive: true })
+    fs.writeFileSync(
+      path.join(isolatedHome, '.inspecto', 'settings.json'),
+      JSON.stringify({ 'server.host': '127.0.0.1' }, null, 2),
+      'utf-8',
+    )
 
     try {
       const compiler = webpack({
@@ -41,7 +74,7 @@ describe('E2E Build Integration - Webpack', () => {
               test: /\.[jt]sx?$/,
               exclude: /node_modules/,
               use: {
-                loader: 'babel-loader',
+                loader: require.resolve('babel-loader', { paths: [pluginPackageRoot] }),
                 options: {
                   presets: [
                     '@babel/preset-env',

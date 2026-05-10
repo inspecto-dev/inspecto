@@ -36,7 +36,7 @@ If the browser or agent reaches the Inspecto dev server through a different host
 
 ## Recommended Workflows
 
-Inspecto supports two workflows for collaborating with your agent, depending on the constraints of your AI client (e.g., Cursor, Claude Desktop). Before starting, make sure your `.inspecto/settings.local.json` sets `"annotate.deliveryMode": "agent"` (or `"both"`).
+Inspecto supports two workflows for collaborating with your agent, depending on the constraints of your AI client (e.g., Cursor, Claude Desktop). Before starting, make sure your `.inspecto/settings.local.json` sets `"annotate.channel": "mcp"`.
 
 ### Mode 1: Asynchronous Queue (Recommended for most clients)
 

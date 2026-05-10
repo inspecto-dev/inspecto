@@ -5,7 +5,7 @@ import type {
   InspectorOptions,
   RuntimeContextEnvelope,
   SourceLocation,
-  IntentConfig,
+  AiIntentConfig,
 } from '@inspecto-dev/types'
 import { openFileWithDiagnostics, fetchIdeInfo } from './http.js'
 import { applyIconToggleButtonState, createMenuHeaderDom } from './menu-header.js'
@@ -22,6 +22,7 @@ import {
 } from './menu-helpers.js'
 import { t } from './i18n.js'
 import { menuClass, loadingSpinnerClass } from './styles.js'
+import { isAiIntentConfig } from '@inspecto-dev/types'
 
 const _DISPLAY_NAMES: Record<Provider, string> = {
   copilot: 'GitHub Copilot',
@@ -280,7 +281,7 @@ export function showIntentMenu(
   }
 
   const resolveRuntimeContext = (
-    intent?: Pick<IntentConfig, 'id' | 'aiIntent'>,
+    intent?: Pick<AiIntentConfig, 'id' | 'aiIntent'>,
   ): RuntimeContextEnvelope | null => {
     if (!canAttachRuntimeContext) return null
 
@@ -395,7 +396,7 @@ export function showIntentMenu(
     applyCssToggleButtonState()
   })
 
-  const resolveCssContextPrompt = (intent?: Pick<IntentConfig, 'id'>): string | null => {
+  const resolveCssContextPrompt = (intent?: Pick<AiIntentConfig, 'id'>): string | null => {
     const shouldAttachCssContext = cssContextEnabled || Boolean(intent && isFixUiIntent(intent))
     if (!shouldAttachCssContext) return null
     try {
@@ -473,13 +474,13 @@ export function showIntentMenu(
             ? t('menu.ask.placeholder.default')
             : t('menu.ask.placeholder.fallback')
       }
-      const aiIntents = intents
+      const aiIntents = intents.filter(isAiIntentConfig)
       const hasFixIntent = aiIntents.some(isFixIntent)
       const hasNonFixIntent = aiIntents.some(intent => !isFixIntent(intent))
       runtimeContextDefaultMode = hasFixIntent ? (hasNonFixIntent ? 'mixed' : 'all-on') : 'off'
       renderRuntimeContextUi()
       const aiActions = createIntentActionButtons({
-        intents,
+        intents: aiIntents,
         location,
         includeSnippet,
         maxSnippetLines,

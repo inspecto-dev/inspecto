@@ -4,7 +4,7 @@ layout: home
 hero:
   name: 'Inspecto'
   text: '直接在浏览器里 Inspect UI。'
-  tagline: 'Inspecto 是一套浏览器优先的前端工作流，用来更快定位源码并把正确上下文自动交给 AI。'
+  tagline: 'Inspecto 是一套浏览器优先的前端工作流，用来更快定位源码并把正确上下文自动交给已配置的助手链路。'
   image:
     src: /icon.png
     alt: Inspecto Logo
@@ -21,9 +21,9 @@ hero:
 
 features:
   - title: 检查模式
-    details: 'Inspect 单个组件，自动附带准确上下文，然后立即唤起 AI 提问。'
+    details: 'Inspect 单个组件，自动附带准确上下文，然后通过当前配置的助手链路立即交付。'
   - title: 标注模式
-    details: '跨多个组件圈选多条修改意见，补充一个整体目标，再一次性打包发给 AI。'
+    details: '跨多个组件圈选多条修改意见，补充一个整体目标，再通过当前配置的助手链路整批提交。'
   - title: 快速跳转
     details: '按住 `Alt` + `点击` 页面元素，瞬间在编辑器中打开准确的源码位置，告别手动搜索。'
   - title: 助手引导接入
@@ -58,12 +58,12 @@ import HeroArchitecture from '../components/HeroArchitecture.vue'
   <div class="mode-card">
     <img :src="'/inspecto/inspect-mode.gif'" alt="检查模式 workflow" />
     <h3>检查模式</h3>
-    <p>Inspect 单个组件，自动附带准确上下文，然后立即唤起 AI 提问。</p>
+    <p>Inspect 单个组件，自动附带准确上下文，然后通过当前配置的助手链路立即交付。</p>
   </div>
   <div class="mode-card">
     <img :src="'/inspecto/annotate-mode.gif'" alt="标注模式 workflow" />
     <h3>标注模式</h3>
-    <p>跨多个组件圈选多条修改意见，补充一个整体目标，再一次性打包发给 AI。</p>
+    <p>跨多个组件圈选多条修改意见，补充一个整体目标，再通过当前配置的助手链路整批提交。</p>
   </div>
   <div class="mode-card">
     <img :src="'/inspecto/quick-jump.gif'" alt="快速跳转 workflow" />

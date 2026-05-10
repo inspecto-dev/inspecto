@@ -59,7 +59,7 @@ export default function HomePage() {
             <ol>
               <li>Choose Annotate from the launcher.</li>
               <li>Click multiple cards and save notes.</li>
-              <li>Use the sidebar goal field, then Ask AI once.</li>
+              <li>Use the sidebar goal field, then submit the batch.</li>
             </ol>
           </article>
 
