@@ -57,6 +57,16 @@ If onboarding does not open automatically, say:
 Set up Inspecto in this project
 ```
 
+## After Onboarding: Daily Use
+
+Onboarding only installs the integration and applies project configuration. Day-to-day usage depends on the route you choose:
+
+- **IDE route**: use Inspect mode or Annotate mode to send a prompt into your IDE assistant immediately.
+- **MCP route**: set `"annotate.channel": "mcp"`, configure the Inspecto MCP server in your agent, then let the agent claim annotation or workflow sessions.
+- **Custom workflows**: add `kind: "workflow"` entries to `.inspecto/prompts.json`, such as `Deploy Preview` or `Review & PR`. Inspecto queues the command; your agent decides which skill, MCP server, or tool to use.
+
+If you want the browser timeline and custom workflow automation, make sure MCP is configured after onboarding.
+
 ## Installation Scopes
 
 Depending on the assistant, the integration is installed either globally for your user, or locally for the current project.

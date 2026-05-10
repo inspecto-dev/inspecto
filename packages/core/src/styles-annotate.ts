@@ -105,6 +105,15 @@ export const annotateStyles = `
     font-weight: 500;
   }
 
+  .${annotateSidebarTextClass}[data-inspecto-latest-session-preview="true"] {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-height: 42px;
+  }
+
   .${annotateSidebarSectionClass} {
     display: flex;
     flex-direction: column;

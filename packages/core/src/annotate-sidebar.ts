@@ -24,6 +24,8 @@ import { createSidebarButton } from './annotate-sidebar-helpers.js'
 import { annotateSidebarButtonClass } from './styles.js'
 import { t } from './i18n.js'
 import { pauseIconSvg, playIconSvg } from './icons.js'
+import { buildSessionTimelineItems } from './annotate-session-timeline.js'
+import { renderSessionTimeline } from './annotate-session-timeline-dom.js'
 
 type SidebarMode = 'capture-enabled' | 'capture-paused'
 type SendScope = AnnotateSendScope
@@ -121,6 +123,9 @@ export function createAnnotateSidebar(
     latestSessionMessage,
     latestSessionHint,
     latestSessionRefreshButton,
+    latestSessionTimelineToggle,
+    latestSessionTimelineTitle,
+    latestSessionTimelineContainer,
     latestSessionError,
     recommendedActionLabel,
     updateRawPromptPreviewPosition,
@@ -132,6 +137,7 @@ export function createAnnotateSidebar(
   let isSyncingInstructionDom = false
   let renderedChipSignature = ''
   let lastRevealedSessionId = ''
+  let isLatestSessionTimelineExpanded = false
 
   type LatestSessionMessageKind = 'agent' | 'system-info'
 
@@ -253,6 +259,11 @@ export function createAnnotateSidebar(
   latestSessionRefreshButton.addEventListener('click', event => {
     event.preventDefault()
     currentOptions.onRefreshLatestSession?.()
+  })
+  latestSessionTimelineToggle.addEventListener('click', event => {
+    event.preventDefault()
+    isLatestSessionTimelineExpanded = !isLatestSessionTimelineExpanded
+    patch(currentOptions)
   })
   previewButton.addEventListener('click', event => {
     event.preventDefault()
@@ -550,8 +561,19 @@ export function createAnnotateSidebar(
       latestSessionRefreshButton.style.minWidth = ''
       latestSessionRefreshButton.style.padding = ''
       latestSessionRefreshButton.style.fontSize = '12px'
+      latestSessionTimelineToggle.style.display = 'none'
+      latestSessionTimelineTitle.style.display = 'none'
+      latestSessionTimelineContainer.style.display = 'none'
+      latestSessionTimelineContainer.replaceChildren()
     } else if (latestSession || latestSessionSummary) {
       const latestStatus = latestSession?.status ?? latestSessionSummary?.status ?? 'pending'
+      const latestSessionId = latestSession?.id ?? latestSessionSummary?.id ?? ''
+      const isNewLatestSession = Boolean(
+        latestSessionId && latestSessionId !== lastRevealedSessionId,
+      )
+      if (isNewLatestSession) {
+        isLatestSessionTimelineExpanded = false
+      }
       latestSessionMeta.textContent = latestSession
         ? t('annotate.latestSession.meta.loaded', {
             id: latestSession.id.slice(0, 8),
@@ -576,30 +598,54 @@ export function createAnnotateSidebar(
             })
           : null
       const latestVisualStatus = latestStatus
+      const canShowTimeline = Boolean(latestSession)
+      const shouldShowTimeline = canShowTimeline && isLatestSessionTimelineExpanded
 
       latestSessionStatus.textContent = getLatestSessionStatusLabel(latestVisualStatus)
       applyLatestSessionStatusStyles(latestVisualStatus)
 
       latestSessionMessage.style.display = 'none'
+      latestSessionMessage.textContent = ''
+      delete latestSessionMessage.dataset.inspectoLatestSessionPreview
+      latestSessionMessage.style.overflow = ''
+      latestSessionMessage.style.textOverflow = ''
+      latestSessionMessage.style.maxHeight = ''
+      latestSessionMessage.style.setProperty('-webkit-line-clamp', '')
+      latestSessionMessage.style.setProperty('-webkit-box-orient', '')
 
       const fallbackMsg = getLatestSessionFallbackMessage(latestStatus, Boolean(latestSession))
-      const hasMessage = next.latestSessionLoading || lastAgentOrSystemMessage || fallbackMsg
+      const hasMessage =
+        next.latestSessionLoading ||
+        (!shouldShowTimeline && (lastAgentOrSystemMessage || fallbackMsg))
 
       if (hasMessage) {
-        latestSessionMessage.style.display = 'block'
         latestSessionMessage.textContent = next.latestSessionLoading
           ? t('annotate.latestSession.loading')
           : lastAgentOrSystemMessage || fallbackMsg
+        if (next.latestSessionLoading) {
+          latestSessionMessage.style.display = 'block'
+        } else {
+          latestSessionMessage.dataset.inspectoLatestSessionPreview = 'true'
+          latestSessionMessage.style.display = 'block'
+          latestSessionMessage.style.overflow = 'hidden'
+          latestSessionMessage.style.textOverflow = 'ellipsis'
+          latestSessionMessage.style.maxHeight = '42px'
+          latestSessionMessage.style.setProperty('-webkit-line-clamp', '2')
+          latestSessionMessage.style.setProperty('-webkit-box-orient', 'vertical')
+        }
       }
-      latestSessionMessage.dataset.variant = latestMessageKind ?? 'default'
-      if (latestMessageKind === 'system-info') {
+      const latestMessageVariant = latestMessageKind
+      latestSessionMessage.dataset.variant = latestMessageVariant ?? 'default'
+      if (latestMessageVariant === 'system-info') {
         latestSessionMessage.style.color = '#9ed8ff'
       } else {
         latestSessionMessage.style.color = 'var(--inspecto-text-secondary)'
       }
       const latestSessionHintText = next.latestSessionLoading
         ? ''
-        : getLatestSessionHint(latestStatus)
+        : shouldShowTimeline && latestStatus !== 'resolved'
+          ? ''
+          : getLatestSessionHint(latestStatus)
       const latestSessionErrorText = getLatestSessionErrorMessage(next.latestSessionError)
       const showReconnectAction = Boolean(latestSessionErrorText)
       latestSessionHint.textContent = latestSessionHintText
@@ -618,8 +664,27 @@ export function createAnnotateSidebar(
       latestSessionRefreshButton.style.padding = showReconnectAction ? '6px 10px' : ''
       latestSessionRefreshButton.style.fontSize = showReconnectAction ? '11px' : '12px'
 
-      const latestSessionId = latestSession?.id ?? latestSessionSummary?.id ?? ''
-      if (latestSessionId && latestSessionId !== lastRevealedSessionId) {
+      latestSessionTimelineToggle.style.display = canShowTimeline ? '' : 'none'
+      latestSessionTimelineToggle.textContent = isLatestSessionTimelineExpanded
+        ? t('annotate.latestSession.collapseTimeline')
+        : t('annotate.latestSession.expandTimeline')
+      latestSessionTimelineToggle.setAttribute(
+        'aria-expanded',
+        String(isLatestSessionTimelineExpanded),
+      )
+
+      latestSessionTimelineTitle.style.display = shouldShowTimeline ? 'block' : 'none'
+      latestSessionTimelineContainer.style.display = shouldShowTimeline ? 'block' : 'none'
+      if (latestSession && shouldShowTimeline) {
+        renderSessionTimeline(
+          latestSessionTimelineContainer,
+          buildSessionTimelineItems(latestSession),
+        )
+      } else {
+        latestSessionTimelineContainer.replaceChildren()
+      }
+
+      if (isNewLatestSession) {
         lastRevealedSessionId = latestSessionId
         // Avoid auto-scrolling to the latest session if we have unsaved local changes
         if (!hasCurrentDraft && !hasSavedRecords) {
@@ -638,6 +703,10 @@ export function createAnnotateSidebar(
       latestSessionRefreshButton.style.minWidth = ''
       latestSessionRefreshButton.style.padding = ''
       latestSessionRefreshButton.style.fontSize = '12px'
+      latestSessionTimelineToggle.style.display = 'none'
+      latestSessionTimelineTitle.style.display = 'none'
+      latestSessionTimelineContainer.style.display = 'none'
+      latestSessionTimelineContainer.replaceChildren()
     }
 
     statusMessage.textContent = getLiveStatusMessage(next)

@@ -683,6 +683,10 @@ describe('annotate sidebar', () => {
 
     expect(shadowRoot.textContent).toContain('✓ complete')
     expect(shadowRoot.textContent).toContain('Review the result. Create a follow-up if needed.')
+    const createTaskButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.title === 'Create Task',
+    ) as HTMLButtonElement | undefined
+    expect(createTaskButton?.textContent).toBe('Create Task')
   })
 
   it('shows the latest system message for an acknowledged task', () => {
@@ -717,6 +721,116 @@ describe('annotate sidebar', () => {
     ) as HTMLDivElement
     expect(message.dataset.variant).toBe('system-info')
     expect(message.style.color).toBe('#9ed8ff')
+  })
+
+  it('keeps the latest task timeline expanded for same-session updates and collapses for a new session', () => {
+    const sidebar = createAnnotateSidebar(
+      shadowRoot,
+      createSidebarOptions(createRecordSession(), {
+        latestSessionDetail: {
+          id: 'session-current',
+          status: 'acknowledged',
+          instruction: '',
+          annotations: [],
+          messages: [
+            {
+              id: 'message-first',
+              role: 'agent',
+              text: 'First progress update.',
+              createdAt: 2,
+            },
+          ],
+          createdAt: 1,
+          updatedAt: 2,
+          acknowledgedAt: 2,
+        },
+      }),
+    )
+
+    const collapsedSummaryMessage = Array.from(shadowRoot.querySelectorAll('div')).find(
+      element => element.textContent === 'First progress update.',
+    ) as HTMLDivElement | undefined
+    expect(collapsedSummaryMessage?.dataset.inspectoLatestSessionPreview).toBe('true')
+    expect(collapsedSummaryMessage?.style.overflow).toBe('hidden')
+    expect(collapsedSummaryMessage?.style.maxHeight).toBe('42px')
+    expect(collapsedSummaryMessage?.style.getPropertyValue('-webkit-line-clamp')).toBe('2')
+
+    clickButtonByText('Show updates')
+
+    const repeatedSummaryMessage = Array.from(shadowRoot.querySelectorAll('div')).find(
+      element => element.textContent === 'First progress update.',
+    ) as HTMLDivElement | undefined
+    const redundantStatusMessage = Array.from(shadowRoot.querySelectorAll('div')).find(
+      element => element.textContent === 'AI acknowledged.',
+    ) as HTMLDivElement | undefined
+    expect(repeatedSummaryMessage).toBeUndefined()
+    expect(redundantStatusMessage).toBeUndefined()
+    expect(shadowRoot.textContent).toContain('Updates')
+    expect(shadowRoot.textContent).toContain('First progress update.')
+    expect(shadowRoot.querySelectorAll('[data-inspecto-session-timeline-item]')).toHaveLength(3)
+
+    sidebar.update(
+      createSidebarOptions(createRecordSession(), {
+        latestSessionDetail: {
+          id: 'session-current',
+          status: 'in_progress',
+          instruction: '',
+          annotations: [],
+          messages: [
+            {
+              id: 'message-first',
+              role: 'agent',
+              text: 'First progress update.',
+              createdAt: 2,
+            },
+            {
+              id: 'message-second',
+              role: 'agent',
+              text: 'Second progress update.',
+              createdAt: 3,
+            },
+          ],
+          createdAt: 1,
+          updatedAt: 3,
+          acknowledgedAt: 2,
+        },
+      }),
+    )
+
+    const expandedToggle = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Hide updates',
+    ) as HTMLButtonElement | undefined
+    expect(expandedToggle?.getAttribute('aria-expanded')).toBe('true')
+    expect(shadowRoot.textContent).toContain('Second progress update.')
+    expect(shadowRoot.querySelectorAll('[data-inspecto-session-timeline-item]')).toHaveLength(4)
+
+    sidebar.update(
+      createSidebarOptions(createRecordSession(), {
+        latestSessionDetail: {
+          id: 'session-new',
+          status: 'acknowledged',
+          instruction: '',
+          annotations: [],
+          messages: [
+            {
+              id: 'message-new',
+              role: 'agent',
+              text: 'New session progress update.',
+              createdAt: 5,
+            },
+          ],
+          createdAt: 4,
+          updatedAt: 5,
+          acknowledgedAt: 5,
+        },
+      }),
+    )
+
+    const collapsedToggle = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Show updates',
+    ) as HTMLButtonElement | undefined
+    expect(collapsedToggle?.getAttribute('aria-expanded')).toBe('false')
+    expect(shadowRoot.querySelectorAll('[data-inspecto-session-timeline-item]')).toHaveLength(0)
   })
 
   it('shows reconnect affordance when current task updates disconnect', () => {

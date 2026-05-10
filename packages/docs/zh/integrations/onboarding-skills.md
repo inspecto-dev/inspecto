@@ -57,6 +57,16 @@ npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 Set up Inspecto in this project
 ```
 
+## Onboarding 之后：日常使用
+
+Onboarding 只负责安装集成并应用项目配置。日常使用取决于你选择的交付路线：
+
+- **IDE route**：使用「检查模式」或「标注模式」把 prompt 立即发送到 IDE 助手。
+- **MCP route**：设置 `"annotate.channel": "mcp"`，在 Agent 中配置 Inspecto MCP server，然后让 Agent 领取 annotation 或 workflow session。
+- **自定义 workflow**：在 `.inspecto/prompts.json` 中添加 `kind: "workflow"` 条目，例如 `Deploy Preview` 或 `Review & PR`。Inspecto 负责把指令入队；Agent 自己决定调用哪个 skill、MCP server 或 tool。
+
+如果你希望使用浏览器 timeline 和自定义 workflow 自动化，请在 onboarding 后确认 MCP 已经配置好。
+
 ## 安装作用域
 
 根据不同的助手，集成的安装位置可能是你的用户全局目录，或者是当前的项目本地目录。
