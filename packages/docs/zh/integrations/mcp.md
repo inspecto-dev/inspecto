@@ -1,14 +1,69 @@
-# MCP 集成 (MCP Integration)
+# MCP 集成
 
-如果你的 AI 助手或 runtime 支持 MCP (Model Context Protocol)，Inspecto 可以通过一个专用的 MCP stdio 入口，将其标注工作流直接暴露给你的 Agent。
+MCP 模式可以让 AI Agent 从 Inspecto 领取 Annotate 任务、处理代码修改，并把进度回写到浏览器。你不需要手动复制 DOM 路径、截图或备注：在浏览器里点击组件、创建任务，然后让 Agent 处理队列即可。
 
-如果你正在使用 Inspecto 的**独立运行/纯浏览器模式** (`ide: "none"`)，这会非常有用，因为它能让你的 AI 工具直接以 hands-free（免手动）的方式获取上下文，而不需要依赖任何 IDE 插件。在 MCP 模式下，浏览器也会变成实时 session 界面：标注模式可以展示任务何时入队、何时被 Agent 领取、Agent 回传了哪些进度，以及最终是完成还是关闭。
+如果你希望 Inspecto 和支持 MCP 的 Agent 协作，尤其是使用**独立运行 / 纯浏览器模式** (`ide: "none"`) 时，请使用本页流程。
 
-MCP 还会解锁 Inspecto 的自定义 workflow 按钮。你可以在 `.inspecto/prompts.json` 中定义 `kind: "workflow"` 指令，例如 `Deploy Preview` 或 `Review & PR`。点击后，Inspecto 会把这条指令和项目元信息作为 workflow session 入队，Agent 再利用自身已有的 skill、MCP server 和 tool 完成任务。
+## 最简单的使用流程
 
-## 配置项
+1. **启动已接入 Inspecto 的应用。** 保持本地 dev server 运行。
+2. **安装 Inspecto agent skill**，让 Agent 知道如何领取和结束任务。
+3. **把 Inspecto 配成 MCP server**，接入你的 AI 客户端。最省事的方式是用 `add-mcp`；手动 JSON 配置作为兜底。
+4. **在浏览器打开 Annotate mode**，点击一个或多个组件，写备注，然后点击 **Create Task**。
+5. **把下面的 prompt 复制给 Agent。** Agent 会领取队列里的任务、处理代码、回写进度，并在完成后关闭 session。
 
-为了将 Inspecto 接入到你的 Agent，请将以下 JSON 配置添加到你的 Agent MCP 配置中（例如 Claude Desktop 或 Cursor 的 MCP 设置）：
+<CopyPrompt
+  eyebrow="Agent Prompt"
+  title="处理 Inspecto 队列任务"
+  description="在 Annotate mode 点击 Create Task 后，把这段内容发给支持 MCP 的 Agent。"
+  copy-label="复制 Prompt"
+  copied-label="已复制"
+  prompt="请处理我的 Inspecto 待办任务。使用 Inspecto MCP tools 领取下一条 session，完成修改，运行检查，并在结束后 resolve。"
+/>
+
+## 1. 安装 agent skill
+
+如果你的 Agent 支持 [skills](https://www.npmjs.com/package/skills) CLI，可以用一条命令安装 Inspecto 的 Agent skill：
+
+```bash
+npx skills add inspecto-dev/inspecto --skill inspecto-agent
+```
+
+这会把 `inspecto-agent` 指令安装到 `skills` 自动识别到的 Agent 目录。如果你想指定某个 Agent 并全局安装，可以使用非交互命令：
+
+```bash
+npx skills add inspecto-dev/inspecto --skill inspecto-agent --agent claude-code --global --yes
+```
+
+把 `claude-code` 替换成你正在使用的 Agent，例如 `codex`、`cursor`、`trae` 或 `codebuddy`。
+
+## 2. 添加 MCP server
+
+推荐使用 [`add-mcp`](https://www.npmjs.com/package/add-mcp) 自动写入对应 Agent 的 MCP 配置：
+
+::: code-group
+
+```bash [Cursor]
+npx -y add-mcp@latest "npx -y @inspecto-dev/cli@latest mcp" --name inspecto -a cursor -y
+```
+
+```bash [Claude Code]
+npx -y add-mcp@latest "npx -y @inspecto-dev/cli@latest mcp" --name inspecto -a claude-code -y
+```
+
+```bash [Codex]
+npx -y add-mcp@latest "npx -y @inspecto-dev/cli@latest mcp" --name inspecto -a codex -y
+```
+
+```bash [VS Code]
+npx -y add-mcp@latest "npx -y @inspecto-dev/cli@latest mcp" --name inspecto -a vscode -y
+```
+
+:::
+
+`add-mcp` 比较适合这里，因为它会处理 Cursor、Claude Code、Codex、VS Code、OpenCode 等不同客户端的 MCP 配置文件位置。建议始终传 `-a <agent>`，这样只会更新你想配置的客户端。如果不传 `-a`，`add-mcp -y` 在没有检测到客户端时可能会安装到所有支持项目级配置的 Agent。
+
+如果你更想手动配置，并且客户端使用 `mcpServers` JSON 格式（例如 Cursor 或 Claude Code 项目配置），可以加入下面这段：
 
 ```json
 {
@@ -21,7 +76,11 @@ MCP 还会解锁 Inspecto 的自定义 workflow 按钮。你可以在 `.inspecto
 }
 ```
 
-如果自动发现无法命中正确的本地 dev server（例如同时运行了多个项目），你可以显式传入 URL：
+如果你同时运行多个本地项目，Agent 可能连到错误的 Inspecto server。此时可以显式指定 URL。使用 `add-mcp` 时，把额外参数放进引号里的 MCP 命令；手动配置时，把它加到 `args` 里：
+
+```bash
+npx -y add-mcp@latest "npx -y @inspecto-dev/cli@latest mcp --server-url http://127.0.0.1:5678" --name inspecto -a cursor -y
+```
 
 ```json
 {
@@ -34,28 +93,46 @@ MCP 还会解锁 Inspecto 的自定义 workflow 按钮。你可以在 `.inspecto
 }
 ```
 
-如果浏览器或 Agent 访问 Inspecto dev server 时使用的主机名与监听地址不同，请在 `.inspecto/settings.local.json` 中设置 `server.publicUrl`，让浏览器注入和 MCP 发现统一使用可访问的地址。
+如果浏览器和 Agent 需要通过不同 hostname 访问 dev server，请在 `.inspecto/settings.local.json` 里设置 `server.publicUrl`，保证两边使用同一个可访问地址。
 
-## 推荐的使用模式
+## 3. 从 Annotate 创建 MCP 任务
 
-Inspecto 支持两种与 Agent 协作的工作流，你可以根据你使用的 AI 客户端（如 Cursor、Claude Desktop 等）的特性来选择。在开始前，请确保你项目中的 `.inspecto/settings.local.json` 里 `"annotate.channel"` 设为了 `"mcp"`。
+确认 Annotate 使用 MCP 通道：
 
-### 浏览器侧 Session Timeline
+```json
+{
+  "annotate.channel": "mcp"
+}
+```
 
-当 `annotate.channel` 设置为 `mcp` 时，点击 `Create Task` 会在本地 Inspecto dev server 上创建一个可持久化的标注 session。标注侧栏会展示最近 session 的 timeline，让你可以在发现问题的同一个浏览器上下文里追踪这次交接。
+然后在浏览器里操作：
 
-timeline 包含：
+1. 打开 **Annotate mode**。
+2. 点击和问题相关的 UI 元素。
+3. 写简短备注，例如“按钮改成主按钮”或“卡片和标题左对齐”。
+4. 点击 **Create Task**。
+5. 回到 Agent，把上面的可复制 prompt 发给它。
 
-- 任务创建 / 入队状态；
-- `inspecto_claim_next` 成功后的 Agent 领取状态；
-- Agent 通过 `inspecto_reply` 回传的进度消息；
-- 通过 `inspecto_resolve` 完成，或通过 `inspecto_dismiss` 关闭的最终状态。
+Annotate 侧边栏会变成任务时间线：你可以看到任务入队、Agent 领取、进度回复，以及最终完成或关闭状态。
 
-这让 MCP 模式不再只是一次 prompt handoff：Agent 可以在处理过程中把状态回写到浏览器，你也不需要只依赖 chat 窗口去猜测任务进展。
+## 4. 可选：让 Agent 持续监听
 
-### 自定义 Workflow 按钮
+如果你的 AI 客户端支持长时间运行或后台 Agent，可以让它等待下一条任务，而不是每次点击 **Create Task** 后都手动发消息。
 
-Workflow 按钮和 inspect 菜单 prompt 一样，通过 `.inspecto/prompts.json` 配置：
+<CopyPrompt
+  eyebrow="Agent Prompt"
+  title="等待下一条 Inspecto 任务"
+  description="仅推荐在支持长时间 tool call 或后台 Agent 的客户端中使用。"
+  copy-label="复制 Prompt"
+  copied-label="已复制"
+  prompt="请监听 Inspecto 任务。任务出现后领取、修改、运行检查并 resolve。持续处理，直到我让你停止。"
+/>
+
+大多数聊天型客户端会限制 tool call 时长。如果 Agent 等待超时，任务仍会安全保留在 Inspecto 队列里；创建任务后重新发送第一段 prompt 即可。
+
+## Workflow 按钮
+
+MCP 还支持项目级 workflow 按钮。你可以在 `.inspecto/prompts.json` 中添加 `kind: "workflow"` 配置，然后在 Annotate mode 中点击执行。这类任务不需要选择 DOM 元素；Inspecto 会追加项目根目录、当前分支、git status 等元信息。
 
 ```json
 [
@@ -63,20 +140,11 @@ Workflow 按钮和 inspect 菜单 prompt 一样，通过 `.inspecto/prompts.json
     "id": "deploy-preview",
     "kind": "workflow",
     "label": "Deploy Preview",
-    "prompt": "请使用可用的 deploy skill、MCP server 或 CLI tool，将当前分支部署到预览环境。完成后回复预览链接，并将 Inspecto session 标记为 resolved。",
+    "prompt": "请使用可用的 deploy skill、MCP server 或 CLI tool，将当前分支部署到预览环境。不要部署生产环境。完成后回复预览链接，并将 Inspecto session 标记为 resolved。",
     "confirm": true
   }
 ]
 ```
-
-和普通标注任务相比，workflow session 更像一条项目指令。它可以不依赖任何已选 DOM 批注，Inspecto 会追加项目根目录、当前分支、git status 等项目元信息，帮助 Agent 判断如何执行。Agent 仍然通过 `inspecto_reply` 回写进度，并通过 `inspecto_resolve` 或 `inspecto_dismiss` 结束任务。
-
-你可以按下面的方式区分两类 session：
-
-| Session 类型       | 从哪里开始                       | 适合场景                                     | 是否需要 DOM 批注 |
-| :----------------- | :------------------------------- | :------------------------------------------- | :---------------- |
-| Annotation session | 选中的元素 + 每个节点的批注意见  | UI 修复、设计走查、组件级重构                | 通常需要          |
-| Workflow session   | 配置好的 `kind: "workflow"` 条目 | deploy、PR、release、测试、文档、批量 review | 不需要            |
 
 常用 workflow prompt 模板：
 
@@ -113,32 +181,16 @@ Workflow 按钮和 inspect 菜单 prompt 一样，通过 `.inspecto/prompts.json
 
 :::
 
-### 模式 1：异步队列模式（推荐大多数客户端使用）
+## 暴露的 MCP tools
 
-由于大多数对话型 AI 客户端有严格的工具调用超时限制（例如如果 Agent 挂起超过 2 分钟，客户端会强行断开并报错），我们推荐这种异步协作模式：
+通常你不需要手动调用这些工具。把 prompt 发给 Agent 后，它会自己使用。
 
-1. **沉浸式标注**: 在浏览器中开启「标注模式」，自由地收集问题。
-2. **提交任务**: 每次点击 `Create Task` 时，任务会安全地存储到本地 dev server 的队列中。你可以连续提交多个任务。
-3. **浏览器侧追踪**: 保持标注侧栏打开，你可以看到任务入队，并在之后看到 Agent 进度。
-4. **批量处理**: 回到你的 AI 助手，告诉它：“请处理一下我刚才积攒的 UI 标注”。
-5. **Agent 执行**: 你的 Agent 会调用 `inspecto_claim_next` 迅速“清空”本地队列中的待办任务。进度回复和最终状态会同步反映在 timeline 中。
+- `inspecto_claim_next`: 领取下一条 annotation 或 workflow session。
+- `inspecto_get_session`: 通过 ID 获取指定 session。
+- `inspecto_reply`: 将进度消息回写到浏览器时间线。
+- `inspecto_resolve`: 标记任务已完成。
+- `inspecto_dismiss`: 不处理代码修改，直接关闭任务。
 
-### 模式 2：实时监听模式（如果你在后台运行 Agent）
-
-如果你的 Agent 支持在后台长驻运行，或者你的客户端允许长时间挂起工具调用，你可以使用最极致的免手动模式：
-
-1. **启动监听**: 告诉你的 Agent：“请进入持续标注模式，等待我接下来的前端标注（可以设置较长的超时时间，比如 10 分钟）”。
-2. **Agent 挂起**: Agent 会调用 `inspecto_claim_next` 并传入较长的 `timeoutMs`，进入等待状态。
-3. **实时处理**: 一旦你在前端点击 `Create Task`，Agent 会在几毫秒内自动捕获上下文并直接开始写代码，无需你在两个窗口间来回切换。浏览器侧 timeline 会随着 Agent 领取、回复和完成 session 而更新。
-
-> **重要限制**：大多数对话型 AI 客户端（包括标准聊天界面）对工具调用有严格的超时限制（通常为 1–2 分钟）。如果你在超时到期前没有提交标注，`inspecto_claim_next` 调用会失败，Agent 将回到空闲状态。此时你的标注仍会留在队列中，但需要你明确发送指令（如“请处理我的 UI 标注”）才会被处理。如需真正持续的后台监听，请使用支持常驻 Agent 的客户端（如 Claude Desktop、Cursor Agent Mode）。
-
-## 暴露的 MCP 工具列表
-
-这套 MCP 能力刻意收敛到了免手动的 session 工作流。以下工具会代理到本地的 Inspecto dev server（dev server 是管理标注会话的唯一真相源）：
-
-- `inspecto_claim_next`: 等待下一条未处理的标注任务，并自动领取它。浏览器侧 timeline 会从入队更新为已领取。
-- `inspecto_get_session`: 通过 ID 直接获取某个具体的标注会话。
-- `inspecto_reply`: Agent 用来向标注任务回传进度或状态信息，这些回复会展示在浏览器侧 timeline 中。
-- `inspecto_resolve`: Agent 用来将任务标记为已完成，timeline 会记录完成状态。
-- `inspecto_dismiss`: 如果某个标注会话不应该被处理，Agent 会调用此工具将其关闭，timeline 会记录关闭状态。
+<script setup>
+import CopyPrompt from '../../components/CopyPrompt.vue'
+</script>

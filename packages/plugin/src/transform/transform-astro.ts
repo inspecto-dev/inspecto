@@ -1,10 +1,16 @@
 import MagicString from 'magic-string'
 import { parse as parseAstro } from '@astrojs/compiler/sync'
-import { buildEscapeTagsSet, formatAttrValue, type TransformResult } from './utils.js'
+import {
+  buildEscapeTagsSet,
+  formatAttrValue,
+  resolveTransformAttrPath,
+  type TransformResult,
+} from './utils.js'
 
 export interface TransformAstroOptions {
   filePath: string
   source: string
+  projectRoot?: string
   pathType?: 'absolute' | 'relative'
   escapeTags?: string[]
   attributeName?: string
@@ -22,9 +28,24 @@ function walk(node: any, visitor: { enter: (n: any) => void }) {
 }
 
 export function transformAstro(options: TransformAstroOptions): TransformResult {
-  const { filePath, source, escapeTags, attributeName = 'data-inspecto' } = options
+  const {
+    filePath,
+    source,
+    projectRoot,
+    pathType = 'absolute',
+    escapeTags,
+    attributeName = 'data-inspecto',
+  } = options
 
   const escapeTagsSet = buildEscapeTagsSet(escapeTags)
+  const normalizedPath =
+    projectRoot || options.pathType
+      ? resolveTransformAttrPath({
+          filePath,
+          pathType,
+          ...(projectRoot ? { projectRoot } : {}),
+        })
+      : filePath.replace(/\\/g, '/')
 
   let ast: any
   try {
@@ -67,7 +88,7 @@ export function transformAstro(options: TransformAstroOptions): TransformResult 
               const line = node.position.start.line
               const column = node.position.start.column
 
-              const attrValue = formatAttrValue(filePath, line, column)
+              const attrValue = formatAttrValue(normalizedPath, line, column)
               const addition = ` ${attributeName}="${attrValue}"`
 
               s.appendLeft(insertPosition, addition)

@@ -18,7 +18,6 @@ import {
   getAnnotateSidebarOptions as buildAnnotateSidebarOptions,
   getAnnotationTargetKey as getAnnotateTargetKey,
   getNextRecordDisplayOrder as getAnnotateNextRecordDisplayOrder,
-  hasCurrentRecord as hasAnnotateCurrentRecord,
   markTargetInAnnotateSession as markAnnotateTarget,
   persistCurrentDraft as persistAnnotateDraft,
   rebindCurrentAnnotationElements as rebindAnnotateElements,
@@ -78,7 +77,6 @@ import {
   isCssContextEnabledForTransportTarget as isCssEnabledForTransportTarget,
   syncRuntimeContextCapture as syncRuntimeCapture,
 } from './component-evidence.js'
-import { createElementSelector } from './component-utils.js'
 import { createRuntimeContextCollector, createRuntimeContextEnvelope } from './runtime-context.js'
 import type {
   AnnotationTransport,
@@ -111,6 +109,9 @@ class InspectoElement extends BaseElement {
     mode: 'inspect',
   }
   private mode: InspectorMode = 'inspect'
+  private ide: import('@inspecto-dev/types').IdeType = 'vscode'
+  private ideConnected = false
+  private ideConnectionKnown = false
   private launcherPanelOpen = false
   private shadowRootEl!: ShadowRoot
   private overlay!: ReturnType<typeof createOverlay>
@@ -364,14 +365,6 @@ class InspectoElement extends BaseElement {
 
   private describeElement(element: Element): string {
     return describeInspectableElement(this, element)
-  }
-
-  private createSelector(element: Element): string {
-    return createElementSelector(element)
-  }
-
-  private hasCurrentRecord(): boolean {
-    return hasAnnotateCurrentRecord(this)
   }
 
   private getNextRecordDisplayOrder(): number {

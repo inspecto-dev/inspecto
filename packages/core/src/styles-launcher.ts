@@ -231,6 +231,12 @@ export const launcherStyles = `
     gap: 6px;
   }
 
+  .${badgeClass}-panel-group [data-inspecto-launcher-inspect-notice="true"] {
+    font-size: 10px;
+    line-height: 1.4;
+    color: var(--inspecto-text-tertiary);
+  }
+
   .${badgeClass}-panel-button {
     appearance: none;
     width: 100%;

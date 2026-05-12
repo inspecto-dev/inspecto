@@ -168,8 +168,16 @@ export function createAnnotateOverlayDom(
     '400 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
   composerInput.style.outline = 'none'
   composerInput.style.resize = 'none'
-  composerInput.style.marginBottom = '14px'
+  composerInput.style.marginBottom = '6px'
   composerInput.style.boxShadow = 'inset 0 1px 0 rgba(255, 255, 255, 0.04)'
+
+  const composerShortcut = document.createElement('div')
+  composerShortcut.setAttribute('data-inspecto-annotate-composer-shortcut', '')
+  composerShortcut.textContent = t('annotate.composer.shortcut')
+  composerShortcut.style.margin = '0 0 2px 2px'
+  composerShortcut.style.color = tokens.textTertiary()
+  composerShortcut.style.font =
+    '500 10px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 
   const composerActions = document.createElement('div')
   composerActions.style.display = 'flex'
@@ -217,7 +225,7 @@ export function createAnnotateOverlayDom(
   composerHeaderActions.append(composerCssButton, composerRuntimeButton, composerOpenButton)
   composerActions.append(deleteButton, cancelButton, addButton)
   composerHeader.append(composerHeaderText, composerHeaderActions)
-  composer.append(composerHeader, composerInput, composerActions)
+  composer.append(composerHeader, composerInput, composerShortcut, composerActions)
 
   const preview = document.createElement('div')
   preview.setAttribute('data-inspecto-annotate-preview', '')

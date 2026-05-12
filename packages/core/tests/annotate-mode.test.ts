@@ -151,7 +151,7 @@ describe('annotate mode integration', () => {
   function configResponse(overrides: Record<string, unknown> = {}) {
     return {
       ok: true,
-      json: async () => ({ ide: 'vscode', prompts: [], ...overrides }),
+      json: async () => ({ ide: 'vscode', ideConnected: true, prompts: [], ...overrides }),
     }
   }
 
@@ -395,6 +395,73 @@ describe('annotate mode integration', () => {
       '[data-inspecto-annotate-composer] textarea',
     ) as HTMLTextAreaElement
     expect(composerNote.placeholder).toBe('What should change for this component?')
+  })
+
+  it('keeps Enter available for multi-line composer notes', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(configResponse())
+    vi.stubGlobal('fetch', fetchMock)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+    const note = shadowRoot.querySelector(
+      '[data-inspecto-annotate-composer] textarea',
+    ) as HTMLTextAreaElement
+
+    note.value = 'Change to red'
+    note.dispatchEvent(new Event('input', { bubbles: true }))
+    note.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+    )
+    await Promise.resolve()
+
+    expect(shadowRoot.querySelectorAll('.inspecto-annotate-sidebar-queue-item')).toHaveLength(0)
+  })
+
+  it('saves the current annotation when pressing Cmd or Ctrl Enter in the composer note', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(configResponse())
+    vi.stubGlobal('fetch', fetchMock)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+    const note = shadowRoot.querySelector(
+      '[data-inspecto-annotate-composer] textarea',
+    ) as HTMLTextAreaElement
+
+    note.value = 'Change to red'
+    note.dispatchEvent(new Event('input', { bubbles: true }))
+    note.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        metaKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    )
+    await Promise.resolve()
+
+    expect(shadowRoot.querySelectorAll('.inspecto-annotate-sidebar-queue-item')).toHaveLength(1)
+    expect(shadowRoot.querySelector('.inspecto-annotate-sidebar')?.textContent).toContain(
+      'Change to red',
+    )
+    expect(
+      shadowRoot.querySelector('[data-inspecto-annotate-composer-shortcut]')?.textContent,
+    ).toBe('Enter for newline · ⌘/Ctrl+Enter to save')
   })
 
   it('saves empty-note records immediately in quick capture mode without opening the add composer', async () => {
@@ -872,6 +939,158 @@ describe('annotate mode integration', () => {
 
     expect(panel.style.display).toBe('none')
     expect(shadowRoot.textContent).not.toContain('Open in Editor')
+  })
+
+  it('hides inspect mode when MCP annotate is configured without an IDE connection', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      configResponse({
+        annotateChannel: 'mcp',
+        ideConnected: false,
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const inspector = (await mountInspector({ defaultActive: false })) as any
+    await inspector.configLoadPromise
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+    const launcher = shadowRoot.querySelector('.inspecto-badge') as HTMLDivElement
+
+    launcher.click()
+
+    const inspectButton = shadowRoot.querySelector(
+      '[data-inspecto-launcher-action="inspect"]',
+    ) as HTMLButtonElement
+    const annotateButton = shadowRoot.querySelector(
+      '[data-inspecto-launcher-action="annotate"]',
+    ) as HTMLButtonElement
+
+    expect(inspectButton.style.display).toBe('none')
+    expect(annotateButton.style.display).toBe('inline-flex')
+    expect(shadowRoot.textContent).toContain('Inspect needs an IDE connection in MCP mode.')
+  })
+
+  it('keeps inspect mode visible when MCP annotate is configured with an IDE connection', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      configResponse({
+        annotateChannel: 'mcp',
+        ideConnected: true,
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const inspector = (await mountInspector({ defaultActive: false })) as any
+    await inspector.configLoadPromise
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+    const launcher = shadowRoot.querySelector('.inspecto-badge') as HTMLDivElement
+
+    launcher.click()
+
+    const inspectButton = shadowRoot.querySelector(
+      '[data-inspecto-launcher-action="inspect"]',
+    ) as HTMLButtonElement
+    const annotateButton = shadowRoot.querySelector(
+      '[data-inspecto-launcher-action="annotate"]',
+    ) as HTMLButtonElement
+
+    expect(inspectButton.style.display).toBe('inline-flex')
+    expect(annotateButton.style.display).toBe('inline-flex')
+    expect(shadowRoot.textContent).not.toContain('Inspect needs an IDE connection in MCP mode.')
+    expect(shadowRoot.textContent).not.toContain(
+      'Inspect is hidden because IDE integration is disabled.',
+    )
+  })
+
+  it('hides inspect mode when IDE integration is disabled explicitly', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      configResponse({
+        ide: 'none',
+        annotateChannel: 'ide',
+        ideConnected: true,
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const inspector = (await mountInspector({ defaultActive: false })) as any
+    await inspector.configLoadPromise
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+    const launcher = shadowRoot.querySelector('.inspecto-badge') as HTMLDivElement
+
+    launcher.click()
+
+    const inspectButton = shadowRoot.querySelector(
+      '[data-inspecto-launcher-action="inspect"]',
+    ) as HTMLButtonElement
+    const annotateButton = shadowRoot.querySelector(
+      '[data-inspecto-launcher-action="annotate"]',
+    ) as HTMLButtonElement
+
+    expect(inspectButton.style.display).toBe('none')
+    expect(annotateButton.style.display).toBe('inline-flex')
+    expect(shadowRoot.textContent).toContain(
+      'Inspect is hidden because IDE integration is disabled.',
+    )
+  })
+
+  it('falls back to annotate mode when inspect mode becomes unavailable', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      configResponse({
+        annotateChannel: 'mcp',
+        ideConnected: false,
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const inspector = (await mountInspector({ defaultActive: true, mode: 'inspect' })) as any
+    await inspector.configLoadPromise
+
+    expect(inspector.getMode()).toBe('annotate')
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+    expect(
+      (shadowRoot.querySelector('[data-inspecto-launcher-state="true"]') as HTMLElement)
+        .textContent,
+    ).toBe('Annotate mode')
+    expect(shadowRoot.querySelector('.inspecto-annotate-sidebar')).not.toBeNull()
+  })
+
+  it('does not restore inspect mode after resume when inspect becomes unavailable while paused', async () => {
+    const configDeferred = createDeferred<Response>()
+    const fetchMock = vi.fn().mockReturnValue(configDeferred.promise)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const inspector = (await mountInspector({ defaultActive: true, mode: 'inspect' })) as any
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+    const launcher = shadowRoot.querySelector('.inspecto-badge') as HTMLDivElement
+
+    launcher.click()
+    const pauseButton = shadowRoot.querySelector(
+      '[data-inspecto-launcher-action="pause"]',
+    ) as HTMLButtonElement
+    pauseButton.click()
+
+    configDeferred.resolve(
+      configResponse({
+        annotateChannel: 'mcp',
+        ideConnected: false,
+      }) as Response,
+    )
+    await inspector.configLoadPromise
+
+    launcher.click()
+    const resumeButton = shadowRoot.querySelector(
+      '[data-inspecto-launcher-action="pause"]',
+    ) as HTMLButtonElement
+    resumeButton.click()
+
+    expect(inspector.getMode()).toBe('annotate')
+    expect(
+      (shadowRoot.querySelector('[data-inspecto-launcher-state="true"]') as HTMLElement)
+        .textContent,
+    ).toBe('Annotate mode')
   })
 
   it('restores the idle launcher state after pausing and resuming', async () => {

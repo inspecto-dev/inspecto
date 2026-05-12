@@ -61,6 +61,7 @@ export function transformRouter(options: RouterOptions): TransformResult | null 
     return transformAstro({
       filePath,
       source,
+      projectRoot,
       escapeTags: pluginOptions.escapeTags,
       pathType: pluginOptions.pathType,
       attributeName: pluginOptions.attributeName,

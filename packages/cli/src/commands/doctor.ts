@@ -3,7 +3,6 @@
 // ============================================================
 import path from 'node:path'
 import os from 'node:os'
-import { execSync } from 'node:child_process'
 import { log } from '../utils/logger.js'
 import { exists, readJSON, readFile } from '../utils/fs.js'
 import { detectPackageManager, getInstallCommand } from '../detect/package-manager.js'
@@ -14,6 +13,7 @@ import { detectProviders } from '../detect/provider.js'
 import { isExtensionInstalled } from '../inject/extension.js'
 import { createPlanResult } from '../onboarding/planner.js'
 import { writeCommandOutput } from '../utils/output.js'
+import { resolveSettingsRoot } from './settings-root.js'
 import type {
   CommandStatus,
   DoctorDiagnostic,
@@ -84,39 +84,6 @@ function isConfigPatchReason(reason: string): boolean {
 
 function isNextWebpackDevPatchReason(reason: string): boolean {
   return reason === 'next_dev_script_requires_webpack'
-}
-
-async function resolveSettingsRoot(root: string): Promise<string | null> {
-  let current = root
-  const home = os.homedir()
-  const gitRoot = resolveGitRoot(root)
-  while (true) {
-    if (gitRoot && !isUnderOrEqual(current, gitRoot)) return null
-    if (current === home) return null
-    if (isHomeOrHomeAncestor(current, home)) return null
-    if (await exists(path.join(current, '.inspecto'))) return current
-    if (gitRoot && current === gitRoot) return null
-    const parent = path.dirname(current)
-    if (parent === current) return null
-    current = parent
-  }
-}
-
-function resolveGitRoot(cwd: string): string | null {
-  try {
-    const output = execSync('git rev-parse --show-toplevel', { cwd, encoding: 'utf-8' })
-    return typeof output === 'string' ? output.trim() : null
-  } catch {
-    return null
-  }
-}
-
-function isUnderOrEqual(candidate: string, root: string): boolean {
-  return candidate === root || candidate.startsWith(root + path.sep)
-}
-
-function isHomeOrHomeAncestor(candidate: string, home: string): boolean {
-  return candidate === home || home.startsWith(candidate + path.sep)
 }
 
 async function collectEffectiveSettingsSources(root: string): Promise<string[]> {
