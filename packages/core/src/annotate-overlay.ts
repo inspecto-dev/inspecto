@@ -102,6 +102,13 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
   composerInput.addEventListener('blur', () => {
     isComposerFocused = false
   })
+  composerInput.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' || (!event.metaKey && !event.ctrlKey) || event.isComposing) return
+
+    event.preventDefault()
+    event.stopPropagation()
+    addButton.click()
+  })
   composerActions.addEventListener('focusin', () => {
     isComposerFocused = true
   })

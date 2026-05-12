@@ -3,9 +3,13 @@ import { parse as parseSFC } from '@vue/compiler-sfc'
 import type { ElementNode, AttributeNode } from '@vue/compiler-core'
 import { NodeTypes } from '@vue/compiler-core'
 import MagicString from 'magic-string'
-import path from 'node:path'
 import type { PathType } from '@inspecto-dev/types'
-import { buildEscapeTagsSet, formatAttrValue, type TransformResult } from './utils.js'
+import {
+  buildEscapeTagsSet,
+  formatAttrValue,
+  resolveTransformAttrPath,
+  type TransformResult,
+} from './utils.js'
 
 export interface TransformVueOptions {
   filePath: string
@@ -39,13 +43,7 @@ export function transformVue(options: TransformVueOptions): TransformResult {
 
   const escapeTagsSet = buildEscapeTagsSet(escapeTags)
 
-  // Resolve path
-  const resolvedPath =
-    pathType === 'absolute'
-      ? path.resolve(filePath)
-      : path.relative(projectRoot, path.resolve(filePath))
-
-  const normalizedPath = resolvedPath.replace(/\\/g, '/')
+  const normalizedPath = resolveTransformAttrPath({ filePath, projectRoot, pathType })
 
   // ── Find <template> block boundaries ──────────────────────────────────────
   // Use @vue/compiler-sfc to parse the file and extract the template block.

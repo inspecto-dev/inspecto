@@ -1,5 +1,6 @@
 import type { UnpluginOptions } from '@inspecto-dev/types'
 import type MagicString from 'magic-string'
+import path from 'node:path'
 
 export interface TransformResult {
   code: string
@@ -103,7 +104,13 @@ export function extractTransformFilePath(requestId: string): NormalizedTransform
  * Determine if a file should be transformed.
  * Always skips node_modules and dist directories.
  */
-export function shouldTransform(filePath: string, _options: Required<UnpluginOptions>): boolean {
+type UserPattern = string | RegExp
+
+export function shouldTransform(
+  filePath: string,
+  options: Required<UnpluginOptions>,
+  projectRoot?: string,
+): boolean {
   const resolvedFilePath = extractTransformFilePath(filePath).filePath
 
   // Never transform in production
@@ -124,10 +131,96 @@ export function shouldTransform(filePath: string, _options: Required<UnpluginOpt
     return false
   }
 
-  // Check user-defined exclude patterns
-  // (picomatch integration — see index.ts for how options.exclude is applied)
+  if (!matchesUserPatterns(resolvedFilePath, options.include as UserPattern[], true, projectRoot)) {
+    return false
+  }
+  if (matchesUserPatterns(resolvedFilePath, options.exclude as UserPattern[], false, projectRoot)) {
+    return false
+  }
 
   return true
+}
+
+function matchesUserPatterns(
+  filePath: string,
+  patterns: UserPattern[],
+  emptyResult: boolean,
+  projectRoot?: string,
+): boolean {
+  if (patterns.length === 0) return emptyResult
+
+  const normalizedPath = filePath.replace(/\\/g, '/')
+  return patterns.some(pattern => matchesPattern(normalizedPath, pattern, projectRoot))
+}
+
+function matchesPattern(filePath: string, pattern: UserPattern, projectRoot?: string): boolean {
+  if (pattern instanceof RegExp) {
+    pattern.lastIndex = 0
+    return pattern.test(filePath)
+  }
+
+  const normalizedPattern = pattern.replace(/\\/g, '/')
+  const candidates = new Set<string>([filePath])
+
+  if (projectRoot) {
+    const normalizedProjectRoot = projectRoot.replace(/\\/g, '/')
+    candidates.add(path.posix.relative(normalizedProjectRoot, filePath))
+  }
+
+  const srcIndex = filePath.indexOf('/src/')
+  if (srcIndex >= 0) candidates.add(filePath.slice(srcIndex + 1))
+
+  return expandBraceGlob(normalizedPattern).some(patternVariant => {
+    const regexp = globToRegExp(patternVariant)
+    return Array.from(candidates).some(candidate => regexp.test(candidate))
+  })
+}
+
+function expandBraceGlob(pattern: string): string[] {
+  const match = pattern.match(/\{([^{}]+)\}/)
+  if (!match || match.index === undefined) return [pattern]
+
+  const before = pattern.slice(0, match.index)
+  const after = pattern.slice(match.index + match[0].length)
+  return match[1]!.split(',').flatMap(part => expandBraceGlob(`${before}${part}${after}`))
+}
+
+function globToRegExp(pattern: string): RegExp {
+  let source = '^'
+
+  for (let index = 0; index < pattern.length; index++) {
+    const char = pattern[index]!
+    const next = pattern[index + 1]
+
+    if (char === '*') {
+      if (next === '*') {
+        const afterGlobstar = pattern[index + 2]
+        if (afterGlobstar === '/') {
+          source += '(?:.*/)?'
+          index += 2
+        } else {
+          source += '.*'
+          index++
+        }
+      } else {
+        source += '[^/]*'
+      }
+      continue
+    }
+
+    if (char === '?') {
+      source += '[^/]'
+      continue
+    }
+
+    source += escapeRegExp(char)
+  }
+
+  return new RegExp(`${source}$`)
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[|\\{}()[\]^$+?.]/g, '\\$&')
 }
 
 /**
@@ -149,4 +242,31 @@ export function buildEscapeTagsSet(escapeTags?: string[]): Set<string> {
  */
 export function formatAttrValue(file: string, line: number, column: number): string {
   return `${file}:${line}:${column}`
+}
+
+export function resolveTransformAttrPath(options: {
+  filePath: string
+  projectRoot?: string
+  pathType?: 'absolute' | 'relative'
+}): string {
+  const baseRoot = options.projectRoot ?? process.cwd()
+  const normalizedInputPath = options.filePath.replace(/\\/g, '/')
+  const normalizedProjectRoot = normalizeAbsoluteLikePath(baseRoot)
+  const normalizedFilePath = isAbsoluteLikePath(normalizedInputPath)
+    ? normalizedInputPath
+    : normalizeAbsoluteLikePath(path.resolve(baseRoot, options.filePath))
+  const resolvedPath =
+    options.pathType === 'relative'
+      ? path.posix.relative(normalizedProjectRoot, normalizedFilePath)
+      : normalizedFilePath
+
+  return resolvedPath.replace(/\\/g, '/')
+}
+
+function normalizeAbsoluteLikePath(filePath: string): string {
+  return filePath.replace(/\\/g, '/')
+}
+
+function isAbsoluteLikePath(filePath: string): boolean {
+  return path.isAbsolute(filePath) || /^[A-Za-z]:\//.test(filePath)
 }

@@ -1,14 +1,66 @@
 # MCP Integration
 
-If your AI runtime supports MCP (Model Context Protocol), Inspecto can expose its annotate session workflow directly to your agent through a dedicated MCP stdio entrypoint.
+MCP mode lets an AI agent pick up Annotate tasks from Inspecto, work on them, and report progress back to the browser. You do not need to copy DOM paths, screenshots, or notes by hand: click components in the browser, create a task, then ask your agent to process the queue.
 
-This is especially useful if you are using Inspecto in **Standalone / Clipboard Mode** (`ide: "none"`) and want a direct, hands-free connection to your AI without relying on IDE extensions. In MCP mode, the browser also becomes a live session surface: Annotate mode can show when a task is queued, claimed by the agent, updated with progress replies, and resolved or dismissed.
+Use this page if you want Inspecto to work with an MCP-capable agent, especially in **Standalone / Browser-only mode** (`ide: "none"`).
 
-MCP also unlocks Inspecto's custom workflow buttons. You can define `kind: "workflow"` prompts in `.inspecto/prompts.json`, such as `Deploy Preview` or `Review & PR`. When clicked, Inspecto queues a workflow session with your instruction and project metadata, and the agent can use its own skills, MCP servers, and tools to complete the command.
+## The simplest flow
 
-## Configuration
+1. **Start your app with Inspecto enabled.** Keep the local dev server running.
+2. **Install the Inspecto agent skill** so your agent knows how to claim and finish tasks.
+3. **Connect Inspecto as an MCP server** in your AI client. The easiest path is `add-mcp`; the manual JSON config is the fallback.
+4. **Open Annotate mode** in the browser, click one or more components, add notes, then click **Create Task**.
+5. **Paste the prompt below into your agent.** The agent claims the queued task, works on it, sends progress replies, and resolves the session when finished.
 
-To connect Inspecto to your agent, add the following configuration to your agent's MCP settings (for example, in Claude Desktop or Cursor MCP settings):
+<CopyPrompt
+  title="Process queued Inspecto tasks"
+  description="Paste this into your MCP-capable agent after clicking Create Task in Annotate mode."
+  prompt="Please process my pending Inspecto task. Use the Inspecto MCP tools to claim the next session, make the needed changes, run checks, and resolve it when finished."
+/>
+
+## 1. Install the agent skill
+
+If your agent supports the [skills](https://www.npmjs.com/package/skills) CLI, install Inspecto's agent skill with one command:
+
+```bash
+npx skills add inspecto-dev/inspecto --skill inspecto-agent
+```
+
+This installs the `inspecto-agent` instructions into the agent directories detected by `skills`. If you want a non-interactive global install for one agent, pass `--agent`, `--global`, and `--yes`:
+
+```bash
+npx skills add inspecto-dev/inspecto --skill inspecto-agent --agent claude-code --global --yes
+```
+
+Replace `claude-code` with the agent you use, such as `codex`, `cursor`, `trae`, or `codebuddy`.
+
+## 2. Add the MCP server
+
+Recommended: use [`add-mcp`](https://www.npmjs.com/package/add-mcp) to write the MCP config for your agent:
+
+::: code-group
+
+```bash [Cursor]
+npx -y add-mcp@latest "npx -y @inspecto-dev/cli@latest mcp" --name inspecto -a cursor -y
+```
+
+```bash [Claude Code]
+npx -y add-mcp@latest "npx -y @inspecto-dev/cli@latest mcp" --name inspecto -a claude-code -y
+```
+
+```bash [Codex]
+npx -y add-mcp@latest "npx -y @inspecto-dev/cli@latest mcp" --name inspecto -a codex -y
+```
+
+```bash [VS Code]
+npx -y add-mcp@latest "npx -y @inspecto-dev/cli@latest mcp" --name inspecto -a vscode -y
+```
+
+:::
+
+`add-mcp` is a good fit here because it handles the different MCP config file locations for Cursor, Claude Code, Codex, VS Code, OpenCode, and other agents. Prefer passing `-a <agent>` so the command updates only the client you intend to use. Without `-a`, `add-mcp -y` may install to every project-capable agent when none are detected.
+
+If you prefer to edit config manually, use this shape for clients that expect `mcpServers` JSON, such as Cursor or Claude Code project config:
 
 ```json
 {
@@ -21,7 +73,11 @@ To connect Inspecto to your agent, add the following configuration to your agent
 }
 ```
 
-If auto-discovery does not find the right local dev server (for example, when running multiple projects), you can pass an explicit URL:
+If you run multiple local projects and the agent connects to the wrong Inspecto server, pin the server URL. With `add-mcp`, put the extra flag inside the quoted command; for manual config, add it to `args`:
+
+```bash
+npx -y add-mcp@latest "npx -y @inspecto-dev/cli@latest mcp --server-url http://127.0.0.1:5678" --name inspecto -a cursor -y
+```
 
 ```json
 {
@@ -34,28 +90,43 @@ If auto-discovery does not find the right local dev server (for example, when ru
 }
 ```
 
-If the browser or agent reaches the Inspecto dev server through a different hostname than the bind address, set `.inspecto/settings.local.json` with `server.publicUrl` so browser injection and MCP discovery use the same reachable URL.
+If the browser and agent need to reach the dev server through a different hostname, set `server.publicUrl` in `.inspecto/settings.local.json` so both sides use the same URL.
 
-## Recommended Workflows
+## 3. Send Annotate tasks to MCP
 
-Inspecto supports two workflows for collaborating with your agent, depending on the constraints of your AI client (e.g., Cursor, Claude Desktop). Before starting, make sure your `.inspecto/settings.local.json` sets `"annotate.channel": "mcp"`.
+Make sure Annotate mode uses MCP:
 
-### Browser-side Session Timeline
+```json
+{
+  "annotate.channel": "mcp"
+}
+```
 
-When `annotate.channel` is set to `mcp`, clicking `Create Task` creates a durable annotation session on the local Inspecto dev server. The Annotate sidebar then displays the latest session timeline so you can track the handoff from the same browser context where the issue was found.
+Then use the browser:
 
-The timeline includes:
+1. Open **Annotate mode**.
+2. Click the UI elements involved in the issue.
+3. Write short notes such as “make this button primary” or “align this card with the header”.
+4. Click **Create Task**.
+5. Ask your agent to process the queued task using the copyable prompt above.
 
-- task creation / queued state;
-- agent acknowledgement after `inspecto_claim_next` succeeds;
-- progress messages sent through `inspecto_reply`;
-- final completion through `inspecto_resolve` or closure through `inspecto_dismiss`.
+The Annotate sidebar becomes the task timeline. It shows when the task is queued, claimed by the agent, updated with progress replies, and resolved or dismissed.
 
-This makes MCP mode different from a plain prompt handoff: the agent can report back into the browser while it works, and you do not need to infer task state from the chat window alone.
+## 4. Optional: keep the agent watching
 
-### Custom Workflow Buttons
+If your AI client supports long-running or background agents, you can ask it to wait for the next task instead of manually prompting it after each **Create Task**.
 
-Workflow buttons are configured in `.inspecto/prompts.json` alongside inspect menu prompts:
+<CopyPrompt
+  title="Wait for the next Inspecto task"
+  description="Use this only with clients that allow long-running tool calls or background agents."
+  prompt="Please watch for Inspecto tasks. When a task appears, claim it, fix it, run checks, and resolve it. Continue until I ask you to stop."
+/>
+
+Most chat-style clients enforce tool-call timeouts. If the agent times out while waiting, your task is still safe in Inspecto; just send the first prompt again after creating the task.
+
+## Workflow buttons
+
+MCP also supports project-level workflow buttons. Add `kind: "workflow"` items to `.inspecto/prompts.json`, then click them from Annotate mode. These tasks do not need selected DOM elements; Inspecto adds project metadata such as root path, branch, and git status.
 
 ```json
 [
@@ -63,20 +134,11 @@ Workflow buttons are configured in `.inspecto/prompts.json` alongside inspect me
     "id": "deploy-preview",
     "kind": "workflow",
     "label": "Deploy Preview",
-    "prompt": "Deploy the current branch to the preview environment using the available deploy skill, MCP servers, or CLI tools. Reply with the preview URL and mark the Inspecto session resolved when finished.",
+    "prompt": "Deploy the current branch to the preview environment using the available deploy skill, MCP servers, or CLI tools. Do not deploy production. Reply with the preview URL and resolve the Inspecto session when finished.",
     "confirm": true
   }
 ]
 ```
-
-Compared with a normal annotation task, a workflow session is more like a project command. It can include zero selected DOM annotations, and Inspecto appends project metadata such as the project root, current branch, and git status so the agent has enough context to act. The agent still reports progress through `inspecto_reply` and finishes with `inspecto_resolve` or `inspecto_dismiss`.
-
-Use this split when deciding what to create:
-
-| Session type       | Starts from                          | Best for                                      | Needs DOM annotations? |
-| :----------------- | :----------------------------------- | :-------------------------------------------- | :--------------------- |
-| Annotation session | Selected elements + per-node notes   | UI fixes, design review, component refactors  | Usually yes            |
-| Workflow session   | A configured `kind: "workflow"` item | Deploy, PR, release, test, docs, batch review | No                     |
 
 Useful workflow prompt templates:
 
@@ -113,32 +175,16 @@ Useful workflow prompt templates:
 
 :::
 
-### Mode 1: Asynchronous Queue (Recommended for most clients)
+## Available MCP tools
 
-Because most conversational AI clients have strict timeout limits for tool calls (e.g., forcefully disconnecting if a tool hangs for more than 2 minutes), we recommend this async workflow:
+You usually do not need to call these tools manually. Your agent uses them after you paste the prompt.
 
-1. **Immersive Annotation**: Open `Annotate mode` in the browser and collect UI issues at your own pace.
-2. **Submit Tasks**: Every time you click `Create Task`, the session is safely queued in your local dev server. You can queue multiple tasks.
-3. **Track from the Browser**: Keep the Annotate sidebar open to see the queued task and later agent progress.
-4. **Batch Processing**: Go back to your AI assistant and say: _"Please process the UI annotations I just created."_
-5. **Agent Execution**: Your agent will call `inspecto_claim_next` and instantly consume the pending tasks from the local queue. Progress replies and final status are reflected in the timeline.
+- `inspecto_claim_next`: Claim the next pending annotation or workflow session.
+- `inspecto_get_session`: Fetch a specific session by ID.
+- `inspecto_reply`: Send progress updates back to the browser timeline.
+- `inspecto_resolve`: Mark the task as completed.
+- `inspecto_dismiss`: Close a task without making changes.
 
-### Mode 2: Continuous Watch Mode (If your agent supports background running)
-
-If your agent can run as a background worker, or if your client allows long-running tool executions, you can use the ultimate hands-free mode:
-
-1. **Start Watching**: Tell your agent: _"Please enter continuous annotation mode and wait for my next frontend tasks (you can set a long timeout, like 10 minutes)."_
-2. **Agent Hangs**: The agent calls `inspecto_claim_next` with a long `timeoutMs` and waits.
-3. **Real-time Processing**: The moment you click `Create Task` in the browser, the agent receives the context in milliseconds and starts writing code immediately—no window switching required. The browser timeline updates as the agent acknowledges, replies, and resolves the session.
-
-> **Important limitation**: Most conversational AI clients (including standard chat interfaces) enforce strict tool call timeouts (typically 1–2 minutes). If you do not submit an annotation before the timeout expires, the `inspecto_claim_next` call fails and the agent returns to idle. In that case, your annotation remains in the queue but will not be processed until you explicitly ask the agent to check again. For truly continuous background listening, use a client that supports persistent agents (e.g., Claude Desktop, Cursor Agent Mode).
-
-## Available MCP Tools
-
-The MCP surface is intentionally limited to the hands-free session workflow. These tools proxy into the local Inspecto dev server, which remains the source of truth for durable annotation sessions:
-
-- `inspecto_claim_next`: Waits for the next pending annotation session and automatically acknowledges it. This changes the browser timeline from queued to acknowledged.
-- `inspecto_get_session`: Fetches a specific session by its ID.
-- `inspecto_reply`: Used by the agent to send progress updates back to the session. These replies appear in the browser timeline.
-- `inspecto_resolve`: Used by the agent to mark the task as complete. The timeline records the resolved state.
-- `inspecto_dismiss`: Used by the agent if the session should be closed without action. The timeline records the dismissed state.
+<script setup>
+import CopyPrompt from '../components/CopyPrompt.vue'
+</script>

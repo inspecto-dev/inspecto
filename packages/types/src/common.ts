@@ -26,9 +26,11 @@ export type PathType = 'relative' | 'absolute'
 
 export type LogLevel = 'info' | 'warn' | 'error' | 'silent'
 
+export type TransformPattern = string | RegExp
+
 export interface UnpluginOptions {
-  include?: string[]
-  exclude?: string[]
+  include?: TransformPattern[]
+  exclude?: TransformPattern[]
   escapeTags?: string[]
   pathType?: PathType
   attributeName?: string

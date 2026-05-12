@@ -1,4 +1,4 @@
-import type { HotKeys } from '@inspecto-dev/types'
+import type { HotKeys, IdeType } from '@inspecto-dev/types'
 import { badgeClass } from './styles.js'
 import { getDeepActiveElement, hotKeysHeld } from './component-utils.js'
 import { t } from './i18n.js'
@@ -10,6 +10,10 @@ type LauncherContext = {
   active: boolean
   disabled: boolean
   mode: 'inspect' | 'annotate'
+  ide: IdeType
+  ideConnected: boolean
+  ideConnectionKnown: boolean
+  annotateChannel: 'ide' | 'mcp'
   launcherPanelOpen: boolean
   badge: HTMLDivElement
   shadowRootEl: ShadowRoot
@@ -26,6 +30,20 @@ type LauncherContext = {
 
 function asLauncherContext(ctx: unknown): LauncherContext {
   return ctx as LauncherContext
+}
+
+function getInspectHiddenReason(
+  state: LauncherContext,
+): 'ide-disabled' | 'ide-disconnected' | null {
+  if (state.ide === 'none') return 'ide-disabled'
+  if (state.annotateChannel === 'mcp' && state.ideConnectionKnown && !state.ideConnected) {
+    return 'ide-disconnected'
+  }
+  return null
+}
+
+function shouldShowInspectMode(state: LauncherContext): boolean {
+  return getInspectHiddenReason(state) === null
 }
 
 export function getEffectiveHotKeys(ctx: unknown): HotKeys {
@@ -161,9 +179,12 @@ export function createBadge(ctx: unknown): HTMLDivElement {
   utilityGroup.className = `${badgeClass}-panel-group`
   utilityGroup.dataset.inspectoLauncherUtilityGroup = 'true'
 
+  const inspectNotice = document.createElement('div')
+  inspectNotice.dataset.inspectoLauncherInspectNotice = 'true'
+
   modeGroup.append(inspectBtn, annotateBtn)
   panelHeader.append(panelHeaderCopy, panelHeaderActions)
-  utilityGroup.append(hotkeyHint)
+  utilityGroup.append(inspectNotice, hotkeyHint)
   panelHeaderActions.append(pauseText, pauseBtn)
   panel.append(panelHeader, modeGroup, utilityGroup)
   titleBlock.append(titleSpan, stateSpan)
@@ -297,7 +318,10 @@ export function setPaused(ctx: unknown, value: boolean): void {
     state.cleanupMenu?.()
     state.cleanupMenu = null
   } else {
-    state.mode = state.prePauseState.mode
+    state.mode =
+      state.prePauseState.mode === 'inspect' && !shouldShowInspectMode(state)
+        ? 'annotate'
+        : state.prePauseState.mode
     state.active = state.prePauseState.active
   }
   state.syncRuntimeContextCapture()
@@ -335,6 +359,9 @@ export function updateBadgeContent(ctx: unknown): void {
   const hotkeyHint = state.badge.querySelector(
     `[data-inspecto-launcher-hint="hotkey"]`,
   ) as HTMLDivElement | null
+  const inspectNotice = state.badge.querySelector(
+    `[data-inspecto-launcher-inspect-notice]`,
+  ) as HTMLDivElement | null
 
   if (
     !indicator ||
@@ -345,7 +372,8 @@ export function updateBadgeContent(ctx: unknown): void {
     !annotateBtn ||
     !pauseBtn ||
     !pauseText ||
-    !hotkeyHint
+    !hotkeyHint ||
+    !inspectNotice
   ) {
     return
   }
@@ -398,7 +426,12 @@ export function updateBadgeContent(ctx: unknown): void {
     getEffectiveHotKeys(state) === false
       ? t('launcher.hint.hotkeyDisabled')
       : t('launcher.hint.hotkeyQuickJump', { hotkey: getHotKeyLabel(state) })
-  inspectBtn.style.display = state.disabled ? 'none' : 'inline-flex'
+  const inspectHiddenReason = getInspectHiddenReason(state)
+  inspectBtn.style.display = state.disabled || inspectHiddenReason ? 'none' : 'inline-flex'
+  inspectNotice.style.display = !state.disabled && inspectHiddenReason ? '' : 'none'
+  inspectNotice.textContent = inspectHiddenReason
+    ? t(`launcher.inspectUnavailable.${inspectHiddenReason}`)
+    : ''
   annotateBtn.style.display = state.disabled ? 'none' : 'inline-flex'
 
   updateModeButton(inspectBtn, !state.disabled && state.active && state.mode === 'inspect')

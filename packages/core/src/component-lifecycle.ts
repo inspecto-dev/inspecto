@@ -3,13 +3,16 @@ import { fetchIdeInfo } from './http.js'
 import { inspectorStyles } from './styles.js'
 import { setBaseUrl } from './http.js'
 import { configureI18n } from './i18n.js'
-import type { HotKeys, InspectorOptions } from '@inspecto-dev/types'
+import type { HotKeys, IdeType, InspectorOptions } from '@inspecto-dev/types'
 
 type InspectoOptions = InspectorOptions & { mode?: 'inspect' | 'annotate' }
 
 type LifecycleContext = {
   options: InspectoOptions
   mode: 'inspect' | 'annotate'
+  ide: IdeType
+  ideConnected: boolean
+  ideConnectionKnown: boolean
   serverHotKeys: HotKeys | null
   shadowRootEl: ShadowRoot
   overlay: ReturnType<typeof createOverlay>
@@ -38,11 +41,20 @@ type LifecycleContext = {
   teardownListeners(): void
   syncRuntimeContextCapture(): void
   syncModeUi(): void
+  updateBadgeContent(): void
   updateAnnotateSidebar(): void
 }
 
 function asLifecycleContext(ctx: unknown): LifecycleContext {
   return ctx as LifecycleContext
+}
+
+function canUseInspectMode(state: LifecycleContext): boolean {
+  if (state.ide === 'none') return false
+  if (state.annotateChannel === 'mcp' && state.ideConnectionKnown && !state.ideConnected) {
+    return false
+  }
+  return true
 }
 
 function applyTheme(state: LifecycleContext, theme?: 'light' | 'dark' | 'auto'): void {
@@ -157,6 +169,13 @@ export function configure(ctx: unknown, options: InspectoOptions): void {
       if (info?.theme !== undefined) {
         applyTheme(state, info.theme)
       }
+      if (info?.ide !== undefined) {
+        state.ide = info.ide
+      }
+      if (info && Object.prototype.hasOwnProperty.call(info, 'ideConnected')) {
+        state.ideConnectionKnown = true
+        state.ideConnected = (info as { ideConnected?: boolean }).ideConnected === true
+      }
       if (info?.annotateChannel !== undefined) {
         state.annotateChannel = info.annotateChannel
       }
@@ -172,6 +191,18 @@ export function configure(ctx: unknown, options: InspectoOptions): void {
           ...info.runtimeContext,
         }
         state.syncRuntimeContextCapture()
+      }
+
+      const modeChanged = state.mode === 'inspect' && !canUseInspectMode(state)
+      if (modeChanged) {
+        state.mode = 'annotate'
+      }
+
+      if (modeChanged) {
+        state.syncRuntimeContextCapture()
+        state.syncModeUi()
+      } else {
+        state.updateBadgeContent()
       }
 
       if (state.mode === 'annotate' && state.annotateSidebar) {
@@ -190,9 +221,9 @@ export function configure(ctx: unknown, options: InspectoOptions): void {
 export function setMode(ctx: unknown, mode: 'inspect' | 'annotate'): void {
   const state = asLifecycleContext(ctx)
   const previousMode = state.mode
-  state.mode = mode
+  state.mode = mode === 'inspect' && !canUseInspectMode(state) ? 'annotate' : mode
 
-  if (mode === 'annotate') {
+  if (state.mode === 'annotate') {
     state.overlay.hide()
   } else if (previousMode === 'annotate') {
     resetAnnotateState(state)

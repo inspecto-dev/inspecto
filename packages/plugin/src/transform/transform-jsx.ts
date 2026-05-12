@@ -6,9 +6,13 @@ const traverse =
 import type { NodePath } from '@babel/traverse'
 import type { JSXOpeningElement } from '@babel/types'
 import MagicString from 'magic-string'
-import path from 'node:path'
 import type { PathType } from '@inspecto-dev/types'
-import { buildEscapeTagsSet, formatAttrValue, type TransformResult } from './utils.js'
+import {
+  buildEscapeTagsSet,
+  formatAttrValue,
+  resolveTransformAttrPath,
+  type TransformResult,
+} from './utils.js'
 
 export interface TransformJsxOptions {
   filePath: string
@@ -34,14 +38,7 @@ export function transformJsx(options: TransformJsxOptions): TransformResult {
 
   const escapeTagsSet = buildEscapeTagsSet(escapeTags)
 
-  // Resolve the file path based on pathType config
-  const resolvedPath =
-    pathType === 'absolute'
-      ? path.resolve(filePath)
-      : path.relative(projectRoot, path.resolve(filePath))
-
-  // Normalize path separators on Windows
-  const normalizedPath = resolvedPath.replace(/\\/g, '/')
+  const normalizedPath = resolveTransformAttrPath({ filePath, projectRoot, pathType })
 
   let ast: ReturnType<typeof parser.parse>
   try {

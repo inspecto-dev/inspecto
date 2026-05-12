@@ -15,7 +15,9 @@ export async function buildClientConfig(
   const effectiveIde = (userConfig.ide ?? 'vscode') as IdeType
 
   let info: any
-  if (!serverState.ideInfo) {
+  if (effectiveIde === 'none') {
+    info = { ide: 'none', providers: {} }
+  } else if (!serverState.ideInfo) {
     info = { ide: effectiveIde }
   } else {
     const { scheme: _scheme, ...rest } = serverState.ideInfo as any
@@ -26,6 +28,7 @@ export async function buildClientConfig(
 
   return {
     ...info,
+    ideConnected: effectiveIde !== 'none' && Boolean(serverState.ideInfo),
     prompts: allIntents.filter(isAiIntentConfig),
     workflows: resolveWorkflowSlots(allIntents),
     hotKeys: userConfig['inspector.hotKey'] ?? 'alt',

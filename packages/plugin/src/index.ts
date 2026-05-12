@@ -152,7 +152,7 @@ const InspectoPlugin = createUnplugin<UnpluginOptions | undefined>((userOptions 
 
     transformInclude(id) {
       if (isProduction || !id) return false
-      return shouldTransform(id, options)
+      return shouldTransform(id, options, projectRoot)
     },
 
     transform(code, id) {

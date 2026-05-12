@@ -1,6 +1,11 @@
 import MagicString from 'magic-string'
 import { parse as parseSvelte } from 'svelte/compiler'
-import { buildEscapeTagsSet, formatAttrValue, type TransformResult } from './utils.js'
+import {
+  buildEscapeTagsSet,
+  formatAttrValue,
+  resolveTransformAttrPath,
+  type TransformResult,
+} from './utils.js'
 
 export interface TransformSvelteOptions {
   filePath: string
@@ -29,9 +34,24 @@ function walk(node: any, visitor: { enter: (n: any) => void }) {
 }
 
 export function transformSvelte(options: TransformSvelteOptions): TransformResult {
-  const { filePath, source, escapeTags, attributeName = 'data-inspecto' } = options
+  const {
+    filePath,
+    source,
+    projectRoot,
+    pathType = 'absolute',
+    escapeTags,
+    attributeName = 'data-inspecto',
+  } = options
 
   const escapeTagsSet = buildEscapeTagsSet(escapeTags)
+  const normalizedPath =
+    projectRoot || options.pathType
+      ? resolveTransformAttrPath({
+          filePath,
+          pathType,
+          ...(projectRoot ? { projectRoot } : {}),
+        })
+      : filePath.replace(/\\/g, '/')
 
   // svelte parse doesn't support ts or scss/less
   // so replace the content of <script></script> and <style></style> with space
@@ -91,7 +111,7 @@ export function transformSvelte(options: TransformSvelteOptions): TransformResul
           const lastNewLine = source.lastIndexOf('\n', node.start - 1)
           const column = lastNewLine === -1 ? node.start + 1 : node.start - lastNewLine
 
-          const attrValue = formatAttrValue(filePath, line, column)
+          const attrValue = formatAttrValue(normalizedPath, line, column)
           const addition = ` ${attributeName}="${attrValue}"`
 
           s.appendLeft(insertPosition, addition)

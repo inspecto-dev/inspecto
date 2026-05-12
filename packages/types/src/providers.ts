@@ -156,6 +156,7 @@ export interface WorkflowSlotOption {
 
 export interface InspectoConfig {
   ide: IdeType
+  ideConnected?: boolean
   providers?: Record<Provider, ProviderInfo>
   prompts?: import('./prompts.js').AiIntentConfig[]
   workflows?: WorkflowSlotOption[]

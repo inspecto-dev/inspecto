@@ -17,4 +17,18 @@ const a = 1;
     const result = transformAstro({ filePath: 'test.astro', source })
     expect(result.code).toContain('<Component data-inspecto="test.astro:1:2" a={1} />')
   })
+
+  it('uses relative path when pathType is relative', () => {
+    const source = `<div>Hello</div>`
+
+    const result = transformAstro({
+      filePath: '/project/src/pages/index.astro',
+      source,
+      projectRoot: '/project',
+      pathType: 'relative',
+    })
+
+    expect(result.code).toContain('data-inspecto="src/pages/index.astro:1:1"')
+    expect(result.code).not.toContain('/project/src/pages/index.astro')
+  })
 })

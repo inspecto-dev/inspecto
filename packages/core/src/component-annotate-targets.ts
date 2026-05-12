@@ -4,7 +4,7 @@ import {
   saveCurrentRecord,
   setCurrentRecordTarget,
 } from './annotate-session.js'
-import { ATTR_NAME, getInspectableLocation } from './component-utils.js'
+import { ATTR_NAME, createElementSelector, getInspectableLocation } from './component-utils.js'
 import type { AnnotationTarget, FeedbackRecord, SourceLocation } from '@inspecto-dev/types'
 import { asAnnotateContext } from './component-annotate-shared.js'
 
@@ -286,30 +286,4 @@ export function describeElement(_ctx: unknown, element: Element): string {
   return `${element.tagName.toLowerCase()}${id}${className}` || element.tagName.toLowerCase()
 }
 
-export function createSelector(element: Element): string {
-  if (element.id) return `#${element.id}`
-
-  const segments: string[] = []
-  let current: Element | null = element
-
-  while (current && current !== document.body) {
-    const tag = current.tagName.toLowerCase()
-    const siblings = current.parentElement
-      ? Array.from(current.parentElement.children).filter(
-          sibling => sibling.tagName.toLowerCase() === tag,
-        )
-      : []
-    const index = siblings.indexOf(current)
-    const nth = index >= 0 ? `:nth-of-type(${index + 1})` : ''
-    segments.unshift(`${tag}${nth}`)
-
-    if (current.id) {
-      segments[0] = `#${current.id}`
-      break
-    }
-
-    current = current.parentElement
-  }
-
-  return segments.join(' > ')
-}
+export const createSelector = createElementSelector

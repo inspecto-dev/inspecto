@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { findElementForLocation } from '../src/component-annotate-targets.js'
+import { createSelector, findElementForLocation } from '../src/component-annotate-targets.js'
 import { findInspectable, getInspectableLocation } from '../src/component-utils.js'
 
 describe('component-utils astro source support', () => {
@@ -46,5 +46,15 @@ describe('component-utils astro source support', () => {
     )
 
     expect(element).toBe(document.getElementById('card'))
+  })
+
+  it('uses the shared element selector builder for annotation targets', () => {
+    document.body.innerHTML = `
+      <main>
+        <section><button>First</button><button id="target">Second</button></section>
+      </main>
+    `
+
+    expect(createSelector(document.getElementById('target')!)).toBe('#target')
   })
 })

@@ -1141,6 +1141,62 @@ describe('annotation batch dispatch', () => {
       maxRuntimeErrors: 3,
       maxFailedRequests: 2,
     })
+    expect(response.jsonBody.ideConnected).toBe(false)
+  })
+
+  it('marks client config as IDE-connected after an IDE handshake', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+    const { loadUserConfigSync } = await import('../src/config.js')
+
+    vi.mocked(loadUserConfigSync).mockReturnValue({
+      ide: 'vscode',
+      'annotate.channel': 'mcp',
+    })
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+    serverState.ideInfo = { ide: 'vscode', scheme: 'vscode', providers: {} } as any
+
+    const request = createJsonRequest('GET', '')
+    const response = createMockResponse()
+    const url = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.CLIENT_CONFIG}`)
+
+    const pending = handleRequest(url, request as any, response as any)
+    request.start()
+    await pending
+
+    expect(response.statusCode).toBe(200)
+    expect(response.jsonBody.ide).toBe('vscode')
+    expect(response.jsonBody.ideConnected).toBe(true)
+    expect(response.jsonBody.annotateChannel).toBe('mcp')
+  })
+
+  it('keeps IDE integration disabled in client config when user config sets ide none', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+    const { loadUserConfigSync } = await import('../src/config.js')
+
+    vi.mocked(loadUserConfigSync).mockReturnValue({
+      ide: 'none',
+      'annotate.channel': 'mcp',
+    })
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+    serverState.ideInfo = { ide: 'vscode', scheme: 'vscode', providers: {} } as any
+
+    const request = createJsonRequest('GET', '')
+    const response = createMockResponse()
+    const url = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.CLIENT_CONFIG}`)
+
+    const pending = handleRequest(url, request as any, response as any)
+    request.start()
+    await pending
+
+    expect(response.statusCode).toBe(200)
+    expect(response.jsonBody.ide).toBe('none')
+    expect(response.jsonBody.ideConnected).toBe(false)
+    expect(Object.prototype.hasOwnProperty.call(response.jsonBody, 'providers')).toBe(false)
+    expect(response.jsonBody.annotateChannel).toBe('mcp')
   })
 
   it('serves client config responses without deprecated capability fields', async () => {
@@ -1165,7 +1221,7 @@ describe('annotation batch dispatch', () => {
     await pending
 
     expect(response.statusCode).toBe(200)
-    expect(Object.hasOwn(response.jsonBody, 'screenshotContext')).toBe(false)
+    expect(Object.prototype.hasOwnProperty.call(response.jsonBody, 'screenshotContext')).toBe(false)
   })
 
   it('opens files through VS Code family URI schemes on macOS', async () => {
