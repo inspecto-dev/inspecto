@@ -51,7 +51,7 @@ npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 
 当你已经确定宿主 IDE 时，请始终优先显式传递 `--host-ide`。它能避免在纯终端会话中模糊的 IDE 探测。
 
-如果 onboarding 流程没有自动打开，请手动向 assistant 说：
+如果 onboarding 流程没有自动打开，请手动向 assistant 发送下面这句固定英文口令：
 
 ```text
 Set up Inspecto in this project
@@ -93,7 +93,11 @@ Onboarding 只负责安装集成并应用项目配置。日常使用取决于你
 
 默认情况下，所有的 onboarding 集成都会将配置写入纯本地的文件（`.inspecto/settings.local.json` 和 `.inspecto/prompts.local.json`），保持你的代码仓库干净整洁。
 
-对于 Codex，CLI 目前只会安装 skills；MCP server 配置仍需要你单独补上，所以「标注模式」不会默认切成 task-first。
+对于 Codex，CLI 会默认安装 onboarding skill 和 `inspecto-agent` skill；但 MCP server 配置仍需要你单独补上，所以「标注模式」不会默认切换为 Agent 驱动的任务流程。等 MCP 配好，并且 `.inspecto/settings.local.json` 中使用 `"annotate.channel": "mcp"` 后，默认的后续指令是：
+
+```text
+Use $inspecto-agent to claim Inspecto tasks continuously
+```
 
 常见安装命令示例：
 
@@ -148,6 +152,8 @@ npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 3. `onboard --json --yes`：在获得你的确认后，应用代码变更。
 4. 引导你安装 IDE 插件（如使用 IDE 模式）。
 5. 确认启动 dev server 的命令。
+
+当 onboarding 配置了 `annotate.channel: "mcp"` 时，结构化 onboarding 结果还可能包含 `handoff.dailyUsage`。Assistant 集成在引导用户日常使用已安装的 `inspecto-agent` skill 处理 MCP 标注任务时，应优先使用这个字段，而不是硬编码后续提示语。
 
 这可以保证实际的文件修改，始终由 Inspecto CLI 的解析器安全地完成，而不是依赖助手来手动修改你的配置文件。
 

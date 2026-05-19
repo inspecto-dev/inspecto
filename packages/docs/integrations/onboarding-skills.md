@@ -93,7 +93,7 @@ Here is a full list of supported assistants and where their integrations are ins
 
 All onboarding integrations will by default write configuration into local-only files (`.inspecto/settings.local.json` and `.inspecto/prompts.local.json`), keeping your repository clean.
 
-For Codex installs, the CLI installs both the onboarding skill and the `inspecto-agent` skill. MCP server configuration still needs to be added separately, so the daily `Annotate mode` workflow will not switch to task-first until MCP is configured. Once MCP is connected and `.inspecto/settings.local.json` uses `"annotate.channel": "mcp"`, the default follow-up is:
+For Codex installs, the CLI installs both the onboarding skill and the `inspecto-agent` skill. MCP server configuration still needs to be added separately, so the daily `Annotate mode` workflow will not switch to an agent-driven task flow until MCP is configured. Once MCP is connected and `.inspecto/settings.local.json` uses `"annotate.channel": "mcp"`, the default follow-up is:
 
 ```text
 Use $inspecto-agent to claim Inspecto tasks continuously

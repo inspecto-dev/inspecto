@@ -1,5 +1,13 @@
 # @inspecto-dev/cli
 
+## 0.3.15
+
+### Patch Changes
+
+- release 0.3.15
+- Updated dependencies
+  - @inspecto-dev/types@0.3.15
+
 ## 0.3.14
 
 ### Patch Changes

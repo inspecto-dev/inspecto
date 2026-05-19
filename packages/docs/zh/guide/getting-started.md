@@ -62,7 +62,7 @@ _(如果你使用其他包管理器，可以用 `pnpm dlx`、`yarn dlx` 或 `bun
 - 只想要源码跳转、不接 AI：看[手动安装](./manual-installation.md)。
 - 只想让独立 MCP Agent 处理任务、不装 IDE 扩展：看 [MCP 集成](../integrations/mcp.md)。
 
-命令执行后，Inspecto 会尝试在你的 IDE 中打开 onboarding 会话。**如果没有自动打开**，请开启一个 AI 助手聊天并发送：
+命令执行后，Inspecto 会尝试在你的 IDE 中打开 onboarding 会话。**如果没有自动打开**，请开启一个 AI 助手聊天并发送下面这句固定英文口令：
 
 > _"Set up Inspecto in this project"_
 
@@ -75,7 +75,7 @@ _(如果你使用其他包管理器，可以用 `pnpm dlx`、`yarn dlx` 或 `bun
 3. **试试看**：
    - `Alt + 点击` 任意组件跳转到源码
    - 点击 launcher 选择「检查模式」或「标注模式」
-   - 在「标注模式」里收集一个或多个 UI 批注，然后点击 `Create Task` 将它们作为结构化任务发出
+   - 在「标注模式」里收集一个或多个 UI 批注；MCP 通道点击「创建任务」创建结构化任务，IDE 通道则点击「问 AI」进行一次性派发
 
 如果你的项目使用 MCP 标注链路（`"annotate.channel": "mcp"`），标注侧栏还会展示最近任务的 timeline。你可以用它确认任务已经入队、被 Agent 领取、收到进度回复，并最终完成或关闭。
 

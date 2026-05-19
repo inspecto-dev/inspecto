@@ -19,7 +19,7 @@
         <img src="packages/docs/public/inspect-mode.gif" width="100%" alt="Inspect mode workflow" />
         <br/>
         <b>Inspect mode</b><br/>
-        点击单个组件，立即 Ask AI
+        点击单个组件，立即问 AI
       </td>
       <td width="33%" align="center">
         <img src="packages/docs/public/annotate-mode.gif" width="100%" alt="Annotate mode workflow" />
@@ -82,7 +82,7 @@ _(如果你使用其他包管理器，可以用 `pnpm dlx`、`yarn dlx` 或 `bun
 - 只想要源码跳转、不接 AI：看[安装指南](https://inspecto-dev.github.io/inspecto/zh/guide/manual-installation)
 - 只想让独立 MCP Agent 处理任务、不装 IDE 扩展：看 [MCP 集成](https://inspecto-dev.github.io/inspecto/zh/integrations/mcp)
 
-命令执行后，Inspecto 会尝试在你的 IDE 中打开 onboarding 会话。**如果没有自动打开**，请开启一个 AI 助手聊天并发送：
+命令执行后，Inspecto 会尝试在你的 IDE 中打开 onboarding 会话。**如果没有自动打开**，请开启一个 AI 助手聊天并发送下面这句固定英文口令：
 
 > _"Set up Inspecto in this project"_
 
@@ -94,7 +94,7 @@ _(如果你使用其他包管理器，可以用 `pnpm dlx`、`yarn dlx` 或 `bun
 2. 通过 launcher 使用 `Inspect mode` 或 `Annotate mode`。
 3. 随时使用 **`Alt` + `点击`** 执行 `Quick jump`。
 
-如果希望由 Agent 自动处理前端修改，请将 annotate 切到 MCP 模式，收集 UI 批注后点击 **Create Task**。Agent 会从 Inspecto 的 session 队列领取任务并回传进度，浏览器侧边栏会展示当前任务状态、最新进展，以及可展开的完整处理时间线。
+如果希望由 Agent 自动处理前端修改，请将 annotate 切到 MCP 模式，收集 UI 批注后点击 **创建任务**。Agent 会从 Inspecto 的 session 队列领取任务并回传进度，浏览器侧边栏会展示当前任务状态、最新进展，以及可展开的完整处理时间线。
 
 你还可以在 `.inspecto/prompts.json` 中定义自定义 workflow 按钮。例如配置一个 `kind: "workflow"` 的 `Deploy Preview` 指令，在标注模式里点击后，Agent 会利用自身已有的 skill、MCP server 和 tool 完成当前分支部署，并把进度回写到 Inspecto。
 

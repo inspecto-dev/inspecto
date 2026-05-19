@@ -14,7 +14,7 @@ The near-term goal is narrower:
 - let agents reply to developers
 - let agents resolve a session when work is complete
 
-This gives Inspecto a real hands-free agent loop for annotate workflows.
+This gives Inspecto a real agent-driven loop for annotate workflows.
 
 ## Why Now
 
@@ -39,7 +39,7 @@ The first MCP release should support this loop:
 
 This is enough to unlock:
 
-- hands-free agent pickup
+- agent-driven pickup
 - a browser thread panel later
 - replayable session history
 - self-driving follow-ups in a later phase
@@ -211,7 +211,7 @@ Waits for the next pending session, marks it `acknowledged`, and returns full an
 
 Use cases:
 
-- a hands-free agent wants the next unit of work
+- an agent wants the next unit of work
 - a long-running agent loop needs one atomic wait-and-claim operation
 
 #### `inspecto_reply`
@@ -267,7 +267,7 @@ Guidelines:
 
 ## Rollout Strategy
 
-The current hands-free design does not keep a parallel legacy pickup path for annotate sessions.
+The current agent-driven design does not keep a parallel legacy pickup path for annotate sessions.
 
 Recommended rollout:
 
@@ -346,7 +346,7 @@ interface AnnotationWorkSession {
 
 Current recommendation:
 
-- agent-first flows should prefer `inspecto_claim_next` when claiming new work
+- agent-driven flows should prefer `inspecto_claim_next` when claiming new work
 - `inspecto_reply` can promote claimed sessions to `in_progress`
 - `inspecto_dismiss` should be the explicit closeout path for duplicate or invalid tasks
 

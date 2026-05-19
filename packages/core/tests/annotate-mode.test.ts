@@ -3288,6 +3288,62 @@ describe('annotate mode integration', () => {
     expect(req.instruction).toBe('')
   })
 
+  it('treats IDE Ask AI as a one-shot dispatch without current task updates', async () => {
+    vi.stubGlobal('EventSource', FakeEventSource as unknown as typeof EventSource)
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(configResponse({ annotateChannel: 'ide' }))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          session: {
+            id: 'session-ide-ask',
+            status: 'pending',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          },
+        }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    document.body.innerHTML =
+      '<button data-inspecto="/repo/App.tsx:10:2" id="target">Target</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+    const note = shadowRoot.querySelector(
+      '[data-inspecto-annotate-composer] textarea',
+    ) as HTMLTextAreaElement
+    note.value = 'Review this target.'
+    note.dispatchEvent(new Event('input', { bubbles: true }))
+
+    const add = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Save note',
+    ) as HTMLButtonElement
+    add.click()
+    await Promise.resolve()
+
+    const askAi = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Ask AI',
+    ) as HTMLButtonElement
+    askAi.click()
+
+    await vi.waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2))
+
+    expect(FakeEventSource.instances).toHaveLength(0)
+    const currentTaskPanel = shadowRoot.querySelector(
+      'section[data-variant="latest-session"]',
+    ) as HTMLElement
+    expect(currentTaskPanel.style.display).toBe('none')
+  })
+
   it('routes ide workflow confirmations through ide dispatch and explains live updates are unavailable', async () => {
     const fetchMock = vi
       .fn()

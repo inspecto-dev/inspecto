@@ -199,13 +199,20 @@ export async function sendAnnotationBatch(
       return
     }
 
-    state.annotateLatestSessionSummary = result.session ?? null
-    state.annotateLatestSessionDetail = null
-    state.annotateLatestSessionError = ''
-    if (result.session?.id) {
-      state.startLatestAnnotateSessionStream(result.session.id)
-      void state.refreshLatestAnnotateSession()
+    if (deliveryMode === 'mcp') {
+      state.annotateLatestSessionSummary = result.session ?? null
+      state.annotateLatestSessionDetail = null
+      state.annotateLatestSessionError = ''
+      if (result.session?.id) {
+        state.startLatestAnnotateSessionStream(result.session.id)
+        void state.refreshLatestAnnotateSession()
+      } else {
+        state.stopLatestAnnotateSessionStream()
+      }
     } else {
+      state.annotateLatestSessionSummary = null
+      state.annotateLatestSessionDetail = null
+      state.annotateLatestSessionError = ''
       state.stopLatestAnnotateSessionStream()
     }
 

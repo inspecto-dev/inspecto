@@ -9,13 +9,13 @@ MCP 模式可以让 AI Agent 从 Inspecto 领取 Annotate 任务、处理代码�
 1. **启动已接入 Inspecto 的应用。** 保持本地 dev server 运行。
 2. **安装 Inspecto agent skill**，让 Agent 知道如何领取和结束任务。
 3. **把 Inspecto 配成 MCP server**，接入你的 AI 客户端。最省事的方式是用 `add-mcp`；手动 JSON 配置作为兜底。
-4. **在浏览器打开 Annotate mode**，点击一个或多个组件，写备注，然后点击 **Create Task**。
+4. **在浏览器打开 Annotate mode**，点击一个或多个组件，写备注，然后点击 **创建任务**。
 5. **把下面的 prompt 复制给 Agent。** Agent 会领取队列里的任务、处理代码、回写进度，并在完成后关闭 session。
 
 <CopyPrompt
   eyebrow="Agent Prompt"
   title="处理 Inspecto 队列任务"
-  description="在 Annotate mode 点击 Create Task 后，把这段内容发给支持 MCP 的 Agent。"
+  description="在 Annotate mode 点击创建任务后，把这段内容发给支持 MCP 的 Agent。"
   copy-label="复制 Prompt"
   copied-label="已复制"
   prompt="请处理我的 Inspecto 待办任务。使用 Inspecto MCP tools 领取下一条 session，完成修改，运行检查，并在结束后 resolve。"
@@ -110,14 +110,14 @@ npx -y add-mcp@latest "npx -y @inspecto-dev/cli@latest mcp --server-url http://1
 1. 打开 **Annotate mode**。
 2. 点击和问题相关的 UI 元素。
 3. 写简短备注，例如“按钮改成主按钮”或“卡片和标题左对齐”。
-4. 点击 **Create Task**。
+4. 点击 **创建任务**。
 5. 回到 Agent，把上面的可复制 prompt 发给它。
 
 Annotate 侧边栏会变成任务时间线：你可以看到任务入队、Agent 领取、进度回复，以及最终完成或关闭状态。
 
 ## 4. 可选：让 Agent 持续监听
 
-如果你的 AI 客户端支持长时间运行或后台 Agent，可以让它等待下一条任务，而不是每次点击 **Create Task** 后都手动发消息。
+如果你的 AI 客户端支持长时间运行或后台 Agent，可以让它等待下一条任务，而不是每次点击 **创建任务** 后都手动发消息。
 
 <CopyPrompt
   eyebrow="Agent Prompt"

@@ -59,7 +59,7 @@ Inspecto looks for configuration files in your project directory in the followin
 
 - **Type:** `"ide" | "mcp"`
 - **Default:** `"mcp"`
-- **Description:** Controls which channel Inspecto uses for `Annotate mode` submissions. `"mcp"` shows `Create Task` and is the canonical setting for hands-free MCP workflows. `"ide"` shows `Ask AI` for immediate IDE handoff flows.
+- **Description:** Controls which channel Inspecto uses for `Annotate mode` submissions. `"mcp"` shows `Create Task`, is the canonical setting for agent-driven MCP workflows, and displays the task timeline in the sidebar. `"ide"` shows `Ask AI` for immediate one-shot IDE handoff flows and does not keep tracking a current task in the sidebar.
 
 ### `server.host`
 
