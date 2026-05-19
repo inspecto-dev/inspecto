@@ -28,6 +28,23 @@ Inspecto 负责连接你的浏览器和 AI 助手。根据你的 AI 工具架构
 
 关于字段级的响应语义和状态处理，请参阅 [Onboarding 集成](./onboarding-skills.md) 以及 onboarding 命令文档。
 
+当 onboarding 配置为 Agent 驱动的 annotate 交付方式时，返回的 JSON 结果里还可能包含一个结构化的运行时交接信息：
+
+```json
+{
+  "handoff": {
+    "dailyUsage": {
+      "mode": "agent",
+      "skill": "inspecto-agent",
+      "prompt": "Use $inspecto-agent to claim Inspecto tasks continuously",
+      "requiresMcp": true
+    }
+  }
+}
+```
+
+如果存在 `handoff.dailyUsage`，应优先使用它，而不是硬编码后续提示语。它才是日常 MCP 驱动标注工作流的规范化 post-onboarding 入口。
+
 ## 交互模式
 
 你可以把下面这些模式理解成不同的交付路线：
@@ -88,24 +105,6 @@ AI 工具完全在终端内运行。Inspecto 将在你的 IDE 中打开一个新
 ## 独立运行 / 剪贴板模式支持
 
 如果你不想使用任何 IDE 插件或 CLI 终端，你可以将 Inspecto 配置为独立运行模式：
-
-```json
-{
-  "ide": "none"
-}
-```
-
-## 支持的 AI 工具概览
-
-Inspecto 连接浏览器和本地 AI 助手。在设置期间，CLI 会探测 CLI 工具与 IDE 扩展；内置型 IDE 目标仍可在运行时使用，也可以通过手动配置启用：
-
-- **插件模式 (IDE 扩展)**: GitHub Copilot, Claude Code Extension, Gemini Plugin, CodeX.
-- **CLI 模式 (终端)**: Claude CLI (`claude`), Coco CLI (`coco`), CodeX CLI, Gemini CLI.
-- **内置模式 (原生 IDE)**: Trae, Cursor, CodeBuddy (无需额外安装扩展的原生 AI 集成).
-
-## 独立模式 / 剪贴板模式支持
-
-如果你不想使用 IDE 扩展或 CLI 终端，可以将 Inspecto 配置为独立模式：
 
 ```json
 {

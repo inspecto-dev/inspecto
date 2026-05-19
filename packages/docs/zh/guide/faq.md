@@ -84,7 +84,7 @@ npx @inspecto-dev/cli integrations doctor <assistant> --host-ide <ide>
 - 确认 `.inspecto/settings.local.json` 中已经设置 `"annotate.channel": "mcp"`。
 - 确认你的 AI 客户端已经配置 Inspecto MCP server，并指向正确的本地 dev server。
 - 明确告诉 Agent 领取任务，例如：`Please process my Inspecto tasks`。
-- 如果 Agent 之前处于持续监听模式，它的 tool call 可能在你点击 `Create Task` 前已经超时；让它重新 claim 一次即可。
+- 如果 Agent 之前处于持续监听模式，它的 tool call 可能在你点击「创建任务」前已经超时；让它重新 claim 一次即可。
 - 如果你想看到实时 timeline 更新，请保持浏览器页面打开。
 
 ### 8. Workflow 按钮会不会误触发部署或修改生产环境？

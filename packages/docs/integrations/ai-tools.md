@@ -28,7 +28,7 @@ If you are building your own agent/runtime integration, use the structured onboa
 
 For field-level response semantics and status handling, see [Onboarding Integrations](./onboarding-skills.md) and the onboarding command docs.
 
-When onboarding configures agent-first annotate delivery, the JSON result may include a structured runtime handoff:
+When onboarding configures agent-driven annotate delivery, the JSON result may include a structured runtime handoff:
 
 ```json
 {

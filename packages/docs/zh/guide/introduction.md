@@ -8,7 +8,7 @@ Inspecto 缩短了浏览器、编辑器、DevTools 和 AI Agent 之间的往返�
 
 ### 1. 检查模式（Inspect Mode）
 
-**点击单个组件，立即 Ask AI。**
+**点击单个组件，立即问 AI。**
 <img src="/inspect-mode.gif" alt="检查模式 workflow" style="border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.16); box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin: 16px 0;" />
 当你发现某个 UI 组件有问题，或者想要修改它的特定行为时，可以直接进入检查模式。点击该组件，Inspecto 会瞬间收集它的 DOM 结构和源代码上下文，并直接发送给你连接好的 AI 助手。
 
