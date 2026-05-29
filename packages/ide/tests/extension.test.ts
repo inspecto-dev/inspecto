@@ -215,4 +215,30 @@ describe('resolveServerPorts', () => {
 
     vi.useRealTimers()
   })
+
+  it('pushes IDE info to every reachable Inspecto server port', async () => {
+    setMockWorkspaceFolders(['/repo'])
+    const portData: Record<string, number> = {
+      unrelated: 6000,
+      another: 6001,
+    }
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true })
+    vi.stubGlobal('fetch', fetchMock)
+    mockFs.readFileSync.mockReturnValueOnce(JSON.stringify(portData))
+    mockFs.watch.mockReturnValue({ close: vi.fn() })
+
+    activate({ subscriptions: { push: vi.fn() } } as any)
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://127.0.0.1:6000/inspecto/api/v1/ide/info',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://127.0.0.1:6001/inspecto/api/v1/ide/info',
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
 })

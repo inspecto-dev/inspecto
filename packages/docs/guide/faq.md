@@ -81,7 +81,7 @@ For MCP workflow sessions, Inspecto appends project metadata such as project roo
 
 ### 7. I created an MCP task, but the agent did not pick it up. What should I check?
 
-- Make sure `.inspecto/settings.local.json` contains `"annotate.channel": "mcp"`.
+- Make sure `.inspecto/settings.local.json` contains `"delivery.mode": "mcp"`.
 - Make sure your AI client has the Inspecto MCP server configured and points to the correct local dev server.
 - Ask the agent to claim work explicitly, for example: `Please process my Inspecto tasks`.
 - If the agent was waiting in continuous mode, its tool call may have timed out before you clicked `Create Task`; ask it to claim again.

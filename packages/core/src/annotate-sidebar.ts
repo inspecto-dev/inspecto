@@ -31,7 +31,7 @@ type SidebarMode = 'capture-enabled' | 'capture-paused'
 type SendScope = AnnotateSendScope
 type SuccessScope = 'quick-ask' | 'create-task' | null
 type PreferredAction = 'quick-ask' | 'create-task'
-export type AnnotateDefaultChannel = 'ide' | 'mcp'
+export type DeliveryMode = 'ide' | 'mcp'
 export type AnnotateWorkflowNotice = {
   kind: 'ide-dispatch'
   workflowId: string
@@ -54,7 +54,7 @@ export interface AnnotateSidebarOptions {
   sendingScope: SendScope
   successScope: SuccessScope
   preferredAction?: PreferredAction
-  annotateChannel?: AnnotateDefaultChannel
+  deliveryMode?: DeliveryMode
   latestSessionSummary?: AnnotationWorkSessionSummary | null
   latestSessionDetail?: AnnotationWorkSession | null
   latestSessionLoading?: boolean
@@ -382,8 +382,8 @@ export function createAnnotateSidebar(
       Boolean(next.errorMessage)
     const canSend = next.isSending ? false : next.includedRecords.length > 0 || hasCurrentDraft
     const preferredAction: PreferredAction = next.preferredAction ?? 'create-task'
-    const channelPreference = next.annotateChannel ?? 'mcp'
-    const showDebugHelperActions = channelPreference !== 'mcp'
+    const deliveryMode = next.deliveryMode ?? 'mcp'
+    const showDebugHelperActions = deliveryMode !== 'mcp'
 
     element.style.display = ''
     emptyState.style.display = shouldShowBody ? 'none' : ''
@@ -462,8 +462,8 @@ export function createAnnotateSidebar(
     includedSummary.textContent = `Element notes (${next.includedRecords.length})`
     renderers.renderIncludedRecords(next.includedRecords, recordsList)
 
-    const allowQuickAsk = channelPreference === 'ide'
-    const allowCreateTask = channelPreference === 'mcp'
+    const allowQuickAsk = deliveryMode === 'ide'
+    const allowCreateTask = deliveryMode === 'mcp'
 
     quickAskButton.style.display = allowQuickAsk ? '' : 'none'
     createTaskButton.style.display = allowCreateTask ? '' : 'none'

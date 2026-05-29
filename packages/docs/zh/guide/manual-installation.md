@@ -51,7 +51,7 @@ npx @inspecto-dev/cli integrations install <assistant> --host-ide <vscode|cursor
 需要安装 / 配置：
 
 1. 完成 **A** 的全部内容。
-2. 在 `.inspecto/settings.local.json` 中设置 `"annotate.channel": "mcp"`。
+2. 在 `.inspecto/settings.local.json` 中设置 `"delivery.mode": "mcp"`。
 3. 在你的 Agent 中添加 Inspecto MCP server。
 
 阅读：[4. 配置项目参数](#_4-配置项目参数) → [MCP 集成](../integrations/mcp.md)
@@ -208,12 +208,12 @@ export default {
 {
   "ide": "vscode",
   "provider.default": "copilot.extension",
-  "annotate.channel": "mcp",
+  "delivery.mode": "mcp",
   "server.publicUrl": "http://127.0.0.1:5678"
 }
 ```
 
-- `annotate.channel`: 如果使用 MCP，请设为 `"mcp"`；如果只走 IDE 派发，可省略或使用 `"ide"`
+- `delivery.mode`: 如果使用 MCP，请设为 `"mcp"`；如果只走 IDE 派发，可省略或使用 `"ide"`
 - `server.publicUrl`: 可选的浏览器可访问 Inspecto 服务地址。当服务端监听地址和浏览器实际访问地址不一致时使用，例如 devbox、端口转发、远程容器或 tunnel 场景。
 
 > **重要**：添加完配置文件后，请务必**重启你的开发服务器（Dev Server）**，以便插件读取到你的自定义配置。

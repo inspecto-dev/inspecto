@@ -310,7 +310,7 @@ export async function triggerWorkflow(ctx: unknown, workflowId: string): Promise
 
 1. **配置**：存在 `submit-pr` 工作流。
 2. **触发**：用户在侧边栏点击 "Review & PR"。
-3. **前端发送**：将配置的 prompt (`使用 deploy skill 的完整流程...`) 作为 payload；链路仅由 `annotate.channel` 决定。
+3. **前端发送**：将配置的 prompt (`使用 deploy skill 的完整流程...`) 作为 payload；链路仅由 `delivery.mode` 决定。
 4. **后端组装**：拼接 Prompt、标注内容以及动态获取的 Git 状态，创建 `source='workflow'` 的 Session。
 5. **Agent 拉取**：通过 `inspecto_claim_next({ source: 'workflow' })` 拉取任务。
 6. **Agent 执行**：阅读完整指令和项目元信息，自主调用挂载的 Git/GitHub MCP 工具提交代码并提 PR。

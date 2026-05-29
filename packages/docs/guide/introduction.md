@@ -18,7 +18,7 @@ When you spot an issue or want to modify a specific part of your UI, enter Inspe
 <img src="/annotate-mode.gif" alt="Annotate mode workflow" style="border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.16); box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin: 16px 0;" />
 Perfect for design reviews or complex refactoring. Enter Annotate mode to click multiple elements, leave specific instructions for each, and define an overall goal. Inspecto bundles all these notes and their respective contexts into one durable task for your IDE assistant or MCP agent.
 
-When `annotate.channel` is set to `mcp`, Annotate mode also shows a browser-side session timeline. You can see when the task is queued, acknowledged by the agent, updated through progress replies, and finally resolved or dismissed—without leaving the page.
+When `delivery.mode` is set to `mcp`, Annotate mode also shows a browser-side session timeline. You can see when the task is queued, acknowledged by the agent, updated through progress replies, and finally resolved or dismissed—without leaving the page.
 
 **Quick Annotation Workflow**
 <img src="/annotate-quick-mode.gif" alt="Annotate quick mode workflow" style="border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.16); box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin: 16px 0;" />

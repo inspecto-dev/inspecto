@@ -51,7 +51,7 @@ Follow: [3. Install IDE Extension for Assistant Handoff](#_3-install-ide-extensi
 Install / configure:
 
 1. Everything in **A**.
-2. Set `"annotate.channel": "mcp"` in `.inspecto/settings.local.json`.
+2. Set `"delivery.mode": "mcp"` in `.inspecto/settings.local.json`.
 3. Add the Inspecto MCP server to your agent.
 
 Follow: [4. Configure Project Settings](#_4-configure-project-settings) → [MCP Integration](../integrations/mcp.md)
@@ -209,14 +209,14 @@ Create a file named `.inspecto/settings.local.json` and add the following config
 {
   "ide": "vscode",
   "provider.default": "copilot.extension",
-  "annotate.channel": "mcp",
+  "delivery.mode": "mcp",
   "server.publicUrl": "http://127.0.0.1:5678"
 }
 ```
 
 - `ide`: your editor (`vscode`, `cursor`, `trae`, `trae-cn`, `codebuddy`, `codebuddy-cn`, or `none` for standalone/MCP mode)
 - `provider.default`: your AI assistant (e.g. `copilot.extension`, `claude-code.extension`, `cursor.builtin`)
-- `annotate.channel`: set to `"mcp"` if using MCP; omit or use `"ide"` for IDE-only dispatch
+- `delivery.mode`: set to `"mcp"` if using MCP; omit or use `"ide"` for IDE-only dispatch
 - `server.publicUrl`: optional browser-visible base URL for the local Inspecto server. Set this when the server listens on one address but must be reached from the browser through another address, such as devboxes, tunnels, or remote containers.
 
 > **Important**: After making these changes, remember to **restart your development server** so that the Inspecto plugin can pick up your custom settings.

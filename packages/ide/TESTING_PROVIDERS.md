@@ -46,7 +46,7 @@
 
 **验证标准**：
 
-- 当点击浏览器页面中的 `Inspect` 菜单 AI 意图，或在 `annotate.channel = "ide"` 时点击标注面板里的 “Ask AI” 后，VS Code 唤起指定的 AI Chat 面板，输入框内容**应自动提交/发送**给大模型。
+- 当点击浏览器页面中的 `Inspect` 菜单 AI 意图，或在 `delivery.mode = "ide"` 时点击标注面板里的 “Ask AI” 后，VS Code 唤起指定的 AI Chat 面板，输入框内容**应自动提交/发送**给大模型。
 - 将 `"autoSend": false` 后重试，内容仅填入输入框，**不应该**自动发送。
 
 ---

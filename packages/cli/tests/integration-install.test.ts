@@ -214,7 +214,7 @@ describe('integration install', () => {
     expect(writeJSONMock).toHaveBeenCalledWith('/repo/.inspecto/settings.local.json', {
       ide: 'trae-cn',
       'provider.default': 'gemini.extension',
-      'annotate.channel': 'mcp',
+      'delivery.mode': 'mcp',
     })
   })
 
@@ -232,7 +232,7 @@ describe('integration install', () => {
     expect(writeJSONMock).toHaveBeenCalledWith('/repo/.inspecto/settings.local.json', {
       ide: 'trae-cn',
       'provider.default': 'gemini.extension',
-      'annotate.channel': 'mcp',
+      'delivery.mode': 'mcp',
       'prompt.autoSend': true,
     })
   })
@@ -245,7 +245,7 @@ describe('integration install', () => {
     expect(writeJSONMock).toHaveBeenCalledWith('/repo/.inspecto/settings.local.json', {
       ide: 'cursor',
       'provider.default': 'codex.extension',
-      'annotate.channel': 'mcp',
+      'delivery.mode': 'mcp',
     })
   })
 

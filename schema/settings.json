@@ -54,10 +54,10 @@
       "description": "Whether to inject the raw code snippet into the prompt. Default is false (saves tokens, lets IDE AI read the file directly).",
       "default": false
     },
-    "annotate.channel": {
+    "delivery.mode": {
       "type": "string",
       "enum": ["ide", "mcp"],
-      "description": "Controls which channel Inspecto uses for Annotate submissions.",
+      "description": "Controls the default delivery mode Inspecto uses for launcher and AI handoff flows.",
       "default": "mcp"
     },
     "prompt.runtimeContext": {

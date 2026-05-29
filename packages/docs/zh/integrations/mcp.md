@@ -101,7 +101,7 @@ npx -y add-mcp@latest "npx -y @inspecto-dev/cli@latest mcp --server-url http://1
 
 ```json
 {
-  "annotate.channel": "mcp"
+  "delivery.mode": "mcp"
 }
 ```
 

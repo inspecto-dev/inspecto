@@ -130,7 +130,7 @@ class InspectoElement extends BaseElement {
   private annotateErrorMessage = ''
   private annotateRuntimeContextEnabled = false
   private annotateCssContextEnabled = false
-  private annotateChannel: 'ide' | 'mcp' = 'mcp'
+  private deliveryMode: 'ide' | 'mcp' = 'mcp'
   private annotateWorkflows: import('@inspecto-dev/types').WorkflowSlotOption[] = []
   private annotateSendState: {
     isSending: boolean
