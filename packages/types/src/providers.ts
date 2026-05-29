@@ -27,11 +27,15 @@ export interface InspectoSettings {
   ide?: IdeType
   [key: `provider.${string}`]: string | string[] | boolean | undefined
   'inspector.hotKey'?: HotKeys
-  'annotate.channel'?: 'ide' | 'mcp'
+  'delivery.mode'?: 'ide' | 'mcp'
   'server.host'?: string
   'server.publicUrl'?: string
   'prompt.includeSnippet'?: boolean
   'prompt.autoSend'?: boolean
+  'prompt.runtimeContext'?: boolean
+  'prompt.runtimeContextPreview'?: boolean
+  'prompt.runtimeContextMaxErrors'?: number
+  'prompt.runtimeContextMaxRequests'?: number
 }
 
 export const HOST_IDE_IDS = [
@@ -162,7 +166,7 @@ export interface InspectoConfig {
   workflows?: WorkflowSlotOption[]
   hotKeys?: HotKeys
   theme?: 'light' | 'dark' | 'auto'
-  annotateChannel?: 'ide' | 'mcp'
+  deliveryMode?: 'ide' | 'mcp'
   includeSnippet?: boolean
   runtimeContext?: RuntimeContextConfig
 }

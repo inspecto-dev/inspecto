@@ -27,7 +27,7 @@ Inspecto 会按照以下优先级（从高到低）在你的项目中查找并�
   "inspector.hotKey": "alt",
   "ide": "vscode",
   "provider.default": "copilot.extension",
-  "annotate.channel": "mcp",
+  "delivery.mode": "mcp",
   "prompt.includeSnippet": false,
   "prompt.autoSend": false,
   "provider.claude-code.cli.bin": "claude",
@@ -55,7 +55,7 @@ Inspecto 会按照以下优先级（从高到低）在你的项目中查找并�
 - **示例:** `"copilot.extension"`, `"claude-code.cli"`, `"trae.builtin"`, `"codebuddy.builtin"`
 - **描述:** 默认将提取出的代码上下文发送给哪个 AI 工具及通过何种模式。assistant-first onboarding 通常可以自动解析这一项，因此大多数用户第一次接入时不需要先手动设置。
 
-### `annotate.channel`
+### `delivery.mode`
 
 - **类型:** `"ide" | "mcp"`
 - **默认值:** `"mcp"`

@@ -62,7 +62,7 @@ Set up Inspecto in this project
 Onboarding only installs the integration and applies project configuration. Day-to-day usage depends on the route you choose:
 
 - **IDE route**: use Inspect mode or Annotate mode to send a prompt into your IDE assistant immediately.
-- **MCP route**: set `"annotate.channel": "mcp"`, configure the Inspecto MCP server in your agent, then let the agent claim annotation or workflow sessions.
+- **MCP route**: set `"delivery.mode": "mcp"`, configure the Inspecto MCP server in your agent, then let the agent claim annotation or workflow sessions.
 - **Custom workflows**: add `kind: "workflow"` entries to `.inspecto/prompts.json`, such as `Deploy Preview` or `Review & PR`. Inspecto queues the command; your agent decides which skill, MCP server, or tool to use.
 
 If you want the browser timeline and custom workflow automation, make sure MCP is configured after onboarding.
@@ -93,7 +93,7 @@ Here is a full list of supported assistants and where their integrations are ins
 
 All onboarding integrations will by default write configuration into local-only files (`.inspecto/settings.local.json` and `.inspecto/prompts.local.json`), keeping your repository clean.
 
-For Codex installs, the CLI installs both the onboarding skill and the `inspecto-agent` skill. MCP server configuration still needs to be added separately, so the daily `Annotate mode` workflow will not switch to an agent-driven task flow until MCP is configured. Once MCP is connected and `.inspecto/settings.local.json` uses `"annotate.channel": "mcp"`, the default follow-up is:
+For Codex installs, the CLI installs both the onboarding skill and the `inspecto-agent` skill. MCP server configuration still needs to be added separately, so the daily `Annotate mode` workflow will not switch to an agent-driven task flow until MCP is configured. Once MCP is connected and `.inspecto/settings.local.json` uses `"delivery.mode": "mcp"`, the default follow-up is:
 
 ```text
 Use $inspecto-agent to claim Inspecto tasks continuously
@@ -153,7 +153,7 @@ The integrations work by exposing Inspecto's structured CLI onboarding contract 
 4. Guides you through installing the IDE extension (if using IDE mode).
 5. Confirms the dev server start command.
 
-When onboarding configures `annotate.channel: "mcp"`, the structured onboarding result can also include a `handoff.dailyUsage` payload. Assistant integrations should prefer that field over hard-coded follow-up wording when pointing users to the installed `inspecto-agent` skill for daily MCP-driven annotation work.
+When onboarding configures `delivery.mode: "mcp"`, the structured onboarding result can also include a `handoff.dailyUsage` payload. Assistant integrations should prefer that field over hard-coded follow-up wording when pointing users to the installed `inspecto-agent` skill for daily MCP-driven annotation work.
 
 This guarantees that the actual file modifications are always safely performed by the Inspecto CLI parser, rather than relying on the assistant to hand-edit your configuration files.
 

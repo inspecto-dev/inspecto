@@ -32,13 +32,13 @@ export async function buildClientConfig(
     prompts: allIntents.filter(isAiIntentConfig),
     workflows: resolveWorkflowSlots(allIntents),
     hotKeys: userConfig['inspector.hotKey'] ?? 'alt',
-    annotateChannel: userConfig['annotate.channel'] ?? 'mcp',
+    deliveryMode: userConfig['delivery.mode'] ?? 'mcp',
     includeSnippet: userConfig['prompt.includeSnippet'] ?? false,
     runtimeContext: {
-      enabled: true,
-      preview: true,
-      maxRuntimeErrors: 3,
-      maxFailedRequests: 2,
+      enabled: userConfig['prompt.runtimeContext'] ?? false,
+      preview: userConfig['prompt.runtimeContextPreview'] ?? true,
+      maxRuntimeErrors: userConfig['prompt.runtimeContextMaxErrors'] ?? 3,
+      maxFailedRequests: userConfig['prompt.runtimeContextMaxRequests'] ?? 2,
     },
     autoSend: userConfig['prompt.autoSend'] ?? false,
   }

@@ -193,7 +193,7 @@ describe('annotate sidebar', () => {
       shadowRoot,
       createSidebarOptions(createEmptySession(), {
         includedRecords: [],
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         preferredAction: 'create-task',
         isSending: false,
       }),
@@ -483,7 +483,7 @@ describe('annotate sidebar', () => {
     createAnnotateSidebar(
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         preferredAction: 'create-task',
       }),
     )
@@ -508,7 +508,7 @@ describe('annotate sidebar', () => {
     createAnnotateSidebar(
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         preferredAction: 'create-task',
       }),
     )
@@ -528,7 +528,7 @@ describe('annotate sidebar', () => {
     createAnnotateSidebar(
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         preferredAction: 'create-task',
       }),
     )
@@ -543,7 +543,7 @@ describe('annotate sidebar', () => {
     createAnnotateSidebar(
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         preferredAction: 'create-task',
       }),
     )
@@ -585,7 +585,7 @@ describe('annotate sidebar', () => {
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
         preferredAction: 'create-task',
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         isSending: false,
       }),
     )
@@ -636,7 +636,7 @@ describe('annotate sidebar', () => {
       shadowRoot,
       createSidebarOptions(createEmptySession(), {
         successScope: 'create-task',
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         preferredAction: 'create-task',
       }),
     )
@@ -644,7 +644,7 @@ describe('annotate sidebar', () => {
     controller.update(
       createSidebarOptions(createEmptySession(), {
         successScope: 'create-task',
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         preferredAction: 'create-task',
         latestSessionSummary: {
           id: 'session-abcdef12',
@@ -957,7 +957,7 @@ describe('annotate sidebar', () => {
     createAnnotateSidebar(
       shadowRoot,
       createSidebarOptions(createRecordSession(), {
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         preferredAction: 'create-task',
         isSending: false,
       }),

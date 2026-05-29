@@ -248,7 +248,7 @@ export async function triggerWorkflow(ctx: unknown, workflowId: string): Promise
   const workflowPrompt = workflow?.prompt || ''
   if (!workflowPrompt.trim()) return
 
-  const deliveryMode = state.annotateChannel ?? 'mcp'
+  const deliveryMode = state.deliveryMode ?? 'mcp'
 
   if (deliveryMode === 'ide') {
     const scope: AnnotateSendScope = `workflow:${workflowId}`
@@ -397,10 +397,10 @@ export function getAnnotateSidebarOptions(ctx: unknown): AnnotateSidebarOptions 
   const allRuntimeContext = state.getAnnotateRuntimeContext(allAnnotations)
   const allCssContextPrompt = state.getAnnotateCssContextPrompt(allAnnotations)
 
-  const channelPreference = state.annotateChannel ?? 'mcp'
+  const deliveryMode = state.deliveryMode ?? 'mcp'
   let preferredAction: 'quick-ask' | 'create-task' = 'create-task'
-  if (channelPreference === 'ide') preferredAction = 'quick-ask'
-  if (channelPreference === 'mcp') preferredAction = 'create-task'
+  if (deliveryMode === 'ide') preferredAction = 'quick-ask'
+  if (deliveryMode === 'mcp') preferredAction = 'create-task'
 
   return {
     mode: state.annotateCapturePaused ? 'capture-paused' : 'capture-enabled',
@@ -423,7 +423,7 @@ export function getAnnotateSidebarOptions(ctx: unknown): AnnotateSidebarOptions 
     sendingScope: state.annotateSendState.scope,
     successScope: state.annotateSuccessScope,
     preferredAction,
-    annotateChannel: state.annotateChannel,
+    deliveryMode: state.deliveryMode,
     workflows: state.annotateWorkflows,
     latestSessionSummary: state.annotateLatestSessionSummary,
     latestSessionDetail: state.annotateLatestSessionDetail,

@@ -12,7 +12,7 @@ This note records the implementation direction that matches the shipped annotate
 - one clicked target maps to one `FeedbackRecord`
 - the sidebar holds a batch of saved records plus one current draft
 - batch-level intent is expressed through the freeform instruction field
-- the user submits through one primary action determined by `annotate.channel`
+- the user submits through one primary action determined by `delivery.mode`
 
 ## Explicit Rejections
 

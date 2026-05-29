@@ -123,8 +123,8 @@ const EN_MESSAGES: Record<string, string> = {
   'workflow.notice.status.ide': 'sent to IDE',
   'workflow.notice.meta.ide': 'IDE channel',
   'workflow.notice.message.ide':
-    'Sent to IDE. Live sidebar updates are unavailable for annotate.channel=ide.',
-  'workflow.notice.hint.ide': 'Switch annotate.channel to mcp to follow agent progress here.',
+    'Sent to IDE. Live sidebar updates are unavailable for delivery.mode=ide.',
+  'workflow.notice.hint.ide': 'Switch delivery.mode to mcp to follow agent progress here.',
 }
 
 const ZH_CN_MESSAGES: Record<string, string> = {
@@ -242,8 +242,8 @@ const ZH_CN_MESSAGES: Record<string, string> = {
   'workflow.notice.title': 'Workflow 已发送',
   'workflow.notice.status.ide': '已发送到 IDE',
   'workflow.notice.meta.ide': 'IDE 通道',
-  'workflow.notice.message.ide': '已发送到 IDE。annotate.channel=ide 不支持在侧边栏实时更新。',
-  'workflow.notice.hint.ide': '如需在这里跟进 agent 进度，请将 annotate.channel 切换为 mcp。',
+  'workflow.notice.message.ide': '已发送到 IDE。delivery.mode=ide 不支持在侧边栏实时更新。',
+  'workflow.notice.hint.ide': '如需在这里跟进 agent 进度，请将 delivery.mode 切换为 mcp。',
 }
 
 const BUILTIN_MESSAGES: Record<string, Record<string, string>> = {

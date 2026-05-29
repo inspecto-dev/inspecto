@@ -12,7 +12,7 @@ Inspecto keeps `Inspect mode` for single-target immediate actions and uses `Anno
 - one clicked component creates or reopens one `FeedbackRecord`
 - the sidebar collects many saved records
 - the freeform instruction field provides optional batch-level intent
-- the user submits the batch through one primary action determined by `annotate.channel`
+- the user submits the batch through one primary action determined by `delivery.mode`
 
 This keeps annotate aligned with the current UI while avoiding a second send path.
 
@@ -156,7 +156,7 @@ Each item should expose:
 
 ### Footer
 
-- one primary action determined by `annotate.channel`: `Ask AI` or `Create Task`
+- one primary action determined by `delivery.mode`: `Ask AI` or `Create Task`
 
 ## Core Workflow
 

@@ -13,7 +13,7 @@ type LauncherContext = {
   ide: IdeType
   ideConnected: boolean
   ideConnectionKnown: boolean
-  annotateChannel: 'ide' | 'mcp'
+  deliveryMode: 'ide' | 'mcp'
   launcherPanelOpen: boolean
   badge: HTMLDivElement
   shadowRootEl: ShadowRoot
@@ -36,7 +36,7 @@ function getInspectHiddenReason(
   state: LauncherContext,
 ): 'ide-disabled' | 'ide-disconnected' | null {
   if (state.ide === 'none') return 'ide-disabled'
-  if (state.annotateChannel === 'mcp' && state.ideConnectionKnown && !state.ideConnected) {
+  if (state.deliveryMode === 'mcp' && state.ideConnectionKnown && !state.ideConnected) {
     return 'ide-disconnected'
   }
   return null

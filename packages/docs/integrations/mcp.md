@@ -98,7 +98,7 @@ Make sure Annotate mode uses MCP:
 
 ```json
 {
-  "annotate.channel": "mcp"
+  "delivery.mode": "mcp"
 }
 ```
 

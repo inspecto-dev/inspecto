@@ -62,7 +62,7 @@ Set up Inspecto in this project
 Onboarding 只负责安装集成并应用项目配置。日常使用取决于你选择的交付路线：
 
 - **IDE route**：使用「检查模式」或「标注模式」把 prompt 立即发送到 IDE 助手。
-- **MCP route**：设置 `"annotate.channel": "mcp"`，在 Agent 中配置 Inspecto MCP server，然后让 Agent 领取 annotation 或 workflow session。
+- **MCP route**：设置 `"delivery.mode": "mcp"`，在 Agent 中配置 Inspecto MCP server，然后让 Agent 领取 annotation 或 workflow session。
 - **自定义 workflow**：在 `.inspecto/prompts.json` 中添加 `kind: "workflow"` 条目，例如 `Deploy Preview` 或 `Review & PR`。Inspecto 负责把指令入队；Agent 自己决定调用哪个 skill、MCP server 或 tool。
 
 如果你希望使用浏览器 timeline 和自定义 workflow 自动化，请在 onboarding 后确认 MCP 已经配置好。
@@ -93,7 +93,7 @@ Onboarding 只负责安装集成并应用项目配置。日常使用取决于你
 
 默认情况下，所有的 onboarding 集成都会将配置写入纯本地的文件（`.inspecto/settings.local.json` 和 `.inspecto/prompts.local.json`），保持你的代码仓库干净整洁。
 
-对于 Codex，CLI 会默认安装 onboarding skill 和 `inspecto-agent` skill；但 MCP server 配置仍需要你单独补上，所以「标注模式」不会默认切换为 Agent 驱动的任务流程。等 MCP 配好，并且 `.inspecto/settings.local.json` 中使用 `"annotate.channel": "mcp"` 后，默认的后续指令是：
+对于 Codex，CLI 会默认安装 onboarding skill 和 `inspecto-agent` skill；但 MCP server 配置仍需要你单独补上，所以「标注模式」不会默认切换为 Agent 驱动的任务流程。等 MCP 配好，并且 `.inspecto/settings.local.json` 中使用 `"delivery.mode": "mcp"` 后，默认的后续指令是：
 
 ```text
 Use $inspecto-agent to claim Inspecto tasks continuously
@@ -153,7 +153,7 @@ npx @inspecto-dev/cli integrations install codebuddy --host-ide codebuddy-cn
 4. 引导你安装 IDE 插件（如使用 IDE 模式）。
 5. 确认启动 dev server 的命令。
 
-当 onboarding 配置了 `annotate.channel: "mcp"` 时，结构化 onboarding 结果还可能包含 `handoff.dailyUsage`。Assistant 集成在引导用户日常使用已安装的 `inspecto-agent` skill 处理 MCP 标注任务时，应优先使用这个字段，而不是硬编码后续提示语。
+当 onboarding 配置了 `delivery.mode: "mcp"` 时，结构化 onboarding 结果还可能包含 `handoff.dailyUsage`。Assistant 集成在引导用户日常使用已安装的 `inspecto-agent` skill 处理 MCP 标注任务时，应优先使用这个字段，而不是硬编码后续提示语。
 
 这可以保证实际的文件修改，始终由 Inspecto CLI 的解析器安全地完成，而不是依赖助手来手动修改你的配置文件。
 

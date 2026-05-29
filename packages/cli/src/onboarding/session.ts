@@ -268,11 +268,11 @@ async function buildDailyUsageHandoff(
     (await readJSON<Record<string, unknown>>(
       path.join(projectRoot, '.inspecto', 'settings.json'),
     )) ?? {}
-  const annotateChannel =
-    (localSettings['annotate.channel'] as string | undefined) ??
-    (sharedSettings['annotate.channel'] as string | undefined)
+  const deliveryMode =
+    (localSettings['delivery.mode'] as string | undefined) ??
+    (sharedSettings['delivery.mode'] as string | undefined)
 
-  if (annotateChannel !== 'mcp') {
+  if (deliveryMode !== 'mcp') {
     return undefined
   }
 

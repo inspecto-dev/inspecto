@@ -944,7 +944,7 @@ describe('annotate mode integration', () => {
   it('hides inspect mode when MCP annotate is configured without an IDE connection', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       configResponse({
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         ideConnected: false,
       }),
     )
@@ -973,7 +973,7 @@ describe('annotate mode integration', () => {
   it('keeps inspect mode visible when MCP annotate is configured with an IDE connection', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       configResponse({
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         ideConnected: true,
       }),
     )
@@ -1006,7 +1006,7 @@ describe('annotate mode integration', () => {
     const fetchMock = vi.fn().mockResolvedValue(
       configResponse({
         ide: 'none',
-        annotateChannel: 'ide',
+        deliveryMode: 'ide',
         ideConnected: true,
       }),
     )
@@ -1037,7 +1037,7 @@ describe('annotate mode integration', () => {
   it('falls back to annotate mode when inspect mode becomes unavailable', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       configResponse({
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         ideConnected: false,
       }),
     )
@@ -1074,7 +1074,7 @@ describe('annotate mode integration', () => {
 
     configDeferred.resolve(
       configResponse({
-        annotateChannel: 'mcp',
+        deliveryMode: 'mcp',
         ideConnected: false,
       }) as Response,
     )
@@ -3293,7 +3293,7 @@ describe('annotate mode integration', () => {
 
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(configResponse({ annotateChannel: 'ide' }))
+      .mockResolvedValueOnce(configResponse({ deliveryMode: 'ide' }))
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -3349,7 +3349,7 @@ describe('annotate mode integration', () => {
       .fn()
       .mockResolvedValueOnce(
         configResponse({
-          annotateChannel: 'ide',
+          deliveryMode: 'ide',
           workflows: [
             {
               id: 'review-pr',
@@ -3442,7 +3442,7 @@ describe('annotate mode integration', () => {
       .fn()
       .mockResolvedValueOnce(
         configResponse({
-          annotateChannel: 'mcp',
+          deliveryMode: 'mcp',
           workflows: [
             {
               id: 'review-pr',
@@ -3536,7 +3536,7 @@ describe('annotate mode integration', () => {
       .fn()
       .mockResolvedValueOnce(
         configResponse({
-          annotateChannel: 'mcp',
+          deliveryMode: 'mcp',
           workflows: [
             {
               id: 'auto-merge-commit',

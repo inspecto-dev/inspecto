@@ -58,7 +58,7 @@ export type AnnotateContext = {
   annotateErrorMessage: string
   annotateRuntimeContextEnabled: boolean
   annotateCssContextEnabled: boolean
-  annotateChannel: 'ide' | 'mcp'
+  deliveryMode: 'ide' | 'mcp'
   annotateWorkflows: import('@inspecto-dev/types').WorkflowSlotOption[]
   annotateSendState: {
     isSending: boolean

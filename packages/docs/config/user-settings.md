@@ -27,7 +27,7 @@ Inspecto looks for configuration files in your project directory in the followin
   "inspector.hotKey": "alt",
   "ide": "vscode",
   "provider.default": "copilot.extension",
-  "annotate.channel": "mcp",
+  "delivery.mode": "mcp",
   "prompt.includeSnippet": false,
   "prompt.autoSend": false,
   "provider.claude-code.cli.bin": "claude",
@@ -55,7 +55,7 @@ Inspecto looks for configuration files in your project directory in the followin
 - **Example:** `"copilot.extension"`, `"claude-code.cli"`, `"trae.builtin"`, `"codebuddy.builtin"`
 - **Description:** The default AI tool and mode to dispatch the code context to. Assistant-first onboarding can often resolve this automatically, so most users do not need to set it before first use.
 
-### `annotate.channel`
+### `delivery.mode`
 
 - **Type:** `"ide" | "mcp"`
 - **Default:** `"mcp"`

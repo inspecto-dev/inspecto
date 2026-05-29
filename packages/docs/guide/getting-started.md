@@ -77,7 +77,7 @@ Want to know what the automated setup does? See [Onboarding Integrations](../int
    - Click the launcher for `Inspect mode` or `Annotate mode`
    - In `Annotate mode`, collect one or more UI notes; click `Create Task` on the MCP channel to create a structured task, or `Ask AI` on the IDE channel for a one-shot handoff
 
-If your project uses MCP annotation (`"annotate.channel": "mcp"`), the annotation sidebar also shows the latest task timeline. Use it to confirm that the task was queued, claimed by the agent, updated with progress replies, and resolved or dismissed.
+If your project uses MCP annotation (`"delivery.mode": "mcp"`), the annotation sidebar also shows the latest task timeline. Use it to confirm that the task was queued, claimed by the agent, updated with progress replies, and resolved or dismissed.
 
 For custom automation, add `kind: "workflow"` entries in `.inspecto/prompts.json`. These appear as workflow buttons in Annotate mode. A button can send a deploy, PR, release, or review instruction to the agent; the agent then uses its own skills, MCP servers, and tools to complete the work while Inspecto tracks the session.
 

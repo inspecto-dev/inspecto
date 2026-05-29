@@ -1119,7 +1119,7 @@ describe('annotation batch dispatch', () => {
       ide: 'vscode',
       'provider.default': 'codex.cli',
       'prompt.autoSend': false,
-      'annotate.channel': 'mcp',
+      'delivery.mode': 'mcp',
     })
 
     serverState.projectRoot = process.cwd()
@@ -1134,14 +1134,46 @@ describe('annotation batch dispatch', () => {
     await pending
 
     expect(response.statusCode).toBe(200)
-    expect(response.jsonBody.annotateChannel).toBe('mcp')
+    expect(response.jsonBody.deliveryMode).toBe('mcp')
     expect(response.jsonBody.runtimeContext).toEqual({
-      enabled: true,
+      enabled: false,
       preview: true,
       maxRuntimeErrors: 3,
       maxFailedRequests: 2,
     })
     expect(response.jsonBody.ideConnected).toBe(false)
+  })
+
+  it('maps runtime context settings into client config responses', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+    const { loadUserConfigSync } = await import('../src/config.js')
+
+    vi.mocked(loadUserConfigSync).mockReturnValue({
+      ide: 'vscode',
+      'prompt.runtimeContext': false,
+      'prompt.runtimeContextPreview': false,
+      'prompt.runtimeContextMaxErrors': 7,
+      'prompt.runtimeContextMaxRequests': 5,
+    })
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const request = createJsonRequest('GET', '')
+    const response = createMockResponse()
+    const url = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.CLIENT_CONFIG}`)
+
+    const pending = handleRequest(url, request as any, response as any)
+    request.start()
+    await pending
+
+    expect(response.statusCode).toBe(200)
+    expect(response.jsonBody.runtimeContext).toEqual({
+      enabled: false,
+      preview: false,
+      maxRuntimeErrors: 7,
+      maxFailedRequests: 5,
+    })
   })
 
   it('marks client config as IDE-connected after an IDE handshake', async () => {
@@ -1150,7 +1182,7 @@ describe('annotation batch dispatch', () => {
 
     vi.mocked(loadUserConfigSync).mockReturnValue({
       ide: 'vscode',
-      'annotate.channel': 'mcp',
+      'delivery.mode': 'mcp',
     })
 
     serverState.projectRoot = process.cwd()
@@ -1168,7 +1200,7 @@ describe('annotation batch dispatch', () => {
     expect(response.statusCode).toBe(200)
     expect(response.jsonBody.ide).toBe('vscode')
     expect(response.jsonBody.ideConnected).toBe(true)
-    expect(response.jsonBody.annotateChannel).toBe('mcp')
+    expect(response.jsonBody.deliveryMode).toBe('mcp')
   })
 
   it('keeps IDE integration disabled in client config when user config sets ide none', async () => {
@@ -1177,7 +1209,7 @@ describe('annotation batch dispatch', () => {
 
     vi.mocked(loadUserConfigSync).mockReturnValue({
       ide: 'none',
-      'annotate.channel': 'mcp',
+      'delivery.mode': 'mcp',
     })
 
     serverState.projectRoot = process.cwd()
@@ -1196,7 +1228,7 @@ describe('annotation batch dispatch', () => {
     expect(response.jsonBody.ide).toBe('none')
     expect(response.jsonBody.ideConnected).toBe(false)
     expect(Object.prototype.hasOwnProperty.call(response.jsonBody, 'providers')).toBe(false)
-    expect(response.jsonBody.annotateChannel).toBe('mcp')
+    expect(response.jsonBody.deliveryMode).toBe('mcp')
   })
 
   it('serves client config responses without deprecated capability fields', async () => {

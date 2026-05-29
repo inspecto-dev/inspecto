@@ -29,7 +29,7 @@ type LifecycleContext = {
   annotateQuickCaptureEnabled: boolean
   annotateRuntimeContextEnabled: boolean
   annotateCssContextEnabled: boolean
-  annotateChannel: 'ide' | 'mcp'
+  deliveryMode: 'ide' | 'mcp'
   annotateWorkflows: import('@inspecto-dev/types').WorkflowSlotOption[]
   stopLatestAnnotateSessionStream(): void
   setAttribute(name: string, value: string): void
@@ -51,7 +51,7 @@ function asLifecycleContext(ctx: unknown): LifecycleContext {
 
 function canUseInspectMode(state: LifecycleContext): boolean {
   if (state.ide === 'none') return false
-  if (state.annotateChannel === 'mcp' && state.ideConnectionKnown && !state.ideConnected) {
+  if (state.deliveryMode === 'mcp' && state.ideConnectionKnown && !state.ideConnected) {
     return false
   }
   return true
@@ -176,8 +176,8 @@ export function configure(ctx: unknown, options: InspectoOptions): void {
         state.ideConnectionKnown = true
         state.ideConnected = (info as { ideConnected?: boolean }).ideConnected === true
       }
-      if (info?.annotateChannel !== undefined) {
-        state.annotateChannel = info.annotateChannel
+      if (info?.deliveryMode !== undefined) {
+        state.deliveryMode = info.deliveryMode
       }
       if (info?.workflows !== undefined) {
         state.annotateWorkflows = info.workflows

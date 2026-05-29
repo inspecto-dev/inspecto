@@ -77,7 +77,7 @@ _(如果你使用其他包管理器，可以用 `pnpm dlx`、`yarn dlx` 或 `bun
    - 点击 launcher 选择「检查模式」或「标注模式」
    - 在「标注模式」里收集一个或多个 UI 批注；MCP 通道点击「创建任务」创建结构化任务，IDE 通道则点击「问 AI」进行一次性派发
 
-如果你的项目使用 MCP 标注链路（`"annotate.channel": "mcp"`），标注侧栏还会展示最近任务的 timeline。你可以用它确认任务已经入队、被 Agent 领取、收到进度回复，并最终完成或关闭。
+如果你的项目使用 MCP 标注链路（`"delivery.mode": "mcp"`），标注侧栏还会展示最近任务的 timeline。你可以用它确认任务已经入队、被 Agent 领取、收到进度回复，并最终完成或关闭。
 
 如果你想做自定义自动化，可以在 `.inspecto/prompts.json` 中增加 `kind: "workflow"` 条目。它们会显示为「标注模式」里的 workflow 按钮。按钮可以把 deploy、PR、release 或 review 指令交给 Agent；Agent 再利用自身已有的 skill、MCP server 和 tool 完成任务，同时由 Inspecto 追踪 session 进度。
 

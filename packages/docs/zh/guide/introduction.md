@@ -18,7 +18,7 @@ Inspecto 缩短了浏览器、编辑器、DevTools 和 AI Agent 之间的往返�
 <img src="/annotate-mode.gif" alt="标注模式 workflow" style="border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.16); box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin: 16px 0;" />
 非常适合设计走查（Design Review）或复杂的重构。进入标注模式后，你可以依次圈选页面上的多个元素，为每个元素填写具体的修改意见，最后再补充一个整体目标。Inspecto 会将所有批注及其源码上下文整理成一个可持久化的任务，再按当前配置交给 IDE 助手或 MCP Agent 处理。
 
-当 `annotate.channel` 设置为 `mcp` 时，标注模式还会展示浏览器侧的 session timeline。你可以直接在页面里看到任务何时入队、何时被 Agent 领取、Agent 回传了哪些进度，以及最终是完成还是关闭。
+当 `delivery.mode` 设置为 `mcp` 时，标注模式还会展示浏览器侧的 session timeline。你可以直接在页面里看到任务何时入队、何时被 Agent 领取、Agent 回传了哪些进度，以及最终是完成还是关闭。
 
 **快速批注工作流**
 <img src="/annotate-quick-mode.gif" alt="快速标注 workflow" style="border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.16); box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin: 16px 0;" />
