@@ -417,3 +417,9 @@ Phase 3 moved shared component utilities, i18n, icons, and style modules into
 `shared/`. Root-level compatibility re-export files remain temporarily so the
 runtime composition and transport phases can migrate without broad behavior
 changes.
+
+## Phase 4 Implementation Note
+
+Phase 4 moved the custom element runtime and component coordination modules into
+`runtime/`. Root-level compatibility re-export files remain temporarily while
+transport and final cleanup phases complete.

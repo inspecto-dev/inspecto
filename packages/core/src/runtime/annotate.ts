@@ -1,0 +1,31 @@
+export {
+  addTargetToCurrentAnnotation,
+  beginEditingRecord,
+  clearDraftForTarget,
+  createAnnotationTarget,
+  describeElement,
+  findElementForAnnotationTarget,
+  findElementForLocation,
+  getAnnotationTargetKey,
+  markTargetInAnnotateSession,
+  persistCurrentDraft,
+  rebindCurrentAnnotationElements,
+  restoreEditingRecord,
+} from '../features/annotate/targets/index.js'
+
+export {
+  clearAnnotateError,
+  clearAnnotateSuccess,
+  composeAnnotateInstruction,
+  getAnnotateSidebarOptions,
+  getNextRecordDisplayOrderUi as getNextRecordDisplayOrder,
+  hasCurrentRecordUi as hasCurrentRecord,
+  renderAnnotateSelectionOverlay,
+  refreshLatestAnnotateSession,
+  sendAnnotationBatch,
+  showAnnotateSuccess,
+  startLatestAnnotateSessionStream,
+  stopLatestAnnotateSessionStream,
+  toAnnotateErrorMessage,
+  toAnnotationTransportFromRecordUi as toAnnotationTransportFromRecord,
+} from './annotate-ui.js'

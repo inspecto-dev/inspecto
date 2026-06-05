@@ -3,7 +3,7 @@ import { type SendAnnotationsToAiRequest } from '@inspecto-dev/types'
 import { mountInspector, unmountInspector } from '../src/index.js'
 import { buildAnnotateFullPrompt } from '../src/features/annotate/prompts/full-prompt.js'
 import { openFileWithDiagnostics, sendAnnotationsToAi, setBaseUrl } from '../src/http.js'
-import { toAnnotateErrorMessage } from '../src/component-annotate-ui.js'
+import { toAnnotateErrorMessage } from '../src/runtime/annotate-ui.js'
 
 const SYSTEM_STARTED_MESSAGE = 'Agent claimed this task through MCP.'
 
