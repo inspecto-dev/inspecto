@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mountInspector, unmountInspector } from '../src/index.js'
-import { showIntentMenu } from '../src/menu.js'
+import { showIntentMenu } from '../src/features/inspect/menu/index.js'
 import {
   menuClass,
   loadingSpinnerClass,
@@ -44,6 +44,11 @@ vi.mock('../src/fix-bug-prompt.js', () => ({
   ),
   selectFixBugEvidence: vi.fn((records: unknown[]) => records),
 }))
+
+vi.mock('../src/features/inspect/prompts/fix-bug-prompt.js', async () => {
+  const promptModule = await import('../src/fix-bug-prompt.js')
+  return promptModule
+})
 
 describe('Intent Menu DOM Interaction', () => {
   let shadowRoot: ShadowRoot
@@ -1110,9 +1115,9 @@ describe('Intent Menu DOM Interaction', () => {
   })
 
   it('includes runtime evidence in the final prompt when the bug icon is enabled and a real console.error was captured', async () => {
-    const actualPromptModule = await vi.importActual<typeof import('../src/fix-bug-prompt.js')>(
-      '../src/fix-bug-prompt.js',
-    )
+    const actualPromptModule = await vi.importActual<
+      typeof import('../src/features/inspect/prompts/fix-bug-prompt.js')
+    >('../src/features/inspect/prompts/fix-bug-prompt.js')
     vi.mocked(promptModule.buildPromptForIntent).mockImplementation(
       actualPromptModule.buildPromptForIntent,
     )
@@ -1180,9 +1185,9 @@ describe('Intent Menu DOM Interaction', () => {
   })
 
   it('includes runtime evidence in the final prompt when a real uncaught window error matches the inspected file', async () => {
-    const actualPromptModule = await vi.importActual<typeof import('../src/fix-bug-prompt.js')>(
-      '../src/fix-bug-prompt.js',
-    )
+    const actualPromptModule = await vi.importActual<
+      typeof import('../src/features/inspect/prompts/fix-bug-prompt.js')
+    >('../src/features/inspect/prompts/fix-bug-prompt.js')
     vi.mocked(promptModule.buildPromptForIntent).mockImplementation(
       actualPromptModule.buildPromptForIntent,
     )
@@ -1275,9 +1280,9 @@ describe('Intent Menu DOM Interaction', () => {
   })
 
   it('includes runtime evidence in the final prompt through the real mountInspector inspect flow', async () => {
-    const actualPromptModule = await vi.importActual<typeof import('../src/fix-bug-prompt.js')>(
-      '../src/fix-bug-prompt.js',
-    )
+    const actualPromptModule = await vi.importActual<
+      typeof import('../src/features/inspect/prompts/fix-bug-prompt.js')
+    >('../src/features/inspect/prompts/fix-bug-prompt.js')
     vi.mocked(promptModule.buildPromptForIntent).mockImplementation(
       actualPromptModule.buildPromptForIntent,
     )

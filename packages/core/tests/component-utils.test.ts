@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSelector, findElementForLocation } from '../src/component-annotate-targets.js'
+import { createSelector, findElementForLocation } from '../src/features/annotate/targets/index.js'
 import { findInspectable, getInspectableLocation } from '../src/component-utils.js'
 
 describe('component-utils astro source support', () => {

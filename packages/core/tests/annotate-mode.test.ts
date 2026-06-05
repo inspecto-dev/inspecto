@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type SendAnnotationsToAiRequest } from '@inspecto-dev/types'
 import { mountInspector, unmountInspector } from '../src/index.js'
-import { buildAnnotateFullPrompt } from '../src/annotate-full-prompt.js'
+import { buildAnnotateFullPrompt } from '../src/features/annotate/prompts/full-prompt.js'
 import { openFileWithDiagnostics, sendAnnotationsToAi, setBaseUrl } from '../src/http.js'
 import { toAnnotateErrorMessage } from '../src/component-annotate-ui.js'
 

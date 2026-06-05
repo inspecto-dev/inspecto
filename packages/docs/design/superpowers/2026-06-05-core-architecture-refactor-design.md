@@ -402,3 +402,11 @@ Phase 1 moved pure annotate session, inspect prompt/menu positioning, and runtim
 evidence selection modules into feature directories. Root-level compatibility
 re-export files remain temporarily so DOM-heavy modules can migrate in later
 phases without a broad behavior change.
+
+## Phase 2 Implementation Note
+
+Phase 2 moved inspect menu/overlay DOM modules, annotate overlay/sidebar DOM
+modules, annotate full-prompt assembly, and annotate target helpers into feature
+directories. Root-level compatibility re-export files remain temporarily so the
+runtime composition layer can migrate in a later phase without a broad behavior
+change.
