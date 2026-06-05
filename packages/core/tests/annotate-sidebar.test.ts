@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createEmptySession } from '../src/annotate-session.js'
+import { createEmptySession } from '../src/features/annotate/session/index.js'
 import { createAnnotateSidebar } from '../src/features/annotate/sidebar/index.js'
 import {
   annotateQueueListClass,

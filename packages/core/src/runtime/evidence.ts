@@ -3,8 +3,11 @@ import {
   createRuntimeContextCollector,
   createRuntimeContextEnvelope,
   selectRuntimeEvidence,
-} from '../runtime-context.js'
-import { buildCssContextPrompt, captureCssContextEntry } from '../css-context.js'
+} from '../features/evidence/runtime-context/index.js'
+import {
+  buildCssContextPrompt,
+  captureCssContextEntry,
+} from '../features/evidence/css-context/index.js'
 import type { AnnotationTarget, AnnotationTransport, SourceLocation } from '@inspecto-dev/types'
 
 type EvidenceContext = {

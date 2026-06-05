@@ -1,8 +1,8 @@
 import type { RuntimeContextEnvelope, SourceLocation } from '@inspecto-dev/types'
-import { appendCssContextToPrompt } from '../../../css-context.js'
+import { appendCssContextToPrompt } from '../../evidence/css-context/index.js'
 import { appendRuntimeContextToPrompt } from '../prompts/fix-bug-prompt.js'
 import { buildPrompt, CUSTOM_PROMPT_TEMPLATE } from '../prompts/intents.js'
-import { fetchSnippet, openFileWithDiagnostics, sendToAi } from '../../../http.js'
+import { fetchSnippet, openFileWithDiagnostics, sendToAi } from '../../../transport/http-client.js'
 
 export async function openAndSendInspectPrompt(input: {
   location: SourceLocation

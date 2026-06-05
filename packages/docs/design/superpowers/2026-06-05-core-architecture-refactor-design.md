@@ -20,26 +20,25 @@ This refactor should make the internal architecture easier to understand, test, 
 - Do not introduce a heavy dependency-injection or ports/adapters framework.
 - Do not split `@inspecto-dev/core` into multiple packages.
 
-## Current Shape
+## Resulting Shape
 
-Important current files:
+Important files after the refactor:
 
 - `src/index.ts`: public mount/unmount entry and global fallback.
-- `src/component.ts`: custom element class and central state holder.
-- `src/component-*.ts`: lifecycle, launcher, interactions, annotate UI, evidence, and mode helpers.
-- `src/menu*.ts`: inspect-mode menu DOM, actions, send flow, positioning, and helpers.
-- `src/annotate-*.ts`: annotate session, sidebar, overlay, timeline, and prompt assembly.
-- `src/runtime-context*.ts`: runtime error capture and evidence selection.
-- `src/http.ts`: browser client for local server endpoints and event streams.
-- `src/styles*.ts`, `src/icons.ts`, `src/i18n.ts`: shared presentation assets.
+- `src/runtime/`: custom element coordination, lifecycle, launcher, interactions, annotate UI, evidence, and mode helpers.
+- `src/features/inspect/`: inspect-mode menu, overlay, and prompt assembly.
+- `src/features/annotate/`: annotation session state, sidebar, overlay, targets, timeline, and prompt assembly.
+- `src/features/evidence/`: runtime and CSS evidence capture, ranking, and prompt formatting.
+- `src/transport/http-client.ts`: browser client for local server endpoints and event streams.
+- `src/shared/`: component-location helpers, i18n, icons, and style modules.
 
-Existing strong points:
+Preserved strong points:
 
 - Pure modules already exist for session state, prompt assembly, menu positioning, and runtime-context selection.
 - The public entry already lazy-loads DOM-dependent code for SSR safety.
 - Tests cover a large amount of current behavior.
 
-Existing pain points:
+Original pain points addressed:
 
 - The flat directory makes feature ownership unclear.
 - `InspectoElement` imports most of the package and acts as a large coordination object.
@@ -429,3 +428,9 @@ transport and final cleanup phases complete.
 Phase 5 moved the browser HTTP/EventSource client into `transport/http-client.ts`.
 The root `http.ts` compatibility re-export remains temporarily for tests and
 older internal imports.
+
+## Phase 6 Implementation Note
+
+Phase 6 moved runtime and CSS evidence into `features/evidence/`, updated tests
+to import feature/runtime/transport paths directly, removed the temporary root
+compatibility re-export files, and refreshed core architecture documentation.

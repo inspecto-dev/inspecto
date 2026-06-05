@@ -14,9 +14,12 @@ inspecto/
 ├── packages/
 │   ├── types/           # Shared TypeScript protocol types
 │   ├── unplugin/        # Build plugin (Vite/Webpack/Rspack/Rollup) — AST injection (React & Vue)
-│   ├── core/            # Browser runtime: Web Component UI + HTTP server client
-│   │   ├── src/client/  # Web Component (pure native DOM + Goober, Shadow DOM)
-│   │   └── src/server/  # Local HTTP server + portfinder
+│   ├── core/            # Browser runtime: Web Component UI + local server transport client
+│   │   └── src/
+│   │       ├── runtime/    # Custom element, lifecycle, interactions, launcher
+│   │       ├── features/   # Inspect, annotate, and evidence feature modules
+│   │       ├── transport/  # Browser HTTP/EventSource client
+│   │       └── shared/     # i18n, icons, styles, source-location helpers
 │   ├── react/           # React thin wrapper (<Inspecto> component)
 │   ├── vue/             # Vue thin wrapper (<Inspecto> component)
 │   └── ide/             # IDE Extension (GitHub Copilot, Claude Code, CLIs strategies)

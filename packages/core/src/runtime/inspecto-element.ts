@@ -80,7 +80,10 @@ import {
   isCssContextEnabledForTransportTarget as isCssEnabledForTransportTarget,
   syncRuntimeContextCapture as syncRuntimeCapture,
 } from './evidence.js'
-import { createRuntimeContextCollector, createRuntimeContextEnvelope } from '../runtime-context.js'
+import {
+  createRuntimeContextCollector,
+  createRuntimeContextEnvelope,
+} from '../features/evidence/runtime-context/index.js'
 import type {
   AnnotationTransport,
   AnnotationTarget,

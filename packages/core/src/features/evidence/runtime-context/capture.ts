@@ -15,7 +15,7 @@ import {
   type CollectorRecordInput,
   type FetchLike,
   type XhrState,
-} from './runtime-context-shared.js'
+} from './shared.js'
 
 type RuntimeCollector = ReturnType<typeof createRuntimeContextCollector>
 

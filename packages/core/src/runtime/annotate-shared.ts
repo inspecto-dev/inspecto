@@ -97,7 +97,9 @@ export type AnnotateContext = {
   getAnnotateRuntimeContext(
     annotations: AnnotationTransport[],
     includeWhenDisabled?: boolean,
-  ): ReturnType<typeof import('../runtime-context.js').createRuntimeContextEnvelope> | null
+  ): ReturnType<
+    typeof import('../features/evidence/runtime-context/index.js').createRuntimeContextEnvelope
+  > | null
   getAnnotateCssContextPrompt(
     annotations: AnnotationTransport[],
     includeWhenDisabled?: boolean,
@@ -105,7 +107,7 @@ export type AnnotateContext = {
   canAttachRuntimeContext(): boolean
   formatRuntimeContextSummary(
     runtimeContext: ReturnType<
-      typeof import('../runtime-context.js').createRuntimeContextEnvelope
+      typeof import('../features/evidence/runtime-context/index.js').createRuntimeContextEnvelope
     > | null,
   ): string
   getCollectedRuntimeErrorCount(): number

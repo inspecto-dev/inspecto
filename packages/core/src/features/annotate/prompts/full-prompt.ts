@@ -3,7 +3,7 @@ import type {
   RuntimeContextEnvelope,
   RuntimeEvidenceRecord,
 } from '@inspecto-dev/types'
-import { appendCssContextToPrompt } from '../../../css-context.js'
+import { appendCssContextToPrompt } from '../../evidence/css-context/index.js'
 
 export function buildAnnotateFullPrompt(input: {
   instruction: string

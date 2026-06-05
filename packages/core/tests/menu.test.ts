@@ -11,18 +11,18 @@ import {
   runtimeToggleBadgeClass,
   tooltipClass,
 } from '../src/shared/styles/index.js'
-import * as http from '../src/http.js'
-import * as promptModule from '../src/fix-bug-prompt.js'
+import * as http from '../src/transport/http-client.js'
+import * as promptModule from '../src/features/inspect/prompts/fix-bug-prompt.js'
 import type { RuntimeContextEnvelope } from '@inspecto-dev/types'
 import {
   attachRuntimeContextCapture,
   createRuntimeContextCollector,
   createRuntimeContextEnvelope,
   selectRuntimeEvidence,
-} from '../src/runtime-context.js'
+} from '../src/features/evidence/runtime-context/index.js'
 
 // Mock http module
-vi.mock('../src/http.js', () => ({
+vi.mock('../src/transport/http-client.js', () => ({
   fetchSnippet: vi.fn(),
   sendToAi: vi.fn(),
   openFile: vi.fn(),
@@ -30,12 +30,7 @@ vi.mock('../src/http.js', () => ({
   fetchIdeInfo: vi.fn(),
 }))
 
-vi.mock('../src/transport/http-client.js', async () => {
-  const httpModule = await import('../src/http.js')
-  return httpModule
-})
-
-vi.mock('../src/fix-bug-prompt.js', () => ({
+vi.mock('../src/features/inspect/prompts/fix-bug-prompt.js', () => ({
   buildPromptForIntent: vi.fn(
     (
       intent: { id?: string },
@@ -49,11 +44,6 @@ vi.mock('../src/fix-bug-prompt.js', () => ({
   ),
   selectFixBugEvidence: vi.fn((records: unknown[]) => records),
 }))
-
-vi.mock('../src/features/inspect/prompts/fix-bug-prompt.js', async () => {
-  const promptModule = await import('../src/fix-bug-prompt.js')
-  return promptModule
-})
 
 describe('Intent Menu DOM Interaction', () => {
   let shadowRoot: ShadowRoot

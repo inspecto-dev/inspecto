@@ -6,7 +6,7 @@ import {
   rankRuntimeEvidence,
   selectRuntimeEvidence,
   summarizeRuntimeContext,
-} from '../src/runtime-context.js'
+} from '../src/features/evidence/runtime-context/index.js'
 
 describe('runtime context collector', () => {
   let cleanup: (() => void) | undefined

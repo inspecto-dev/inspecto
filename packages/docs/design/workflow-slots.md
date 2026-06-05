@@ -260,7 +260,7 @@ function appendProjectMetadata(prompt: string, state: Pick<ServerState, 'project
 
 ## 六、前端改动
 
-### 6.1 Sidebar UI 扩展 (`packages/core/src/annotate-sidebar-dom.ts` & `annotate-sidebar.ts`)
+### 6.1 Sidebar UI 扩展 (`packages/core/src/features/annotate/sidebar/dom.ts` & `index.ts`)
 
 在侧边栏底部新建 `workflowRow` 容器，并根据 `workflows` 配置动态渲染按钮：
 
@@ -277,7 +277,7 @@ for (const wf of workflows) {
 }
 ```
 
-### 6.2 触发逻辑 (`packages/core/src/component-annotate-ui.ts`)
+### 6.2 触发逻辑 (`packages/core/src/runtime/annotate-ui.ts`)
 
 复用 `sendAnnotationBatch` 发送请求：
 

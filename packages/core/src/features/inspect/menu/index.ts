@@ -7,7 +7,7 @@ import type {
   SourceLocation,
   AiIntentConfig,
 } from '@inspecto-dev/types'
-import { openFileWithDiagnostics, fetchIdeInfo } from '../../../http.js'
+import { openFileWithDiagnostics, fetchIdeInfo } from '../../../transport/http-client.js'
 import { applyIconToggleButtonState, createMenuHeaderDom } from './header.js'
 import { resolveMenuPosition } from './position.js'
 import {

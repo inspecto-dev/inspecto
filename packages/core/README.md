@@ -15,12 +15,13 @@ The local development server, snippet extraction, and IDE dispatch runtime live 
 
 ## Core Implementation
 
-- **Web Component**: Implemented with pure native DOM APIs and `goober` for CSS-in-JS inside the Shadow DOM, ensuring zero framework dependency and avoiding conflicts with user styles.
-- **Intent System**: Defines the default AI actions (Explain, Fix Bug, Code Review, etc.) and handles prompting.
-- **Context Assembly**: Requests optional snippet/runtime/CSS context and appends it to the outgoing prompt.
-- **Workflow Buttons**: Displays project-specific workflow entries such as Deploy Preview or Review & PR, letting agents execute them with their own skills, MCP servers, and tools.
-- **Session Timeline**: Converts annotation and workflow sessions into deterministic timeline items and renders the latest agent task progress in Annotate mode.
-- **Overlay Runtime**: Mounts and configures the browser overlay via `mountInspector()` / `unmountInspector()`.
+- **Runtime Layer**: `src/runtime/` owns the custom element, lifecycle, launcher, interactions, annotate UI coordination, evidence wiring, and mode switching.
+- **Inspect Feature**: `src/features/inspect/` contains the inspect menu, overlay, and prompt actions.
+- **Annotate Feature**: `src/features/annotate/` contains annotation session state, sidebar, overlay, targets, timeline, and prompt assembly.
+- **Evidence Feature**: `src/features/evidence/` contains runtime and CSS evidence capture, ranking, and prompt formatting.
+- **Transport Layer**: `src/transport/http-client.ts` contains the browser HTTP/EventSource client for local server endpoints.
+- **Shared Assets**: `src/shared/` contains source-location helpers, i18n, icons, and style modules.
+- **Public Entry**: `src/index.ts` exposes `mountInspector()` / `unmountInspector()` and lazy-loads DOM-dependent runtime code for SSR safety.
 
 ## Modes
 
