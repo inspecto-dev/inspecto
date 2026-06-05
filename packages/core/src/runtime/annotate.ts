@@ -21,11 +21,14 @@ export {
   getNextRecordDisplayOrderUi as getNextRecordDisplayOrder,
   hasCurrentRecordUi as hasCurrentRecord,
   renderAnnotateSelectionOverlay,
-  refreshLatestAnnotateSession,
   sendAnnotationBatch,
   showAnnotateSuccess,
-  startLatestAnnotateSessionStream,
-  stopLatestAnnotateSessionStream,
   toAnnotateErrorMessage,
   toAnnotationTransportFromRecordUi as toAnnotationTransportFromRecord,
 } from './annotate-ui.js'
+
+export {
+  refreshLatestAnnotateSession,
+  startLatestAnnotateSessionStream,
+  stopLatestAnnotateSessionStream,
+} from './annotate-session-stream.js'
