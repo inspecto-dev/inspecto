@@ -1,5 +1,5 @@
 import type { FeedbackRecord, FeedbackRecordSession } from '@inspecto-dev/types'
-import { t } from '../../../i18n.js'
+import { t } from '../../../shared/i18n.js'
 
 export type PromptChipRecord = {
   id: string

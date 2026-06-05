@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createAnnotateOverlay } from '../src/features/annotate/overlay/index.js'
 import { createOverlay } from '../src/features/inspect/overlay/index.js'
-import { overlayClass, tooltipClass } from '../src/styles.js'
+import { overlayClass, tooltipClass } from '../src/shared/styles/index.js'
 
 describe('Overlay DOM Interaction', () => {
   let shadowRoot: ShadowRoot

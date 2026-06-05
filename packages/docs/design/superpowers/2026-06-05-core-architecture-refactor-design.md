@@ -410,3 +410,10 @@ modules, annotate full-prompt assembly, and annotate target helpers into feature
 directories. Root-level compatibility re-export files remain temporarily so the
 runtime composition layer can migrate in a later phase without a broad behavior
 change.
+
+## Phase 3 Implementation Note
+
+Phase 3 moved shared component utilities, i18n, icons, and style modules into
+`shared/`. Root-level compatibility re-export files remain temporarily so the
+runtime composition and transport phases can migrate without broad behavior
+changes.

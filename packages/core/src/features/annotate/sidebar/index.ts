@@ -21,9 +21,9 @@ import {
 import { createAnnotateSidebarDom } from './dom.js'
 import { createAnnotateSidebarRenderers } from './renderers.js'
 import { createSidebarButton } from './helpers.js'
-import { annotateSidebarButtonClass } from '../../../styles.js'
-import { t } from '../../../i18n.js'
-import { pauseIconSvg, playIconSvg } from '../../../icons.js'
+import { annotateSidebarButtonClass } from '../../../shared/styles/index.js'
+import { t } from '../../../shared/i18n.js'
+import { pauseIconSvg, playIconSvg } from '../../../shared/icons.js'
 import { buildSessionTimelineItems } from '../session/timeline.js'
 import { renderSessionTimeline } from './session-timeline-dom.js'
 

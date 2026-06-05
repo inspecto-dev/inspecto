@@ -20,8 +20,8 @@ import {
   isFixUiIntent,
   showError,
 } from './helpers.js'
-import { t } from '../../../i18n.js'
-import { menuClass, loadingSpinnerClass } from '../../../styles.js'
+import { t } from '../../../shared/i18n.js'
+import { menuClass, loadingSpinnerClass } from '../../../shared/styles/index.js'
 import { isAiIntentConfig } from '@inspecto-dev/types'
 
 const _DISPLAY_NAMES: Record<Provider, string> = {

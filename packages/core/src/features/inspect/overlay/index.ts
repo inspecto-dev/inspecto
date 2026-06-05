@@ -9,7 +9,7 @@ import {
   dimClass,
   separatorClass,
   sourceClass,
-} from '../../../styles.js'
+} from '../../../shared/styles/index.js'
 
 const GAP = 8
 const EDGE_MARGIN = 4

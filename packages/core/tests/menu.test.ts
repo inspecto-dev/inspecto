@@ -10,7 +10,7 @@ import {
   menuContextSummaryClass,
   runtimeToggleBadgeClass,
   tooltipClass,
-} from '../src/styles.js'
+} from '../src/shared/styles/index.js'
 import * as http from '../src/http.js'
 import * as promptModule from '../src/fix-bug-prompt.js'
 import type { RuntimeContextEnvelope } from '@inspecto-dev/types'

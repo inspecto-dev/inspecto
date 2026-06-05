@@ -1,6 +1,6 @@
 import type { SourceLocation } from '@inspecto-dev/types'
-import { bugIconSvg, cssIconSvg } from '../../../icons.js'
-import { t } from '../../../i18n.js'
+import { bugIconSvg, cssIconSvg } from '../../../shared/icons.js'
+import { t } from '../../../shared/i18n.js'
 import { formatSourceAnchor } from './helpers.js'
 import {
   applyHeaderIconButtonStyles,
@@ -9,7 +9,7 @@ import {
   runtimeToggleBadgeClass,
   runtimeToggleClass,
   runtimeToggleIconClass,
-} from '../../../styles.js'
+} from '../../../shared/styles/index.js'
 
 export function createMenuHeaderDom(input: {
   location: SourceLocation

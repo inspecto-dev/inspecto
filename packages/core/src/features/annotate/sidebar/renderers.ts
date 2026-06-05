@@ -4,11 +4,11 @@ import {
   annotateSidebarEmptyClass,
   annotateSidebarQueueItemClass,
   annotateSidebarQueueMetaClass,
-} from '../../../styles.js'
-import { closeIconSvg, inspectFilledIconSvg } from '../../../icons.js'
+} from '../../../shared/styles/index.js'
+import { closeIconSvg, inspectFilledIconSvg } from '../../../shared/icons.js'
 import type { PromptChipRecord } from './helpers.js'
 import type { AnnotateSidebarOptions } from './index.js'
-import { t } from '../../../i18n.js'
+import { t } from '../../../shared/i18n.js'
 
 type PromptChipElement = HTMLSpanElement & {
   dataset: DOMStringMap & {

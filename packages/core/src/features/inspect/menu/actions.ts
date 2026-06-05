@@ -2,9 +2,9 @@ import type { AiIntentConfig, RuntimeContextEnvelope, SourceLocation } from '@in
 import { appendCssContextToPrompt } from '../../../css-context.js'
 import { buildPromptForIntent } from '../prompts/fix-bug-prompt.js'
 import { fetchSnippet } from '../../../http.js'
-import { t } from '../../../i18n.js'
+import { t } from '../../../shared/i18n.js'
 import { isFixUiIntent } from './helpers.js'
-import { menuItemClass } from '../../../styles.js'
+import { menuItemClass } from '../../../shared/styles/index.js'
 
 export function createIntentActionButtons(input: {
   intents: AiIntentConfig[]

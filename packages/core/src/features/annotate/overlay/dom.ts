@@ -1,6 +1,6 @@
-import { applyHeaderIconButtonStyles } from '../../../styles.js'
-import { bugIconSvg, cssIconSvg } from '../../../icons.js'
-import { t } from '../../../i18n.js'
+import { applyHeaderIconButtonStyles } from '../../../shared/styles/index.js'
+import { bugIconSvg, cssIconSvg } from '../../../shared/icons.js'
+import { t } from '../../../shared/i18n.js'
 
 export function createAnnotateOverlayDom(
   shadowRoot: ShadowRoot,

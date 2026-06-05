@@ -1,6 +1,6 @@
 import type { SessionTimelineItem } from '../session/timeline.js'
 import { formatTimelineTimestamp } from '../session/timeline.js'
-import { t } from '../../../i18n.js'
+import { t } from '../../../shared/i18n.js'
 
 export function renderSessionTimeline(container: HTMLElement, items: SessionTimelineItem[]): void {
   container.replaceChildren()

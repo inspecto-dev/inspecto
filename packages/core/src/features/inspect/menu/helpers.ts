@@ -5,7 +5,7 @@ import type {
   RuntimeEvidenceRecord,
   SourceLocation,
 } from '@inspecto-dev/types'
-import { runtimeSummaryLabel, t } from '../../../i18n.js'
+import { runtimeSummaryLabel, t } from '../../../shared/i18n.js'
 import {
   errorMsgClass,
   menuContextPreviewClass,
@@ -15,7 +15,7 @@ import {
   menuInputIconClass,
   menuInputWrapperClass,
   menuSectionClass,
-} from '../../../styles.js'
+} from '../../../shared/styles/index.js'
 
 export function formatSourceAnchor(location: SourceLocation): string {
   const fileName = location.file.split('/').pop() || location.file

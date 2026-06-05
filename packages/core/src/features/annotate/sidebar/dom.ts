@@ -16,10 +16,10 @@ import {
   runtimeToggleBadgeClass,
   runtimeToggleClass,
   runtimeToggleIconClass,
-} from '../../../styles.js'
-import { bugIconSvg, cssIconSvg, pureMarkIconSvg, closeIconSvg } from '../../../icons.js'
+} from '../../../shared/styles/index.js'
+import { bugIconSvg, cssIconSvg, pureMarkIconSvg, closeIconSvg } from '../../../shared/icons.js'
 import { createSidebarButton } from './helpers.js'
-import { t } from '../../../i18n.js'
+import { t } from '../../../shared/i18n.js'
 
 export interface AnnotateSidebarDom {
   element: HTMLElement

@@ -10,7 +10,7 @@ import {
   annotateSidebarQueueItemClass,
   annotateSidebarSectionClass,
   annotateSidebarTextClass as _annotateSidebarTextClass,
-} from '../src/styles.js'
+} from '../src/shared/styles/index.js'
 import type { FeedbackRecordSession } from '@inspecto-dev/types'
 
 const SYSTEM_STARTED_MESSAGE = 'Agent claimed this task through MCP.'

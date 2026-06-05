@@ -10,7 +10,7 @@ type SelectedTargetOverlayEntry = {
 export type { SelectedTargetOverlayEntry }
 
 import { createAnnotateOverlayDom } from './dom.js'
-import { t } from '../../../i18n.js'
+import { t } from '../../../shared/i18n.js'
 import {
   applyComposerRuntimeButtonState,
   applyOverlayState,

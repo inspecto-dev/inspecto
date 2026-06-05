@@ -8,7 +8,7 @@ import {
   ATTR_NAME,
   createElementSelector,
   getInspectableLocation,
-} from '../../../component-utils.js'
+} from '../../../shared/component-utils.js'
 import type { AnnotationTarget, FeedbackRecord, SourceLocation } from '@inspecto-dev/types'
 import { asAnnotateContext } from '../../../component-annotate-shared.js'
 
