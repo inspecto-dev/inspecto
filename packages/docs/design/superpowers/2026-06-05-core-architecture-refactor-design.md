@@ -395,3 +395,10 @@ Phase 1 should be considered complete when:
 - All imports compile.
 - Existing tests pass without behavior changes.
 - Any temporary root re-export files are clearly marked and limited.
+
+## Phase 1 Implementation Note
+
+Phase 1 moved pure annotate session, inspect prompt/menu positioning, and runtime
+evidence selection modules into feature directories. Root-level compatibility
+re-export files remain temporarily so DOM-heavy modules can migrate in later
+phases without a broad behavior change.

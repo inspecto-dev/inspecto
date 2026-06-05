@@ -3,7 +3,7 @@ import {
   buildFixBugPrompt,
   buildPromptForIntent,
   selectFixBugEvidence,
-} from '../src/fix-bug-prompt.js'
+} from '../src/features/inspect/prompts/fix-bug-prompt.js'
 
 describe('fix bug prompt assembly', () => {
   it('keeps high-confidence runtime errors ahead of medium evidence', () => {
