@@ -30,6 +30,11 @@ vi.mock('../src/http.js', () => ({
   fetchIdeInfo: vi.fn(),
 }))
 
+vi.mock('../src/transport/http-client.js', async () => {
+  const httpModule = await import('../src/http.js')
+  return httpModule
+})
+
 vi.mock('../src/fix-bug-prompt.js', () => ({
   buildPromptForIntent: vi.fn(
     (

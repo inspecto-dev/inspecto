@@ -145,7 +145,7 @@ class InspectoElement extends BaseElement {
   private annotateLatestSessionSummary: AnnotationWorkSessionSummary | null = null
   private annotateLatestSessionDetail: AnnotationWorkSession | null = null
   private annotateLatestSessionStream:
-    | import('../http.js').AnnotationSessionEventStreamConnection
+    | import('../transport/http-client.js').AnnotationSessionEventStreamConnection
     | null = null
   private annotateLatestSessionLoading = false
   private annotateLatestSessionError = ''

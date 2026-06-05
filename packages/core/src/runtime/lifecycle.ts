@@ -1,7 +1,7 @@
 import { createOverlay } from '../features/inspect/overlay/index.js'
-import { fetchIdeInfo } from '../http.js'
+import { fetchIdeInfo } from '../transport/http-client.js'
 import { inspectorStyles } from '../shared/styles/index.js'
-import { setBaseUrl } from '../http.js'
+import { setBaseUrl } from '../transport/http-client.js'
 import { configureI18n } from '../shared/i18n.js'
 import type { HotKeys, IdeType, InspectorOptions } from '@inspecto-dev/types'
 

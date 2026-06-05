@@ -1,5 +1,5 @@
 import { showIntentMenu } from '../features/inspect/menu/index.js'
-import { openFile } from '../http.js'
+import { openFile } from '../transport/http-client.js'
 import { findInspectable, getInspectableLocation } from '../shared/component-utils.js'
 import { createRuntimeContextEnvelope, selectRuntimeEvidence } from '../runtime-context.js'
 import type { InspectorOptions, SourceLocation } from '@inspecto-dev/types'

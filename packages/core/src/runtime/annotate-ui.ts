@@ -19,7 +19,7 @@ import {
   openFile,
   sendToAi,
   sendAnnotationsToAi,
-} from '../http.js'
+} from '../transport/http-client.js'
 import type {
   AiErrorCode,
   AnnotationDeliveryMode,

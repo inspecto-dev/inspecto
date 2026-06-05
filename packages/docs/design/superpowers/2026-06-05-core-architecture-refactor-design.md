@@ -423,3 +423,9 @@ changes.
 Phase 4 moved the custom element runtime and component coordination modules into
 `runtime/`. Root-level compatibility re-export files remain temporarily while
 transport and final cleanup phases complete.
+
+## Phase 5 Implementation Note
+
+Phase 5 moved the browser HTTP/EventSource client into `transport/http-client.ts`.
+The root `http.ts` compatibility re-export remains temporarily for tests and
+older internal imports.

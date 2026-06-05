@@ -69,7 +69,9 @@ export type AnnotateContext = {
   }
   annotateLatestSessionSummary: AnnotationWorkSessionSummary | null
   annotateLatestSessionDetail: AnnotationWorkSession | null
-  annotateLatestSessionStream: import('../http.js').AnnotationSessionEventStreamConnection | null
+  annotateLatestSessionStream:
+    | import('../transport/http-client.js').AnnotationSessionEventStreamConnection
+    | null
   annotateLatestSessionLoading: boolean
   annotateLatestSessionError: string
   annotateWorkflowNotice: AnnotateWorkflowNotice | null
