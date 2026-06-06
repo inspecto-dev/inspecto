@@ -8,10 +8,10 @@ import type {
   AiIntentConfig,
 } from '@inspecto-dev/types'
 import { openFileWithDiagnostics, fetchIdeInfo } from '../../../transport/http-client.js'
-import { applyIconToggleButtonState, createMenuHeaderDom } from './header.js'
+import { createMenuHeaderDom } from './header.js'
 import { syncCssToggleButton, syncRuntimeToggleButton } from './header-actions.js'
 import { resolveMenuPosition } from './position.js'
-import { isFixIntent, isFixUiIntent, showError } from './helpers.js'
+import { isFixIntent, showError } from './helpers.js'
 import { t } from '../../../shared/i18n.js'
 import { isAiIntentConfig } from '@inspecto-dev/types'
 import { attachMenuClickAway } from './click-away.js'
@@ -21,6 +21,10 @@ import { attachMenuFocusLifecycle } from './focus.js'
 import type { RuntimeContextDefaultMode } from './runtime-toggle.js'
 import { renderRuntimeContextUi } from './runtime-context-renderer.js'
 import { resolveInspectMenuRuntimeContext } from './runtime-context-resolver.js'
+import {
+  createInspectMenuCssContextToggle,
+  resolveInspectMenuCssContextPrompt,
+} from './css-context-toggle.js'
 
 const _DISPLAY_NAMES: Record<Provider, string> = {
   copilot: 'GitHub Copilot',
@@ -54,7 +58,6 @@ export function showIntentMenu(
     options.runtimeContext?.enabled === true && typeof deps.getRuntimeContext === 'function'
   let runtimeContextPreference: boolean | null = null
   let runtimeContextDefaultMode: RuntimeContextDefaultMode = 'off'
-  let cssContextEnabled = false
   const canAttachCssContext = typeof deps.captureCssContextPrompt === 'function'
 
   const {
@@ -81,15 +84,6 @@ export function showIntentMenu(
     canAttachCssContext,
   })
 
-  const applyCssToggleButtonState = () => {
-    applyIconToggleButtonState(
-      cssToggleButton,
-      cssContextEnabled,
-      t('menu.cssEnabled'),
-      t('menu.attachCss'),
-    )
-  }
-
   syncCssToggleButton({
     headerActions,
     cssToggleButton,
@@ -103,7 +97,7 @@ export function showIntentMenu(
     openButton,
     canAttachRuntimeContext,
   })
-  applyCssToggleButtonState()
+  const cssContextToggle = createInspectMenuCssContextToggle(cssToggleButton)
   headerActions.appendChild(openButton)
   menu.appendChild(header)
 
@@ -183,21 +177,14 @@ export function showIntentMenu(
     renderCurrentRuntimeContextUi()
   })
 
-  cssToggleButton.addEventListener('click', event => {
-    event.preventDefault()
-    event.stopPropagation()
-    cssContextEnabled = !cssContextEnabled
-    applyCssToggleButtonState()
-  })
-
   const resolveCssContextPrompt = (intent?: Pick<AiIntentConfig, 'id'>): string | null => {
-    const shouldAttachCssContext = cssContextEnabled || Boolean(intent && isFixUiIntent(intent))
-    if (!shouldAttachCssContext) return null
-    try {
-      return deps.captureCssContextPrompt?.() ?? null
-    } catch {
-      return null
-    }
+    return resolveInspectMenuCssContextPrompt({
+      cssContextEnabled: cssContextToggle.isEnabled(),
+      ...(deps.captureCssContextPrompt
+        ? { captureCssContextPrompt: deps.captureCssContextPrompt }
+        : {}),
+      ...(intent ? { intent } : {}),
+    })
   }
 
   attachCustomAskSubmit({
