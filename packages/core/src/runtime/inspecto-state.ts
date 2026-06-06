@@ -11,11 +11,17 @@ import type {
   FeedbackRecord,
   FeedbackRecordDraft,
   HotKeys,
+  IdeType,
   InspectorOptions,
+  WorkflowSlotOption,
 } from '@inspecto-dev/types'
+import type { AnnotationSessionEventStreamConnection } from '../transport/http-client.js'
 
 export type InspectorMode = 'inspect' | 'annotate'
 export type InspectoOptions = InspectorOptions & { mode?: InspectorMode }
+type InspectOverlay = ReturnType<typeof createOverlay>
+type AnnotateOverlay = ReturnType<typeof createAnnotateOverlay>
+type AnnotateSidebar = ReturnType<typeof createAnnotateSidebar>
 
 const DEFAULT_ANNOTATE_INSTRUCTION = ''
 
@@ -32,18 +38,18 @@ export abstract class InspectoElementState extends BaseElement {
     mode: 'inspect',
   }
   protected mode: InspectorMode = 'inspect'
-  protected ide: import('@inspecto-dev/types').IdeType = 'vscode'
+  protected ide: IdeType = 'vscode'
   protected ideConnected = false
   protected ideConnectionKnown = false
   protected launcherPanelOpen = false
   protected shadowRootEl!: ShadowRoot
-  protected overlay!: ReturnType<typeof createOverlay>
-  protected annotateOverlay: ReturnType<typeof createAnnotateOverlay> | null = null
+  protected overlay!: InspectOverlay
+  protected annotateOverlay: AnnotateOverlay | null = null
   protected cleanupMenu: (() => void) | null = null
   protected annotateSession = createEmptySession()
   protected annotateCapturePaused = false
   protected annotateQuickCaptureEnabled = false
-  protected annotateSidebar: ReturnType<typeof createAnnotateSidebar> | null = null
+  protected annotateSidebar: AnnotateSidebar | null = null
   protected annotateElements = new Map<string, Element>()
   protected annotateDrafts = new Map<string, FeedbackRecordDraft>()
   protected annotateEditingRecord: FeedbackRecord | null = null
@@ -54,7 +60,7 @@ export abstract class InspectoElementState extends BaseElement {
   protected annotateRuntimeContextEnabled = false
   protected annotateCssContextEnabled = false
   protected deliveryMode: 'ide' | 'mcp' = 'mcp'
-  protected annotateWorkflows: import('@inspecto-dev/types').WorkflowSlotOption[] = []
+  protected annotateWorkflows: WorkflowSlotOption[] = []
   protected annotateSendState: {
     isSending: boolean
     scope: AnnotateSendScope
@@ -64,9 +70,7 @@ export abstract class InspectoElementState extends BaseElement {
   }
   protected annotateLatestSessionSummary: AnnotationWorkSessionSummary | null = null
   protected annotateLatestSessionDetail: AnnotationWorkSession | null = null
-  protected annotateLatestSessionStream:
-    | import('../transport/http-client.js').AnnotationSessionEventStreamConnection
-    | null = null
+  protected annotateLatestSessionStream: AnnotationSessionEventStreamConnection | null = null
   protected annotateLatestSessionLoading = false
   protected annotateLatestSessionError = ''
   protected annotateWorkflowNotice: AnnotateWorkflowNotice | null = null

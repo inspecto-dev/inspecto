@@ -31,9 +31,11 @@ import {
   isCssContextEnabledForTransportTarget as isCssEnabledForTransportTarget,
   syncRuntimeContextCapture as syncRuntimeCapture,
 } from './evidence.js'
-import { createRuntimeContextEnvelope } from '../features/evidence/runtime-context/index.js'
+import type { createRuntimeContextEnvelope } from '../features/evidence/runtime-context/index.js'
 import { InspectoElementState } from './inspecto-state.js'
 import type { AnnotationTarget, AnnotationTransport } from '@inspecto-dev/types'
+
+type RuntimeContextEnvelope = ReturnType<typeof createRuntimeContextEnvelope>
 
 // Runtime host hooks consumed through structural context casts.
 // Keep these grouped by owning runtime module.
@@ -68,13 +70,11 @@ export abstract class InspectoRuntimeHost extends InspectoElementState {
   protected getAnnotateRuntimeContext(
     annotations: AnnotationTransport[],
     includeWhenDisabled = false,
-  ): ReturnType<typeof createRuntimeContextEnvelope> | null {
+  ): RuntimeContextEnvelope | null {
     return getAnnotateRuntimeEvidence(this, annotations, includeWhenDisabled)
   }
 
-  protected formatRuntimeContextSummary(
-    runtimeContext: ReturnType<typeof createRuntimeContextEnvelope> | null,
-  ): string {
+  protected formatRuntimeContextSummary(runtimeContext: RuntimeContextEnvelope | null): string {
     return formatRuntimeSummary(runtimeContext)
   }
 
