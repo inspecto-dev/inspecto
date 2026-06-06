@@ -1,28 +1,11 @@
-import type { AnnotationSessionEvent, AnnotationWorkSession } from '@inspecto-dev/types'
+import type { AnnotationSessionEvent } from '@inspecto-dev/types'
 import {
   fetchAnnotationSession,
   openAnnotationSessionEventStream,
 } from '../transport/http-client.js'
 import { asAnnotateContext } from './annotate-shared.js'
 import { toAnnotateErrorMessage } from './annotate-errors.js'
-
-function updateLatestSessionState(ctx: unknown, session: AnnotationWorkSession): void {
-  const state = asAnnotateContext(ctx)
-  state.annotateLatestSessionDetail = session
-  state.annotateLatestSessionSummary = {
-    id: session.id,
-    status: session.status,
-    createdAt: session.createdAt,
-    updatedAt: session.updatedAt,
-  }
-  state.annotateLatestSessionError = ''
-
-  if (session.status === 'resolved' || session.status === 'dismissed') {
-    state.stopLatestAnnotateSessionStream()
-  }
-
-  state.renderAnnotateSelectionOverlay()
-}
+import { applyLatestAnnotationSession } from './annotate-latest-session-state.js'
 
 export async function refreshLatestAnnotateSession(ctx: unknown): Promise<void> {
   const state = asAnnotateContext(ctx)
@@ -44,7 +27,7 @@ export async function refreshLatestAnnotateSession(ctx: unknown): Promise<void> 
       return
     }
 
-    updateLatestSessionState(state, result.session)
+    applyLatestAnnotationSession(state, result.session)
   } finally {
     state.annotateLatestSessionLoading = false
     state.updateAnnotateSidebar()
@@ -58,7 +41,7 @@ export function startLatestAnnotateSessionStream(ctx: unknown, sessionId: string
   const connection = openAnnotationSessionEventStream(sessionId, {
     onEvent: (event: AnnotationSessionEvent) => {
       if (event.session.id !== sessionId) return
-      updateLatestSessionState(state, event.session)
+      applyLatestAnnotationSession(state, event.session)
       state.updateAnnotateSidebar()
     },
     onError: () => {
