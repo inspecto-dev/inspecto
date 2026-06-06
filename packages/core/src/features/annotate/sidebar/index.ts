@@ -1,13 +1,13 @@
 import { getLiveStatusMessage, getPromptChipRecords, type PromptChipRecord } from './helpers.js'
 import { createAnnotateSidebarDom } from './dom.js'
 import { createAnnotateSidebarRenderers } from './renderers.js'
-import { t } from '../../../shared/i18n.js'
 import { renderWorkflowRow } from './workflow-row.js'
 import { renderLatestSession, type LatestSessionDom } from './latest-session-renderer.js'
 import { attachAnnotateSidebarEvents } from './events.js'
 import { getAnnotateSidebarViewState } from './view-state.js'
 import { createInstructionChipController } from './instruction-chips.js'
 import { renderAnnotateSidebarHeaderControls } from './header-controls.js'
+import { renderAnnotateSidebarPrimaryActions } from './primary-actions.js'
 import type { AnnotateSidebarOptions, SidebarController } from './types.js'
 export type {
   AnnotateSidebarOptions,
@@ -148,42 +148,11 @@ export function createAnnotateSidebar(
     includedSummary.textContent = `Element notes (${next.includedRecords.length})`
     renderers.renderIncludedRecords(next.includedRecords, recordsList)
 
-    quickAskButton.style.display = viewState.allowQuickAsk ? '' : 'none'
-    createTaskButton.style.display = viewState.allowCreateTask ? '' : 'none'
-
-    quickAskButton.disabled = !viewState.canSend
-    createTaskButton.disabled = !viewState.canSend
-
-    quickAskButton.classList.toggle('primary', true)
-    createTaskButton.classList.toggle('primary', true)
-    quickAskButton.dataset.emphasis = 'primary'
-    createTaskButton.dataset.emphasis = 'primary'
-    quickAskButton.style.flex = '1'
-    createTaskButton.style.flex = '1'
-    quickAskButton.dataset.layoutRole = 'primary'
-    createTaskButton.dataset.layoutRole = 'primary'
-
-    quickAskButton.title = t('annotate.askAiHint')
-    createTaskButton.title = t('annotate.createTaskHint')
-    recommendedActionLabel.style.display = 'none'
-    recommendedActionLabel.textContent =
-      viewState.preferredAction === 'quick-ask'
-        ? t('annotate.recommendedAction.askHint', {
-            action: t('annotate.askAi'),
-          })
-        : t('annotate.recommendedAction.agentHint', {
-            action: t('annotate.createTask'),
-          })
-    quickAskButton.textContent =
-      next.isSending && next.sendingScope === 'quick-ask'
-        ? t('menu.sending')
-        : !next.isSending && next.successScope === 'quick-ask'
-          ? t('annotate.sent')
-          : t('annotate.askAi')
-    createTaskButton.textContent =
-      next.isSending && next.sendingScope === 'create-task'
-        ? t('menu.sending')
-        : t('annotate.createTask')
+    renderAnnotateSidebarPrimaryActions(
+      { quickAskButton, createTaskButton, recommendedActionLabel },
+      next,
+      viewState,
+    )
 
     renderWorkflowRow(dom, next)
 
