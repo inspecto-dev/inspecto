@@ -1,10 +1,8 @@
 import {
   clearCurrentRecord,
-  saveCurrentRecord,
   updateCurrentRecordCssContextEnabled,
   updateCurrentRecordNote,
 } from '../features/annotate/session/index.js'
-import type { AnnotateSendScope } from '../features/annotate/sidebar/helpers.js'
 import type { SelectedTargetOverlayEntry } from '../features/annotate/overlay/index.js'
 import { openFile } from '../transport/http-client.js'
 import { asAnnotateContext } from './annotate-shared.js'
@@ -17,6 +15,7 @@ import {
   restoreEditingRecord,
 } from '../features/annotate/targets/index.js'
 import { t } from '../shared/i18n.js'
+import { saveCurrentAnnotationRecord } from './annotate-current-save.js'
 
 export { toAnnotateErrorMessage } from './annotate-errors.js'
 
@@ -153,31 +152,7 @@ export function renderAnnotateSelectionOverlay(ctx: unknown): void {
       if (!hasCurrentRecordUi(state)) return
       state.clearAnnotateError()
       state.clearAnnotateSuccess()
-      // If saving a record into a new batch, clear the stale resolved session
-      // so its 'completed' color doesn't bleed onto the fresh annotations.
-      if (
-        state.annotateLatestSessionSummary?.status === 'resolved' ||
-        state.annotateLatestSessionDetail?.status === 'resolved'
-      ) {
-        // Previous batch is resolved - clear only the stale task state so the
-        // new annotation can start a fresh batch without losing the current
-        // note being saved.
-        const currentDraft = state.annotateSession.current
-        state.annotateLatestSessionSummary = null
-        state.annotateLatestSessionDetail = null
-        state.stopLatestAnnotateSessionStream()
-        state.annotateInstructionDraft = ''
-        state.annotateDrafts.clear()
-        state.annotateEditingRecord = null
-        state.annotateSession = {
-          current: currentDraft,
-          records: [],
-        }
-      }
-      clearDraftForTarget(state, state.annotateSession.current.target)
-      state.annotateSession = saveCurrentRecord(state.annotateSession)
-      state.annotateEditingRecord = null
-      state.annotateElements.clear()
+      saveCurrentAnnotationRecord(state, target => clearDraftForTarget(state, target))
       state.renderAnnotateSelectionOverlay()
       state.updateAnnotateSidebar()
     },
