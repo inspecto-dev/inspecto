@@ -5,6 +5,14 @@ import {
   createRuntimeContextEnvelope,
   selectRuntimeEvidence,
 } from '../features/evidence/runtime-context/index.js'
+import {
+  addTargetToCurrentAnnotation,
+  describeElement,
+  markTargetInAnnotateSession,
+} from '../features/annotate/targets/index.js'
+import { captureCssContextPromptForElement, getRuntimeContextLimits } from './evidence.js'
+import { setPaused, shouldQuickJumpOnTrigger, updateLauncherEye } from './launcher.js'
+import { isInspectorActive } from './mode-ui.js'
 import type { InspectorOptions, SourceLocation } from '@inspecto-dev/types'
 
 type InteractionOptions = InspectorOptions & {
@@ -28,25 +36,7 @@ type InteractionContext = {
   runtimeContextCollector: {
     snapshot(): { records: unknown[] }
   }
-  updateLauncherEye(): void
-  pause(): void
-  isInspectorActive(e: MouseEvent): boolean
-  markTargetInAnnotateSession(element: Element, location: SourceLocation): void
-  addTargetToCurrentAnnotation(element: Element, location: SourceLocation): void
-  shouldQuickJumpOnTrigger(e: MouseEvent): boolean
-  openInspectMenu(
-    loc: SourceLocation,
-    clientX: number,
-    clientY: number,
-    targetElement: Element,
-  ): void
   renderAnnotateSelectionOverlay(): void
-  describeElement(element: Element): string
-  getRuntimeContextLimits(): {
-    maxRuntimeErrors?: number
-    maxFailedRequests?: number
-  }
-  captureCssContextPromptForElement(element: Element, location: SourceLocation): string | null
 }
 
 function asInteractionContext(ctx: unknown): InteractionContext {
@@ -57,7 +47,7 @@ export function handleMouseMove(ctx: unknown, event: MouseEvent): void {
   const state = asInteractionContext(ctx)
   state.lastPointerX = event.clientX
   state.lastPointerY = event.clientY
-  state.updateLauncherEye()
+  updateLauncherEye(state)
 
   if (state.cleanupMenu !== null) {
     // Determine if the click target is within a dialog or modal
@@ -75,7 +65,7 @@ export function handleMouseMove(ctx: unknown, event: MouseEvent): void {
     return
   }
 
-  const isActive = state.isInspectorActive(event)
+  const isActive = isInspectorActive(state, event)
   if (!isActive) {
     state.overlay.hide()
     return
@@ -115,7 +105,7 @@ export function handleTrigger(ctx: unknown, event: MouseEvent): void {
     }
     return
   }
-  if (!state.isInspectorActive(event)) return
+  if (!isInspectorActive(state, event)) return
 
   const target = findInspectable(event.target as Element)
   if (!target) return
@@ -130,14 +120,14 @@ export function handleTrigger(ctx: unknown, event: MouseEvent): void {
 
   if (state.mode === 'annotate') {
     if (state.annotateQuickCaptureEnabled) {
-      state.markTargetInAnnotateSession(target, loc)
+      markTargetInAnnotateSession(state, target, loc)
     } else {
-      state.addTargetToCurrentAnnotation(target, loc)
+      addTargetToCurrentAnnotation(state, target, loc)
     }
     return
   }
 
-  if (state.shouldQuickJumpOnTrigger(event)) {
+  if (shouldQuickJumpOnTrigger(state, event)) {
     state.overlay.hide()
     state.cleanupMenu = null
     void openFile(loc)
@@ -145,7 +135,7 @@ export function handleTrigger(ctx: unknown, event: MouseEvent): void {
   }
 
   state.overlay.hide()
-  state.openInspectMenu(loc, event.clientX, event.clientY, target)
+  openInspectMenu(state, loc, event.clientX, event.clientY, target)
 }
 
 export function handleKeyDown(ctx: unknown, event: KeyboardEvent): void {
@@ -154,11 +144,11 @@ export function handleKeyDown(ctx: unknown, event: KeyboardEvent): void {
     if (state.cleanupMenu !== null) {
       state.cleanupMenu()
     } else if (!state.disabled) {
-      state.pause()
+      setPaused(state, true)
     }
     state.overlay.hide()
   }
-  state.updateLauncherEye()
+  updateLauncherEye(state)
 }
 
 export function handleViewportChange(ctx: unknown): void {
@@ -198,16 +188,16 @@ export function openInspectMenu(
       state.cleanupMenu = null
     },
     {
-      targetLabel: state.describeElement(targetElement),
+      targetLabel: describeElement(state, targetElement),
       getRuntimeContext: targetLocation =>
         createRuntimeContextEnvelope(
           selectRuntimeEvidence(
             state.runtimeContextCollector.snapshot().records as never[],
             targetLocation,
-            state.getRuntimeContextLimits(),
+            getRuntimeContextLimits(state),
           ),
         ),
-      captureCssContextPrompt: () => state.captureCssContextPromptForElement(targetElement, loc),
+      captureCssContextPrompt: () => captureCssContextPromptForElement(state, targetElement, loc),
     },
   )
 }

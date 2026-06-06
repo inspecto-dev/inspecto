@@ -108,7 +108,6 @@ export type AnnotateContext = {
     > | null,
   ): string
   getCollectedRuntimeErrorCount(): number
-  canAttachCssContext(): boolean
 }
 
 export function asAnnotateContext(ctx: unknown): AnnotateContext {

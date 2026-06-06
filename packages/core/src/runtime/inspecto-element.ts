@@ -1,19 +1,13 @@
 import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/index.js'
 import { createAnnotateOverlay } from '../features/annotate/overlay/index.js'
 import {
-  addTargetToCurrentAnnotation as addAnnotateTarget,
   beginEditingRecord as beginAnnotateEditing,
   clearAnnotateError as clearAnnotateErrorState,
   clearAnnotateSuccess as clearAnnotateSuccessState,
   clearDraftForTarget as clearAnnotateDraftForTarget,
-  createAnnotationTarget as createAnnotateTarget,
-  describeElement as describeInspectableElement,
   findElementForAnnotationTarget as findAnnotateTargetElement,
-  findElementForLocation as findElementByLocation,
   getAnnotateSidebarOptions as buildAnnotateSidebarOptions,
-  getAnnotationTargetKey as getAnnotateTargetKey,
   getNextRecordDisplayOrder as getAnnotateNextRecordDisplayOrder,
-  markTargetInAnnotateSession as markAnnotateTarget,
   persistCurrentDraft as persistAnnotateDraft,
   rebindCurrentAnnotationElements as rebindAnnotateElements,
   renderAnnotateSelectionOverlay as renderAnnotateOverlay,
@@ -25,13 +19,8 @@ import {
 } from './annotate.js'
 import {
   createBadge as createLauncherBadge,
-  dismiss as dismissLauncher,
-  getEffectiveHotKeys as getLauncherHotKeys,
-  getHotKeyLabel as getLauncherHotKeyLabel,
   setActive as setLauncherActive,
   setPaused as setLauncherPaused,
-  shouldInvertLauncherEye as shouldInvertBadgeEye,
-  shouldQuickJumpOnTrigger as shouldQuickJump,
   updateBadgeContent as updateLauncherBadgeContent,
   updateLauncherEye as syncLauncherEye,
 } from './launcher.js'
@@ -40,10 +29,9 @@ import {
   handleMouseMove as handleInspectorMouseMove,
   handleTrigger as handleInspectorTrigger,
   handleViewportChange as handleInspectorViewportChange,
-  openInspectMenu as openInspectorIntentMenu,
 } from './interactions.js'
 import {
-  isInspectorActive as resolveInspectorActive,
+  isInspectorActive,
   mountAnnotateSidebar as mountAnnotateSidebarUi,
   setupListeners as setupInspectorListeners,
   syncModeUi as syncInspectorModeUi,
@@ -57,14 +45,10 @@ import {
   setMode as setInspectorMode,
 } from './lifecycle.js'
 import {
-  canAttachCssContext as canAttachCssEvidence,
-  canAttachRuntimeContext as canAttachRuntimeEvidence,
-  captureCssContextPromptForElement as captureCssPromptForElement,
   formatRuntimeContextSummary as formatRuntimeSummary,
   getAnnotateCssContextPrompt as getAnnotateCssPrompt,
   getAnnotateRuntimeContext as getAnnotateRuntimeEvidence,
   getCollectedRuntimeErrorCount as getRuntimeErrorCount,
-  getRuntimeContextLimits as getRuntimeEvidenceLimits,
   isCssContextEnabledForTarget as isCssEnabledForTarget,
   isCssContextEnabledForTransportTarget as isCssEnabledForTransportTarget,
   syncRuntimeContextCapture as syncRuntimeCapture,
@@ -72,12 +56,7 @@ import {
 import { createRuntimeContextEnvelope } from '../features/evidence/runtime-context/index.js'
 import type { InspectorMode, InspectoOptions } from './inspecto-state.js'
 import { InspectoElementState } from './inspecto-state.js'
-import type {
-  AnnotationTransport,
-  AnnotationTarget,
-  SourceLocation,
-  HotKeys,
-} from '@inspecto-dev/types'
+import type { AnnotationTransport, AnnotationTarget } from '@inspecto-dev/types'
 class InspectoElement extends InspectoElementState {
   private readonly onFocusChange = (): void => {
     this.updateLauncherEye()
@@ -112,18 +91,6 @@ class InspectoElement extends InspectoElementState {
     this.syncModeUi()
   }
 
-  private dismiss(): void {
-    dismissLauncher(this)
-  }
-
-  private getHotKeyLabel(): string {
-    return getLauncherHotKeyLabel(this)
-  }
-
-  private getEffectiveHotKeys(): HotKeys {
-    return getLauncherHotKeys(this)
-  }
-
   private updateBadgeContent(): void {
     updateLauncherBadgeContent(this)
   }
@@ -141,7 +108,7 @@ class InspectoElement extends InspectoElementState {
   }
 
   private readonly onContextMenu = (e: MouseEvent): void => {
-    if (this.isInspectorActive(e)) {
+    if (isInspectorActive(this, e)) {
       this.handleTrigger(e)
     }
   }
@@ -150,20 +117,8 @@ class InspectoElement extends InspectoElementState {
     handleInspectorTrigger(this, e)
   }
 
-  private shouldQuickJumpOnTrigger(e: MouseEvent): boolean {
-    return shouldQuickJump(this, e)
-  }
-
-  private shouldInvertLauncherEye(): boolean {
-    return shouldInvertBadgeEye(this)
-  }
-
   private updateLauncherEye(): void {
     syncLauncherEye(this)
-  }
-
-  private pause(): void {
-    this.setPaused(true)
   }
 
   private readonly onKeyDown = (e: KeyboardEvent): void => {
@@ -174,32 +129,8 @@ class InspectoElement extends InspectoElementState {
     handleInspectorViewportChange(this)
   }
 
-  private openInspectMenu(
-    loc: SourceLocation,
-    clientX: number,
-    clientY: number,
-    targetElement: Element,
-  ): void {
-    openInspectorIntentMenu(this, loc, clientX, clientY, targetElement)
-  }
-
   private syncRuntimeContextCapture(): void {
     syncRuntimeCapture(this)
-  }
-
-  private canAttachRuntimeContext(): boolean {
-    return canAttachRuntimeEvidence(this)
-  }
-
-  private canAttachCssContext(): boolean {
-    return canAttachCssEvidence()
-  }
-
-  private captureCssContextPromptForElement(
-    element: Element,
-    location: SourceLocation,
-  ): string | null {
-    return captureCssPromptForElement(this, element, location)
   }
 
   private isCssContextEnabledForTarget(target: AnnotationTarget): boolean {
@@ -219,13 +150,6 @@ class InspectoElement extends InspectoElementState {
     return getAnnotateCssPrompt(this, annotations, includeWhenDisabled)
   }
 
-  private getRuntimeContextLimits(): {
-    maxRuntimeErrors?: number
-    maxFailedRequests?: number
-  } {
-    return getRuntimeEvidenceLimits(this)
-  }
-
   private getAnnotateRuntimeContext(
     annotations: AnnotationTransport[],
     includeWhenDisabled = false,
@@ -241,18 +165,6 @@ class InspectoElement extends InspectoElementState {
 
   private getCollectedRuntimeErrorCount(): number {
     return getRuntimeErrorCount(this)
-  }
-
-  private addTargetToCurrentAnnotation(element: Element, location: SourceLocation): void {
-    addAnnotateTarget(this, element, location)
-  }
-
-  private markTargetInAnnotateSession(element: Element, location: SourceLocation): void {
-    markAnnotateTarget(this, element, location)
-  }
-
-  private getAnnotationTargetKey(target: AnnotationTarget): string {
-    return getAnnotateTargetKey(this, target)
   }
 
   private persistCurrentDraft(): void {
@@ -275,20 +187,8 @@ class InspectoElement extends InspectoElementState {
     return findAnnotateTargetElement(this, target)
   }
 
-  private findElementForLocation(location: SourceLocation, selector?: string): Element | null {
-    return findElementByLocation(this, location, selector)
-  }
-
   private rebindCurrentAnnotationElements(): void {
     rebindAnnotateElements(this)
-  }
-
-  private createAnnotationTarget(element: Element, location: SourceLocation): AnnotationTarget {
-    return createAnnotateTarget(this, element, location)
-  }
-
-  private describeElement(element: Element): string {
-    return describeInspectableElement(this, element)
   }
 
   private getNextRecordDisplayOrder(): number {
@@ -337,10 +237,6 @@ class InspectoElement extends InspectoElementState {
 
   private renderAnnotateSelectionOverlay(): void {
     renderAnnotateOverlay(this)
-  }
-
-  private isInspectorActive(e: MouseEvent): boolean {
-    return resolveInspectorActive(this, e)
   }
 
   private setupListeners(): void {

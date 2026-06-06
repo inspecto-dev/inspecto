@@ -8,6 +8,7 @@ import type { AnnotateSendScope } from '../features/annotate/sidebar/helpers.js'
 import type { SelectedTargetOverlayEntry } from '../features/annotate/overlay/index.js'
 import { openFile } from '../transport/http-client.js'
 import { asAnnotateContext } from './annotate-shared.js'
+import { canAttachCssContext } from './evidence.js'
 import {
   beginEditingRecord,
   clearDraftForTarget,
@@ -127,7 +128,7 @@ export function renderAnnotateSelectionOverlay(ctx: unknown): void {
     onOpenInEditor: () => {
       void openFile(target.location)
     },
-    canAttachCssContext: state.canAttachCssContext(),
+    canAttachCssContext: canAttachCssContext(),
     cssContextEnabled: state.annotateSession.current.cssContextEnabled ?? false,
     canAttachRuntimeContext: false,
     runtimeContextEnabled: false,

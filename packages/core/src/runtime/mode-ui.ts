@@ -1,7 +1,7 @@
 import { createAnnotateSidebar } from '../features/annotate/sidebar/index.js'
 import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/index.js'
-import type { HotKeys } from '@inspecto-dev/types'
 import { hotKeysHeld } from '../shared/component-utils.js'
+import { getEffectiveHotKeys } from './launcher.js'
 
 type ModeUiContext = {
   disabled: boolean
@@ -18,7 +18,6 @@ type ModeUiContext = {
   updateBadgeContent(): void
   getAnnotateSidebarOptions(): AnnotateSidebarOptions
   renderAnnotateSelectionOverlay(): void
-  getEffectiveHotKeys(): HotKeys
 }
 
 function asModeUiContext(ctx: unknown): ModeUiContext {
@@ -79,7 +78,7 @@ export function isInspectorActive(ctx: unknown, event: MouseEvent): boolean {
   if (state.mode === 'annotate') return true
   if (state.active) return true
 
-  const hotKeys = state.getEffectiveHotKeys()
+  const hotKeys = getEffectiveHotKeys(state)
   if (hotKeys === false) return false
   return hotKeysHeld(event, hotKeys)
 }

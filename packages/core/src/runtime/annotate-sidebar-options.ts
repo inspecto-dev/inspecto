@@ -11,6 +11,7 @@ import { beginEditingRecord, clearDraftForTarget } from '../features/annotate/ta
 import { t } from '../shared/i18n.js'
 import { sendAnnotationBatch, triggerWorkflow } from './annotate-send.js'
 import { getNextRecordDisplayOrderUi, hasCurrentRecordUi } from './annotate-ui.js'
+import { canAttachRuntimeContext } from './evidence.js'
 
 function formatContextAsMarkdown(instruction: string, annotations: AnnotationTransport[]): string {
   let md = ''
@@ -96,7 +97,7 @@ export function getAnnotateSidebarOptions(ctx: unknown): AnnotateSidebarOptions 
     mode: state.annotateCapturePaused ? 'capture-paused' : 'capture-enabled',
     canAttachCssContext: false,
     cssContextEnabled: false,
-    canAttachRuntimeContext: state.canAttachRuntimeContext(),
+    canAttachRuntimeContext: canAttachRuntimeContext(state),
     runtimeContextEnabled: state.annotateRuntimeContextEnabled,
     runtimeContextSummary: state.formatRuntimeContextSummary(allRuntimeContext),
     runtimeErrorCount: state.getCollectedRuntimeErrorCount(),

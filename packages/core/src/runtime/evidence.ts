@@ -8,6 +8,11 @@ import {
   buildCssContextPrompt,
   captureCssContextEntry,
 } from '../features/evidence/css-context/index.js'
+import {
+  createAnnotationTarget,
+  findElementForLocation,
+  getAnnotationTargetKey,
+} from '../features/annotate/targets/index.js'
 import type { AnnotationTarget, AnnotationTransport, SourceLocation } from '@inspecto-dev/types'
 
 type EvidenceContext = {
@@ -36,16 +41,7 @@ type EvidenceContext = {
     }>
   }
   annotateElements: Map<string, Element>
-  createAnnotationTarget(element: Element, location: SourceLocation): AnnotationTarget
-  getAnnotationTargetKey(target: AnnotationTarget): string
-  findElementForLocation(location: SourceLocation, selector?: string): Element | null
   findElementForAnnotationTarget(target: AnnotationTarget): Element | null
-  canAttachRuntimeContext(): boolean
-  canAttachCssContext(): boolean
-  getRuntimeContextLimits(): {
-    maxRuntimeErrors?: number
-    maxFailedRequests?: number
-  }
   isCssContextEnabledForTransportTarget(target: AnnotationTransport['targets'][number]): boolean
 }
 
@@ -87,7 +83,7 @@ export function captureCssContextPromptForElement(
   location: SourceLocation,
 ): string | null {
   const state = asEvidenceContext(ctx)
-  const target = state.createAnnotationTarget(element, location)
+  const target = createAnnotationTarget(state, element, location)
   const entry = captureCssContextEntry({
     element,
     location,
@@ -101,16 +97,16 @@ export function isCssContextEnabledForTarget(ctx: unknown, target: AnnotationTar
   const state = asEvidenceContext(ctx)
   if (state.annotateCssContextEnabled) return true
 
-  const targetKey = state.getAnnotationTargetKey(target)
+  const targetKey = getAnnotationTargetKey(state, target)
   if (
     state.annotateSession.current.target &&
-    state.getAnnotationTargetKey(state.annotateSession.current.target) === targetKey
+    getAnnotationTargetKey(state, state.annotateSession.current.target) === targetKey
   ) {
     return state.annotateSession.current.cssContextEnabled ?? false
   }
 
   const savedRecord = state.annotateSession.records.find(
-    record => state.getAnnotationTargetKey(record.target) === targetKey,
+    record => getAnnotationTargetKey(state, record.target) === targetKey,
   )
   return savedRecord?.cssContextEnabled ?? false
 }
@@ -125,13 +121,13 @@ export function isCssContextEnabledForTransportTarget(
   const targetKey = `${target.location.file}:${target.location.line}:${target.location.column}::${target.selector ?? ''}`
   if (
     state.annotateSession.current.target &&
-    state.getAnnotationTargetKey(state.annotateSession.current.target) === targetKey
+    getAnnotationTargetKey(state, state.annotateSession.current.target) === targetKey
   ) {
     return state.annotateSession.current.cssContextEnabled ?? false
   }
 
   const savedRecord = state.annotateSession.records.find(
-    record => state.getAnnotationTargetKey(record.target) === targetKey,
+    record => getAnnotationTargetKey(state, record.target) === targetKey,
   )
   return savedRecord?.cssContextEnabled ?? false
 }
@@ -148,7 +144,7 @@ export function getAnnotateCssContextPrompt(
       !annotations.some(annotation =>
         annotation.targets.some(target => state.isCssContextEnabledForTransportTarget(target)),
       )) ||
-    !state.canAttachCssContext()
+    !canAttachCssContext()
   ) {
     return null
   }
@@ -158,7 +154,7 @@ export function getAnnotateCssContextPrompt(
       if (!includeWhenDisabled && !state.isCssContextEnabledForTransportTarget(target)) {
         return []
       }
-      const element = state.findElementForLocation(target.location, target.selector)
+      const element = findElementForLocation(state, target.location, target.selector)
       if (!element) return []
       const entry = captureCssContextEntry({
         element,
@@ -196,7 +192,7 @@ export function getAnnotateRuntimeContext(
   const state = asEvidenceContext(ctx)
   if (
     (!includeWhenDisabled && !state.annotateRuntimeContextEnabled) ||
-    !state.canAttachRuntimeContext() ||
+    !canAttachRuntimeContext(state) ||
     annotations.length === 0
   ) {
     return null
@@ -210,7 +206,7 @@ export function getAnnotateRuntimeContext(
   const selected = selectRuntimeEvidence(
     state.runtimeContextCollector.snapshot().records,
     locations,
-    state.getRuntimeContextLimits(),
+    getRuntimeContextLimits(state),
   )
 
   return selected.length > 0 ? createRuntimeContextEnvelope(selected) : null
