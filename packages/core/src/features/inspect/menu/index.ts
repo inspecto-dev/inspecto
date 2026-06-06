@@ -18,9 +18,7 @@ import { attachMenuClickAway } from './click-away.js'
 import { attachCustomAskSubmit } from './custom-ask.js'
 import { createIntentMenuDom } from './dom.js'
 import { attachMenuFocusLifecycle } from './focus.js'
-import type { RuntimeContextDefaultMode } from './runtime-toggle.js'
-import { renderRuntimeContextUi } from './runtime-context-renderer.js'
-import { resolveInspectMenuRuntimeContext } from './runtime-context-resolver.js'
+import { createInspectMenuRuntimeContextController } from './runtime-context-controller.js'
 import {
   createInspectMenuCssContextToggle,
   resolveInspectMenuCssContextPrompt,
@@ -56,8 +54,6 @@ export function showIntentMenu(
   const includeSnippet = options.includeSnippet ?? false
   let canAttachRuntimeContext =
     options.runtimeContext?.enabled === true && typeof deps.getRuntimeContext === 'function'
-  let runtimeContextPreference: boolean | null = null
-  let runtimeContextDefaultMode: RuntimeContextDefaultMode = 'off'
   const canAttachCssContext = typeof deps.captureCssContextPrompt === 'function'
 
   const {
@@ -131,6 +127,18 @@ export function showIntentMenu(
   updatePosition()
   menu.style.visibility = 'visible'
 
+  const runtimeContextController = createInspectMenuRuntimeContextController({
+    runtimeContextSection,
+    runtimeToggleButton,
+    runtimeToggleBadge,
+    canAttachRuntimeContext,
+    runtimeContextDefaultMode: 'off',
+    location,
+    ...(deps.getRuntimeContext ? { getRuntimeContext: deps.getRuntimeContext } : {}),
+    options,
+    updatePosition,
+  })
+
   const teardownFocusLifecycle = attachMenuFocusLifecycle(menu, shadowRoot, input)
   const teardownClickAway = attachMenuClickAway(menu, cleanup)
 
@@ -140,42 +148,6 @@ export function showIntentMenu(
     menu.remove()
     onClose()
   }
-
-  const resolveRuntimeContext = (
-    intent?: Pick<AiIntentConfig, 'id' | 'aiIntent'>,
-  ): RuntimeContextEnvelope | null => {
-    return resolveInspectMenuRuntimeContext({
-      canAttachRuntimeContext,
-      runtimeContextPreference,
-      runtimeContextDefaultMode,
-      location,
-      ...(deps.getRuntimeContext ? { getRuntimeContext: deps.getRuntimeContext } : {}),
-      ...(intent ? { intent } : {}),
-    })
-  }
-
-  const renderCurrentRuntimeContextUi = () => {
-    const runtimeContextForUi = deps.getRuntimeContext?.(location) ?? null
-    renderRuntimeContextUi({
-      runtimeContextSection,
-      runtimeToggleButton,
-      runtimeToggleBadge,
-      canAttachRuntimeContext,
-      runtimeContext: runtimeContextForUi,
-      runtimeContextPreference,
-      runtimeContextDefaultMode,
-      options,
-      updatePosition,
-    })
-  }
-
-  runtimeToggleButton.addEventListener('click', event => {
-    event.preventDefault()
-    event.stopPropagation()
-    const currentEnabled = runtimeToggleButton.getAttribute('aria-pressed') === 'true'
-    runtimeContextPreference = !currentEnabled
-    renderCurrentRuntimeContextUi()
-  })
 
   const resolveCssContextPrompt = (intent?: Pick<AiIntentConfig, 'id'>): string | null => {
     return resolveInspectMenuCssContextPrompt({
@@ -194,7 +166,7 @@ export function showIntentMenu(
     includeSnippet,
     maxSnippetLines,
     ...(deps.targetLabel ? { targetLabel: deps.targetLabel } : {}),
-    resolveRuntimeContext: () => resolveRuntimeContext(),
+    resolveRuntimeContext: () => runtimeContextController.resolve(),
     resolveCssContextPrompt: () => resolveCssContextPrompt(),
     onSuccess: cleanup,
     onError: (message, errorCode) => showError(menu, message, errorCode),
@@ -223,6 +195,7 @@ export function showIntentMenu(
           openButton,
           canAttachRuntimeContext,
         })
+        runtimeContextController.setCanAttachRuntimeContext(true)
       }
       const intents = ideInfo?.prompts || []
       if (!options.askPlaceholder) {
@@ -234,14 +207,16 @@ export function showIntentMenu(
       const aiIntents = intents.filter(isAiIntentConfig)
       const hasFixIntent = aiIntents.some(isFixIntent)
       const hasNonFixIntent = aiIntents.some(intent => !isFixIntent(intent))
-      runtimeContextDefaultMode = hasFixIntent ? (hasNonFixIntent ? 'mixed' : 'all-on') : 'off'
-      renderCurrentRuntimeContextUi()
+      runtimeContextController.setDefaultMode(
+        hasFixIntent ? (hasNonFixIntent ? 'mixed' : 'all-on') : 'off',
+      )
+      runtimeContextController.render()
       const aiActions = createIntentActionButtons({
         intents: aiIntents,
         location,
         includeSnippet,
         maxSnippetLines,
-        resolveRuntimeContext,
+        resolveRuntimeContext: intent => runtimeContextController.resolve(intent),
         resolveCssContextPrompt,
         onSend: async payload => {
           await openAndSendInspectPrompt({
