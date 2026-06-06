@@ -1,14 +1,7 @@
-import type { FeedbackRecordSession } from '@inspecto-dev/types'
 import {
-  captureInstructionSegmentsFromDom,
   formatRuntimeErrorCount,
-  getChipSignature,
-  getInstructionChipIdSignature,
   getLiveStatusMessage,
   getPromptChipRecords,
-  normalizeInstructionSegments,
-  serializeInstructionSegments,
-  type InstructionSegment,
   type PromptChipRecord,
 } from './helpers.js'
 import { createAnnotateSidebarDom } from './dom.js'
@@ -19,6 +12,7 @@ import { renderWorkflowRow } from './workflow-row.js'
 import { renderLatestSession, type LatestSessionDom } from './latest-session-renderer.js'
 import { attachAnnotateSidebarEvents } from './events.js'
 import { getAnnotateSidebarViewState } from './view-state.js'
+import { createInstructionChipController } from './instruction-chips.js'
 import type { AnnotateSidebarOptions, SidebarController } from './types.js'
 export type {
   AnnotateSidebarOptions,
@@ -73,9 +67,6 @@ export function createAnnotateSidebar(
   } = dom
 
   let currentOptions = options
-  let instructionSegments: InstructionSegment[] = []
-  let isSyncingInstructionDom = false
-  let renderedChipSignature = ''
   let lastRevealedSessionId = ''
   let isLatestSessionTimelineExpanded = false
 
@@ -114,69 +105,13 @@ export function createAnnotateSidebar(
     patch(currentOptions)
   }
 
-  function renderInstructionSegments(segments: InstructionSegment[]): void {
-    isSyncingInstructionDom = true
-
-    const fragment = document.createDocumentFragment()
-    for (const segment of normalizeInstructionSegments(segments)) {
-      if (segment.type === 'text') {
-        fragment.appendChild(document.createTextNode(segment.text))
-        continue
-      }
-
-      const chip = getPromptChipRecordById(segment.id)
-      if (!chip) continue
-      fragment.appendChild(renderers.createPromptChipElement(chip))
-    }
-
-    instructionInput.replaceChildren(fragment)
-    isSyncingInstructionDom = false
-  }
-
-  function syncInstructionSegmentsWithChips(session: FeedbackRecordSession): void {
-    const chips = getPromptChipRecords(
-      session,
-      currentOptions.latestSessionSummary?.status === 'resolved' ||
-        currentOptions.latestSessionDetail?.status === 'resolved',
-    )
-    const validChipIds = new Set(chips.map(chip => chip.id))
-    const nextSegments: InstructionSegment[] = []
-    const existingChipIds = new Set<string>()
-
-    for (const segment of instructionSegments) {
-      if (segment.type === 'chip') {
-        if (!validChipIds.has(segment.id) || existingChipIds.has(segment.id)) continue
-        existingChipIds.add(segment.id)
-      }
-      // Keep both 'chip' and 'text' segments to preserve user's instruction draft
-      nextSegments.push(segment)
-    }
-
-    for (const chip of chips) {
-      if (existingChipIds.has(chip.id)) continue
-      nextSegments.push({ type: 'chip', id: chip.id }, { type: 'text', text: '\u00A0' })
-    }
-
-    instructionSegments = normalizeInstructionSegments(nextSegments)
-  }
-
-  function renderPromptChips(session: FeedbackRecordSession): void {
-    const previousChipIds = getInstructionChipIdSignature(instructionSegments)
-    syncInstructionSegmentsWithChips(session)
-    const nextChipIds = getInstructionChipIdSignature(instructionSegments)
-    const nextChipSignature = getChipSignature(
-      session,
-      currentOptions.latestSessionSummary?.status === 'resolved' ||
-        currentOptions.latestSessionDetail?.status === 'resolved',
-    )
-    const shouldRerender =
-      previousChipIds !== nextChipIds || renderedChipSignature !== nextChipSignature
-
-    if (!shouldRerender) return
-
-    renderedChipSignature = nextChipSignature
-    renderInstructionSegments(instructionSegments)
-  }
+  const instructionChips = createInstructionChipController({
+    input: instructionInput,
+    getOptions: () => currentOptions,
+    getPromptChipRecordById,
+    createPromptChipElement: chip => renderers.createPromptChipElement(chip),
+    onInstructionChange: instruction => currentOptions.onUpdateInstruction(instruction),
+  })
 
   function patch(next: AnnotateSidebarOptions): void {
     const viewState = getAnnotateSidebarViewState(next)
@@ -243,7 +178,7 @@ export function createAnnotateSidebar(
           ? `${t('launcher.state.paused')} • ${t('annotate.header.quickCaptureOn', { label: t('annotate.quickCapture.toggle') })}`
           : t('launcher.state.paused')
 
-    renderPromptChips(next.session)
+    instructionChips.render(next.session)
     allPromptText.textContent = next.fullPrompt
     previewFloatContent.textContent = next.fullPrompt
     footerLeftActions.style.display =
@@ -324,29 +259,11 @@ export function createAnnotateSidebar(
     errorMessage.style.display = next.errorMessage ? 'block' : 'none'
   }
 
-  instructionSegments = normalizeInstructionSegments([
-    { type: 'text', text: currentOptions.instruction },
-  ])
-
-  function handleInstructionInput(): void {
-    if (isSyncingInstructionDom) return
-    instructionSegments = captureInstructionSegmentsFromDom(
-      instructionInput,
-      'inspecto-annotate-sidebar-chip',
-    )
-    currentOptions.onUpdateInstruction(
-      serializeInstructionSegments(
-        instructionSegments,
-        id => getPromptChipRecordById(id)?.label ?? null,
-      ),
-    )
-  }
-
   attachAnnotateSidebarEvents({
     dom,
     getOptions: () => currentOptions,
     toggleLatestSessionTimeline,
-    handleInstructionInput,
+    handleInstructionInput: instructionChips.handleInput,
   })
 
   patch(currentOptions)
