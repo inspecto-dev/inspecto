@@ -1,12 +1,9 @@
 import { createAnnotateOverlayDom } from './dom.js'
 import { renderOverlayBoxes } from './boxes.js'
 import { resolveComposerPlacement } from './composer-placement.js'
+import { renderComposerControls, resetComposerControls } from './composer-controls.js'
 import { t } from '../../../shared/i18n.js'
-import {
-  applyComposerRuntimeButtonState,
-  formatRuntimeErrorCount,
-  type ComposerPlacement,
-} from './helpers.js'
+import { type ComposerPlacement } from './helpers.js'
 import type { SelectedTargetOverlayEntry } from './types.js'
 
 export type { SelectedTargetOverlayEntry } from './types.js'
@@ -133,55 +130,11 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
       composerHeaderMeta.textContent = composerOptions.targetMeta ?? ''
       composerHeaderMeta.style.display = composerOptions.targetMeta ? '' : 'none'
       composerOpenButton.onclick = () => composerOptions.onOpenInEditor?.()
-      composerCssButton.style.display = composerOptions.canAttachCssContext ? 'inline-flex' : 'none'
-      composerCssButton.setAttribute(
-        'aria-pressed',
-        composerOptions.cssContextEnabled ? 'true' : 'false',
-      )
-      composerCssButton.dataset.visualState = composerOptions.cssContextEnabled
-        ? 'active'
-        : 'inactive'
-      composerCssButton.title = composerOptions.cssContextEnabled
-        ? t('menu.cssEnabled')
-        : t('menu.attachCss')
-      applyComposerRuntimeButtonState(
-        composerCssButton,
+      renderComposerControls(
+        { composerCssButton, composerRuntimeButton, composerRuntimeBadge },
         tokens,
-        composerOptions.cssContextEnabled === true,
+        composerOptions,
       )
-      composerCssButton.onclick = () => composerOptions.onToggleCssContext?.()
-      composerRuntimeButton.style.display = composerOptions.canAttachRuntimeContext
-        ? 'inline-flex'
-        : 'none'
-      composerRuntimeButton.setAttribute(
-        'aria-pressed',
-        composerOptions.runtimeContextEnabled ? 'true' : 'false',
-      )
-      composerRuntimeButton.dataset.visualState = composerOptions.runtimeContextEnabled
-        ? 'active'
-        : 'inactive'
-      composerRuntimeBadge.textContent = formatRuntimeErrorCount(
-        composerOptions.runtimeErrorCount ?? 0,
-      )
-      composerRuntimeBadge.style.display =
-        composerOptions.runtimeContextEnabled && (composerOptions.runtimeErrorCount ?? 0) > 0
-          ? ''
-          : 'none'
-      composerRuntimeButton.title = composerOptions.runtimeContextEnabled
-        ? composerOptions.runtimeErrorCount
-          ? `${t('menu.runtimeEnabled')} • ${t('annotate.runtimeErrors', { count: formatRuntimeErrorCount(composerOptions.runtimeErrorCount) })}`
-          : composerOptions.runtimeContextSummary
-            ? `${t('menu.runtimeEnabled')} • ${composerOptions.runtimeContextSummary}`
-            : t('menu.runtimeEnabled')
-        : composerOptions.runtimeErrorCount
-          ? `${t('menu.attachRuntime')} • ${t('annotate.runtimeErrors', { count: formatRuntimeErrorCount(composerOptions.runtimeErrorCount) })}`
-          : t('menu.attachRuntime')
-      applyComposerRuntimeButtonState(
-        composerRuntimeButton,
-        tokens,
-        composerOptions.runtimeContextEnabled === true,
-      )
-      composerRuntimeButton.onclick = () => composerOptions.onToggleRuntimeContext?.()
       if ((targetChanged || !isComposerFocused) && composerInput.value !== composerOptions.note) {
         composerInput.value = composerOptions.note
       }
@@ -209,14 +162,10 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
     addButton.onclick = null
     cancelButton.onclick = null
     composerOpenButton.onclick = null
-    composerCssButton.style.display = 'none'
-    composerCssButton.onclick = null
-    composerCssButton.setAttribute('aria-pressed', 'false')
-    composerCssButton.dataset.visualState = 'inactive'
-    composerCssButton.title = t('menu.attachCss')
-    applyComposerRuntimeButtonState(composerCssButton, tokens, false)
-    composerRuntimeButton.style.display = 'none'
-    composerRuntimeButton.onclick = null
+    resetComposerControls(
+      { composerCssButton, composerRuntimeButton, composerRuntimeBadge },
+      tokens,
+    )
     deleteButton.style.display = 'none'
     deleteButton.onclick = null
     preview.style.display = 'none'
@@ -234,8 +183,10 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
     composerInput.value = ''
     addButton.textContent = t('annotate.saveNote')
     composerOpenButton.onclick = null
-    composerRuntimeButton.style.display = 'none'
-    composerRuntimeButton.onclick = null
+    resetComposerControls(
+      { composerCssButton, composerRuntimeButton, composerRuntimeBadge },
+      tokens,
+    )
     deleteButton.style.display = 'none'
     deleteButton.onclick = null
     preview.style.display = 'none'
