@@ -4,6 +4,13 @@ import { inspectorStyles } from '../shared/styles/index.js'
 import { setBaseUrl } from '../transport/http-client.js'
 import { configureI18n } from '../shared/i18n.js'
 import { createBadge, setActive, updateBadgeContent } from './launcher.js'
+import {
+  buildI18nConfig,
+  canUseInspectMode,
+  getThemeAttributeValue,
+  mergeServerRuntimeContext,
+  shouldFallbackToAnnotateMode,
+} from './lifecycle-config.js'
 import { syncRuntimeContextCapture } from './evidence.js'
 import { syncModeUi, updateAnnotateSidebar } from './mode-ui.js'
 import type { InspectoOptions, InspectorMode } from './inspecto-state.js'
@@ -43,21 +50,10 @@ function asLifecycleContext(ctx: unknown): LifecycleContext {
   return ctx as LifecycleContext
 }
 
-function canUseInspectMode(state: LifecycleContext): boolean {
-  if (state.ide === 'none') return false
-  if (state.deliveryMode === 'mcp' && state.ideConnectionKnown && !state.ideConnected) {
-    return false
-  }
-  return true
-}
-
 function applyTheme(state: LifecycleContext, theme?: 'light' | 'dark' | 'auto'): void {
-  if (theme === 'dark') {
-    state.setAttribute('data-theme', 'dark')
-    return
-  }
-  if (theme === 'light') {
-    state.setAttribute('data-theme', 'light')
+  const themeAttribute = getThemeAttributeValue(theme)
+  if (themeAttribute) {
+    state.setAttribute('data-theme', themeAttribute)
     return
   }
   state.removeAttribute('data-theme')
@@ -69,26 +65,6 @@ function resetAnnotateState(state: LifecycleContext): void {
   state.annotateRuntimeContextEnabled = false
   state.annotateCssContextEnabled = false
   state.stopLatestAnnotateSessionStream()
-}
-
-function buildI18nConfig(input: {
-  locale?: InspectoOptions['locale']
-  messages?: InspectoOptions['messages']
-}): {
-  locale?: NonNullable<InspectoOptions['locale']>
-  messages?: NonNullable<InspectoOptions['messages']>
-} {
-  const config: {
-    locale?: NonNullable<InspectoOptions['locale']>
-    messages?: NonNullable<InspectoOptions['messages']>
-  } = {}
-  if (input.locale !== undefined) {
-    config.locale = input.locale
-  }
-  if (input.messages !== undefined) {
-    config.messages = input.messages
-  }
-  return config
 }
 
 export function connect(
@@ -181,14 +157,14 @@ export function configure(ctx: unknown, options: InspectoOptions): void {
         state.options.includeSnippet = info.includeSnippet
       }
       if (info?.runtimeContext !== undefined) {
-        state.options.runtimeContext = {
-          ...state.options.runtimeContext,
-          ...info.runtimeContext,
-        }
+        state.options.runtimeContext = mergeServerRuntimeContext(
+          state.options.runtimeContext,
+          info.runtimeContext,
+        )
         syncRuntimeContextCapture(state)
       }
 
-      const modeChanged = state.mode === 'inspect' && !canUseInspectMode(state)
+      const modeChanged = shouldFallbackToAnnotateMode(state)
       if (modeChanged) {
         state.mode = 'annotate'
       }
