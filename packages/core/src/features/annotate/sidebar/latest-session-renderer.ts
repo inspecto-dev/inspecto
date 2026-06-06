@@ -3,10 +3,10 @@ import {
   applyLatestSessionStatusStyles,
   classifySessionMessage,
   getLatestSessionErrorMessage,
-  getLatestSessionFallbackMessage,
   getLatestSessionHint,
   getLatestSessionStatusLabel,
 } from './latest-session.js'
+import { renderLatestSessionMessage } from './latest-session-message.js'
 import { renderSessionTimeline } from './session-timeline-dom.js'
 import type { AnnotateWorkflowNotice } from './types.js'
 import { t } from '../../../shared/i18n.js'
@@ -57,17 +57,6 @@ function hideTimeline(dom: LatestSessionDom): void {
   dom.latestSessionTimelineContainer.replaceChildren()
 }
 
-function resetLatestSessionMessage(message: HTMLElement): void {
-  message.style.display = 'none'
-  message.textContent = ''
-  delete message.dataset.inspectoLatestSessionPreview
-  message.style.overflow = ''
-  message.style.textOverflow = ''
-  message.style.maxHeight = ''
-  message.style.setProperty('-webkit-line-clamp', '')
-  message.style.setProperty('-webkit-box-orient', '')
-}
-
 function renderWorkflowNotice(dom: LatestSessionDom): void {
   dom.latestSessionMeta.textContent = t('workflow.notice.meta.ide')
   dom.latestSessionStatus.textContent = `• ${t('workflow.notice.status.ide')}`
@@ -94,46 +83,6 @@ function renderEmptyLatestSession(dom: LatestSessionDom): void {
   dom.latestSessionError.style.display = 'none'
   resetRefreshButton(dom.latestSessionRefreshButton)
   hideTimeline(dom)
-}
-
-function renderSessionMessage(
-  dom: LatestSessionDom,
-  params: {
-    isLoading: boolean
-    shouldShowTimeline: boolean
-    latestStatus: AnnotationWorkSession['status']
-    hasDetail: boolean
-    lastAgentOrSystemMessage: string
-    latestMessageVariant: string | null
-  },
-): void {
-  resetLatestSessionMessage(dom.latestSessionMessage)
-
-  const fallbackMsg = getLatestSessionFallbackMessage(params.latestStatus, params.hasDetail)
-  const hasMessage =
-    params.isLoading ||
-    (!params.shouldShowTimeline && (params.lastAgentOrSystemMessage || fallbackMsg))
-
-  if (hasMessage) {
-    dom.latestSessionMessage.textContent = params.isLoading
-      ? t('annotate.latestSession.loading')
-      : params.lastAgentOrSystemMessage || fallbackMsg
-    if (params.isLoading) {
-      dom.latestSessionMessage.style.display = 'block'
-    } else {
-      dom.latestSessionMessage.dataset.inspectoLatestSessionPreview = 'true'
-      dom.latestSessionMessage.style.display = 'block'
-      dom.latestSessionMessage.style.overflow = 'hidden'
-      dom.latestSessionMessage.style.textOverflow = 'ellipsis'
-      dom.latestSessionMessage.style.maxHeight = '42px'
-      dom.latestSessionMessage.style.setProperty('-webkit-line-clamp', '2')
-      dom.latestSessionMessage.style.setProperty('-webkit-box-orient', 'vertical')
-    }
-  }
-
-  dom.latestSessionMessage.dataset.variant = params.latestMessageVariant ?? 'default'
-  dom.latestSessionMessage.style.color =
-    params.latestMessageVariant === 'system-info' ? '#9ed8ff' : 'var(--inspecto-text-secondary)'
 }
 
 function renderSessionTimelineControls(
@@ -220,7 +169,7 @@ function renderLoadedLatestSession(
   dom.latestSessionStatus.textContent = getLatestSessionStatusLabel(latestStatus)
   applyLatestSessionStatusStyles(dom.latestSessionStatus, latestStatus)
 
-  renderSessionMessage(dom, {
+  renderLatestSessionMessage(dom.latestSessionMessage, {
     isLoading: Boolean(state.isLoading),
     shouldShowTimeline,
     latestStatus,
