@@ -10,34 +10,12 @@ import { asAnnotateContext } from './annotate-shared.js'
 import { beginEditingRecord, clearDraftForTarget } from '../features/annotate/targets/index.js'
 import { t } from '../shared/i18n.js'
 import { sendAnnotationBatch, triggerWorkflow } from './annotate-send.js'
-import { getNextRecordDisplayOrderUi, hasCurrentRecordUi } from './annotate-ui.js'
 import { canAttachRuntimeContext } from './evidence.js'
-
-function formatContextAsMarkdown(instruction: string, annotations: AnnotationTransport[]): string {
-  let md = ''
-  if (instruction) {
-    md += `${instruction}\n\n`
-  }
-  if (annotations.length > 0) {
-    md += '### Selected Elements\n\n'
-    annotations.forEach((ann, index) => {
-      md += `**Annotation ${index + 1}**\n`
-      if (ann.note) {
-        md += `* Note: ${ann.note}\n`
-      }
-      ann.targets.forEach((target, targetIndex) => {
-        md += `\n* Target ${targetIndex + 1}:\n`
-        if (target.label) md += `  - Label: \`${target.label}\`\n`
-        if (target.location)
-          md += `  - Location: \`${target.location.file.split('/').pop() || target.location.file}:${target.location.line}:${target.location.column}\`\n`
-        if (target.selector) md += `  - Selector: \`${target.selector}\`\n`
-        if (target.snippet) md += `\n  \`\`\`\n${target.snippet}\n  \`\`\`\n`
-      })
-      md += '\n---\n\n'
-    })
-  }
-  return md.trim()
-}
+import {
+  collectAnnotationTransportsFromSession,
+  formatAnnotationContextAsMarkdown,
+  toAnnotationTransportFromRecordUi as toAnnotationTransportFromRecord,
+} from './annotate-sidebar-transport.js'
 
 export function composeAnnotateInstruction(ctx: unknown): string {
   return asAnnotateContext(ctx).annotateInstructionDraft.trim()
@@ -47,37 +25,12 @@ export function toAnnotationTransportFromRecordUi(
   _ctx: unknown,
   record: FeedbackRecord,
 ): AnnotationTransport {
-  return {
-    note: record.note,
-    intent: record.intent,
-    targets: [
-      {
-        location: record.target.location,
-        ...(record.target.label ? { label: record.target.label } : {}),
-        ...(record.target.selector ? { selector: record.target.selector } : {}),
-      },
-    ],
-  }
+  return toAnnotationTransportFromRecord(record)
 }
 
 function collectAnnotationTransports(ctx: unknown): AnnotationTransport[] {
   const state = asAnnotateContext(ctx)
-  const transports = state.annotateSession.records.map(record =>
-    toAnnotationTransportFromRecordUi(null, record),
-  )
-  if (hasCurrentRecordUi(state) && state.annotateSession.current.target) {
-    transports.push(
-      toAnnotationTransportFromRecordUi(null, {
-        id: state.annotateSession.current.id,
-        displayOrder:
-          state.annotateSession.current.displayOrder ?? getNextRecordDisplayOrderUi(state),
-        target: state.annotateSession.current.target,
-        note: state.annotateSession.current.note,
-        intent: state.annotateSession.current.intent,
-      }),
-    )
-  }
-  return transports
+  return collectAnnotationTransportsFromSession(state.annotateSession)
 }
 
 export function getAnnotateSidebarOptions(ctx: unknown): AnnotateSidebarOptions {
@@ -185,7 +138,7 @@ export function getAnnotateSidebarOptions(ctx: unknown): AnnotateSidebarOptions 
     onCopyContext: () => {
       const transports = collectAnnotationTransports(state)
       const instruction = composeAnnotateInstruction(state)
-      const markdown = formatContextAsMarkdown(instruction, transports)
+      const markdown = formatAnnotationContextAsMarkdown(instruction, transports)
 
       return navigator.clipboard
         .writeText(markdown)
