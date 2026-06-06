@@ -1,10 +1,9 @@
 import type { HotKeys, IdeType } from '@inspecto-dev/types'
 import { badgeClass } from '../shared/styles/index.js'
 import { getDeepActiveElement, hotKeysHeld } from '../shared/component-utils.js'
-import { t } from '../shared/i18n.js'
-import { pauseIconSvg, playIconSvg } from '../shared/icons.js'
 import { createLauncherDom, getLauncherDomRefs } from './launcher-dom.js'
 import { createLauncherDragController } from './launcher-drag.js'
+import { getLauncherViewState, shouldShowInspectMode } from './launcher-view-state.js'
 
 type LauncherContext = {
   options: { hotKeys?: HotKeys }
@@ -32,20 +31,6 @@ type LauncherContext = {
 
 function asLauncherContext(ctx: unknown): LauncherContext {
   return ctx as LauncherContext
-}
-
-function getInspectHiddenReason(
-  state: LauncherContext,
-): 'ide-disabled' | 'ide-disconnected' | null {
-  if (state.ide === 'none') return 'ide-disabled'
-  if (state.deliveryMode === 'mcp' && state.ideConnectionKnown && !state.ideConnected) {
-    return 'ide-disconnected'
-  }
-  return null
-}
-
-function shouldShowInspectMode(state: LauncherContext): boolean {
-  return getInspectHiddenReason(state) === null
 }
 
 export function getEffectiveHotKeys(ctx: unknown): HotKeys {
@@ -170,62 +155,42 @@ export function updateBadgeContent(ctx: unknown): void {
     button.setAttribute('aria-pressed', String(active))
   }
 
-  let stateLabel: string
+  const effectiveHotKeys = getEffectiveHotKeys(state)
+  const viewState = getLauncherViewState({
+    active: state.active,
+    disabled: state.disabled,
+    mode: state.mode,
+    ide: state.ide,
+    ideConnected: state.ideConnected,
+    ideConnectionKnown: state.ideConnectionKnown,
+    deliveryMode: state.deliveryMode,
+    launcherPanelOpen: state.launcherPanelOpen,
+    hotKeysDisabled: effectiveHotKeys === false,
+    hotKeyLabel: effectiveHotKeys === false ? '' : getHotKeyLabel(state),
+  })
 
-  if (state.disabled) {
-    stateLabel = t('launcher.state.paused')
-    refs.indicator.dataset.state = 'paused'
-    state.badge.classList.remove('active')
-    state.badge.classList.add('disabled')
-  } else if (state.mode === 'annotate') {
-    stateLabel = t('launcher.state.annotate')
-    refs.indicator.dataset.state = 'annotate'
-    state.badge.classList.remove('disabled')
-    state.badge.classList.add('active')
-  } else if (state.active) {
-    stateLabel = t('launcher.state.inspect')
-    refs.indicator.dataset.state = 'inspect'
-    state.badge.classList.remove('disabled')
-    state.badge.classList.add('active')
-  } else {
-    stateLabel = t('launcher.state.ready')
-    refs.indicator.dataset.state = 'ready'
-    state.badge.classList.remove('active', 'disabled')
-  }
+  state.badge.classList.toggle('active', viewState.badgeClasses.active)
+  state.badge.classList.toggle('disabled', viewState.badgeClasses.disabled)
+  refs.indicator.dataset.state = viewState.indicatorState
 
   refs.stateSpan.dataset.state = refs.indicator.dataset.state
   refs.stateSpan.hidden = false
-  refs.titleSpan.textContent = t('launcher.title')
-  refs.stateSpan.textContent = stateLabel
+  refs.titleSpan.textContent = viewState.title
+  refs.stateSpan.textContent = viewState.stateLabel
 
-  refs.panel.style.display = state.launcherPanelOpen ? 'flex' : 'none'
-  const isPaused = state.disabled
-  refs.pauseButton.setAttribute(
-    'aria-label',
-    isPaused ? t('launcher.action.resume.title') : t('launcher.action.pause.title'),
-  )
-  refs.pauseButton.setAttribute('aria-pressed', isPaused ? 'true' : 'false')
-  refs.pauseButton.innerHTML = isPaused ? playIconSvg : pauseIconSvg
-  refs.pauseText.textContent = isPaused
-    ? t('launcher.action.resume.title')
-    : t('launcher.action.pause.title')
-  refs.hotkeyHint.textContent =
-    getEffectiveHotKeys(state) === false
-      ? t('launcher.hint.hotkeyDisabled')
-      : t('launcher.hint.hotkeyQuickJump', { hotkey: getHotKeyLabel(state) })
-  const inspectHiddenReason = getInspectHiddenReason(state)
-  refs.inspectButton.style.display = state.disabled || inspectHiddenReason ? 'none' : 'inline-flex'
-  refs.inspectNotice.style.display = !state.disabled && inspectHiddenReason ? '' : 'none'
-  refs.inspectNotice.textContent = inspectHiddenReason
-    ? t(`launcher.inspectUnavailable.${inspectHiddenReason}`)
-    : ''
-  refs.annotateButton.style.display = state.disabled ? 'none' : 'inline-flex'
+  refs.panel.style.display = viewState.panelDisplay
+  refs.pauseButton.setAttribute('aria-label', viewState.pauseLabel)
+  refs.pauseButton.setAttribute('aria-pressed', viewState.pauseAriaPressed)
+  refs.pauseButton.innerHTML = viewState.pauseIconSvg
+  refs.pauseText.textContent = viewState.pauseLabel
+  refs.hotkeyHint.textContent = viewState.hotkeyHint
+  refs.inspectButton.style.display = viewState.inspectButtonDisplay
+  refs.inspectNotice.style.display = viewState.inspectNoticeDisplay
+  refs.inspectNotice.textContent = viewState.inspectNoticeText
+  refs.annotateButton.style.display = viewState.annotateButtonDisplay
 
-  updateModeButton(refs.inspectButton, !state.disabled && state.active && state.mode === 'inspect')
-  updateModeButton(
-    refs.annotateButton,
-    !state.disabled && state.active && state.mode === 'annotate',
-  )
+  updateModeButton(refs.inspectButton, viewState.inspectButtonActive)
+  updateModeButton(refs.annotateButton, viewState.annotateButtonActive)
   updateLauncherEye(state)
 }
 
