@@ -33,6 +33,11 @@ import {
   getLatestSessionHint,
   getLatestSessionStatusLabel,
 } from './latest-session.js'
+import {
+  renderEmptyLatestSession,
+  renderWorkflowNotice,
+  type LatestSessionDom,
+} from './latest-session-renderer.js'
 
 type SidebarMode = 'capture-enabled' | 'capture-paused'
 type SendScope = AnnotateSendScope
@@ -162,6 +167,17 @@ export function createAnnotateSidebar(
     getOptions: () => currentOptions,
     getPromptChipRecordById,
   })
+  const latestSessionDom: LatestSessionDom = {
+    latestSessionMeta,
+    latestSessionStatus,
+    latestSessionMessage,
+    latestSessionHint,
+    latestSessionRefreshButton,
+    latestSessionTimelineToggle,
+    latestSessionTimelineTitle,
+    latestSessionTimelineContainer,
+    latestSessionError,
+  }
 
   latestSessionRefreshButton.addEventListener('click', event => {
     event.preventDefault()
@@ -422,27 +438,7 @@ export function createAnnotateSidebar(
       : t('annotate.latestSession.title')
 
     if (workflowNotice && !latestSession && !latestSessionSummary) {
-      latestSessionMeta.textContent = t('workflow.notice.meta.ide')
-      latestSessionStatus.textContent = `• ${t('workflow.notice.status.ide')}`
-      applyLatestSessionStatusStyles(latestSessionStatus, 'pending')
-      latestSessionMessage.style.display = 'block'
-      latestSessionMessage.textContent = t('workflow.notice.message.ide')
-      latestSessionMessage.dataset.variant = 'system-info'
-      latestSessionMessage.style.color = '#9ed8ff'
-      latestSessionHint.textContent = t('workflow.notice.hint.ide')
-      latestSessionHint.style.display = 'block'
-      latestSessionHint.style.color = 'var(--inspecto-text-secondary)'
-      latestSessionError.textContent = ''
-      latestSessionError.style.display = 'none'
-      latestSessionRefreshButton.textContent = '↻'
-      latestSessionRefreshButton.style.display = 'none'
-      latestSessionRefreshButton.style.minWidth = ''
-      latestSessionRefreshButton.style.padding = ''
-      latestSessionRefreshButton.style.fontSize = '12px'
-      latestSessionTimelineToggle.style.display = 'none'
-      latestSessionTimelineTitle.style.display = 'none'
-      latestSessionTimelineContainer.style.display = 'none'
-      latestSessionTimelineContainer.replaceChildren()
+      renderWorkflowNotice(latestSessionDom)
     } else if (latestSession || latestSessionSummary) {
       const latestStatus = latestSession?.status ?? latestSessionSummary?.status ?? 'pending'
       const latestSessionId = latestSession?.id ?? latestSessionSummary?.id ?? ''
@@ -570,21 +566,7 @@ export function createAnnotateSidebar(
         }
       }
     } else {
-      latestSessionHint.textContent = ''
-      latestSessionHint.style.display = 'none'
-      latestSessionMessage.dataset.variant = 'default'
-      latestSessionMessage.style.color = 'var(--inspecto-text-secondary)'
-      latestSessionError.textContent = ''
-      latestSessionError.style.display = 'none'
-      latestSessionRefreshButton.textContent = '↻'
-      latestSessionRefreshButton.style.display = 'none'
-      latestSessionRefreshButton.style.minWidth = ''
-      latestSessionRefreshButton.style.padding = ''
-      latestSessionRefreshButton.style.fontSize = '12px'
-      latestSessionTimelineToggle.style.display = 'none'
-      latestSessionTimelineTitle.style.display = 'none'
-      latestSessionTimelineContainer.style.display = 'none'
-      latestSessionTimelineContainer.replaceChildren()
+      renderEmptyLatestSession(latestSessionDom)
     }
 
     statusMessage.textContent = getLiveStatusMessage(next)
