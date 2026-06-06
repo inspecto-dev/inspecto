@@ -51,7 +51,7 @@ export function showIntentMenu(
 ): () => void {
   const maxSnippetLines = options.maxSnippetLines ?? 100
   const includeSnippet = options.includeSnippet ?? false
-  let canAttachRuntimeContext =
+  const canAttachRuntimeContext =
     options.runtimeContext?.enabled === true && typeof deps.getRuntimeContext === 'function'
   const canAttachCssContext = typeof deps.captureCssContextPrompt === 'function'
 
@@ -183,13 +183,6 @@ export function showIntentMenu(
         return
       }
 
-      if (
-        ideInfo?.runtimeContext?.enabled === true &&
-        typeof deps.getRuntimeContext === 'function'
-      ) {
-        canAttachRuntimeContext = true
-      }
-
       renderInspectMenuIdeInfo({
         ideInfo,
         input,
@@ -202,7 +195,6 @@ export function showIntentMenu(
         includeSnippet,
         maxSnippetLines,
         options,
-        canAttachRuntimeContext,
         hasRuntimeContextProvider: typeof deps.getRuntimeContext === 'function',
         runtimeContextController,
         resolveCssContextPrompt,

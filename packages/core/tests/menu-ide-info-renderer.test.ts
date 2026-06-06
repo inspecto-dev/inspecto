@@ -44,7 +44,6 @@ describe('inspect menu IDE info renderer', () => {
       includeSnippet: false,
       maxSnippetLines: 100,
       options: {},
-      canAttachRuntimeContext: false,
       hasRuntimeContextProvider: true,
       runtimeContextController,
       resolveCssContextPrompt: () => null,
@@ -81,7 +80,6 @@ describe('inspect menu IDE info renderer', () => {
       includeSnippet: false,
       maxSnippetLines: 100,
       options: {},
-      canAttachRuntimeContext: false,
       hasRuntimeContextProvider: true,
       runtimeContextController,
       resolveCssContextPrompt: () => null,
@@ -117,7 +115,6 @@ describe('inspect menu IDE info renderer', () => {
       includeSnippet: false,
       maxSnippetLines: 100,
       options: {},
-      canAttachRuntimeContext: false,
       hasRuntimeContextProvider: false,
       runtimeContextController,
       resolveCssContextPrompt: () => null,
@@ -140,5 +137,35 @@ describe('inspect menu IDE info renderer', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(onCleanup).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not enable runtime controls without a runtime context provider', () => {
+    const dom = createDom()
+    const runtimeContextController = createRuntimeController()
+    dom.headerActions.appendChild(dom.openButton)
+
+    renderInspectMenuIdeInfo({
+      ...dom,
+      ideInfo: {
+        ide: 'vscode',
+        prompts: [],
+        runtimeContext: { enabled: true },
+      },
+      location,
+      includeSnippet: false,
+      maxSnippetLines: 100,
+      options: {},
+      hasRuntimeContextProvider: false,
+      runtimeContextController,
+      resolveCssContextPrompt: () => null,
+      onSend: vi.fn(),
+      onOpenFile: vi.fn(),
+      onCleanup: vi.fn(),
+      onError: vi.fn(),
+      updatePosition: vi.fn(),
+    })
+
+    expect(runtimeContextController.setCanAttachRuntimeContext).not.toHaveBeenCalled()
+    expect(Array.from(dom.headerActions.querySelectorAll('button'))).toEqual([dom.openButton])
   })
 })

@@ -34,7 +34,6 @@ type RenderInspectMenuIdeInfoInput = {
   includeSnippet: boolean
   maxSnippetLines: number
   options: InspectorOptions
-  canAttachRuntimeContext: boolean
   hasRuntimeContextProvider: boolean
   runtimeContextController: RuntimeContextController
   resolveCssContextPrompt: (intent?: Pick<AiIntentConfig, 'id'>) => string | null
