@@ -11,8 +11,6 @@ import { openFileWithDiagnostics, fetchIdeInfo } from '../../../transport/http-c
 import { applyIconToggleButtonState, createMenuHeaderDom } from './header.js'
 import { resolveMenuPosition } from './position.js'
 import {
-  createAskInput,
-  createMenuSection,
   createRuntimeContextUi,
   formatRuntimeContextSummary,
   formatRuntimeErrorCount,
@@ -21,8 +19,8 @@ import {
   showError,
 } from './helpers.js'
 import { t } from '../../../shared/i18n.js'
-import { menuClass, loadingSpinnerClass } from '../../../shared/styles/index.js'
 import { isAiIntentConfig } from '@inspecto-dev/types'
+import { createIntentMenuDom } from './dom.js'
 
 const _DISPLAY_NAMES: Record<Provider, string> = {
   copilot: 'GitHub Copilot',
@@ -59,12 +57,15 @@ export function showIntentMenu(
   let cssContextEnabled = false
   const canAttachCssContext = typeof deps.captureCssContextPrompt === 'function'
 
-  const menu = document.createElement('div')
-  menu.className = menuClass
-  menu.style.width = '304px'
-  menu.style.maxWidth = 'calc(100vw - 16px)'
-  menu.style.boxSizing = 'border-box'
-  menu.style.pointerEvents = 'auto'
+  const {
+    menu,
+    runtimeContextSection,
+    askAiSection,
+    actionsSection,
+    input,
+    sendIcon,
+    loadingElement,
+  } = createIntentMenuDom(options.askPlaceholder)
 
   const {
     header,
@@ -133,19 +134,10 @@ export function showIntentMenu(
   headerActions.appendChild(openButton)
   menu.appendChild(header)
 
-  const runtimeContextSection = createMenuSection()
-  runtimeContextSection.hidden = true
   menu.appendChild(runtimeContextSection)
 
-  const askAiSection = createMenuSection()
-  const { input, inputWrapper, sendIcon } = createAskInput(options.askPlaceholder)
-  askAiSection.appendChild(inputWrapper)
-  const loadingEl = document.createElement('div')
-  loadingEl.className = loadingSpinnerClass
-  askAiSection.appendChild(loadingEl)
   menu.appendChild(askAiSection)
 
-  const actionsSection = createMenuSection()
   menu.appendChild(actionsSection)
 
   menu.style.left = `${clickX}px`
@@ -451,7 +443,7 @@ export function showIntentMenu(
   // Fetch only IDE info to render the menu immediately
   fetchIdeInfo()
     .then(ideInfo => {
-      loadingEl.remove()
+      loadingElement.remove()
 
       if (!ideInfo) {
         input.placeholder = t('menu.ask.placeholder.setup')
@@ -521,7 +513,7 @@ export function showIntentMenu(
       updatePosition()
     })
     .catch((err: Error) => {
-      loadingEl.remove()
+      loadingElement.remove()
       const isServerDown = err instanceof TypeError
       showError(
         menu,
