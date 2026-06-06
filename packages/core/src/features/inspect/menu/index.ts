@@ -18,8 +18,9 @@ import { attachMenuClickAway } from './click-away.js'
 import { attachCustomAskSubmit } from './custom-ask.js'
 import { createIntentMenuDom } from './dom.js'
 import { attachMenuFocusLifecycle } from './focus.js'
-import { getRuntimeToggleAriaPressed, type RuntimeContextDefaultMode } from './runtime-toggle.js'
+import type { RuntimeContextDefaultMode } from './runtime-toggle.js'
 import { renderRuntimeContextUi } from './runtime-context-renderer.js'
+import { resolveInspectMenuRuntimeContext } from './runtime-context-resolver.js'
 
 const _DISPLAY_NAMES: Record<Provider, string> = {
   copilot: 'GitHub Copilot',
@@ -149,17 +150,14 @@ export function showIntentMenu(
   const resolveRuntimeContext = (
     intent?: Pick<AiIntentConfig, 'id' | 'aiIntent'>,
   ): RuntimeContextEnvelope | null => {
-    if (!canAttachRuntimeContext) return null
-
-    const ariaPressed = getRuntimeToggleAriaPressed(
+    return resolveInspectMenuRuntimeContext({
+      canAttachRuntimeContext,
       runtimeContextPreference,
       runtimeContextDefaultMode,
-    )
-    const shouldAttach =
-      ariaPressed === 'true' || (ariaPressed === 'mixed' && Boolean(intent && isFixIntent(intent)))
-
-    if (!shouldAttach) return null
-    return deps.getRuntimeContext?.(location) ?? null
+      location,
+      ...(deps.getRuntimeContext ? { getRuntimeContext: deps.getRuntimeContext } : {}),
+      ...(intent ? { intent } : {}),
+    })
   }
 
   const renderCurrentRuntimeContextUi = () => {
