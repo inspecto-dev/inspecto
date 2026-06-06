@@ -1,7 +1,11 @@
 import type { HotKeys, IdeType } from '@inspecto-dev/types'
-import { hotKeysHeld } from '../shared/component-utils.js'
 import { createLauncherDom, getLauncherDomRefs } from './launcher-dom.js'
 import { createLauncherDragController } from './launcher-drag.js'
+import {
+  formatHotKeyLabel,
+  getEffectiveHotKeys as getEffectiveHotKeysValue,
+  shouldQuickJumpOnTrigger as shouldQuickJumpOnTriggerValue,
+} from './launcher-hotkeys.js'
 import { updateLauncherEye as updateLauncherEyeElement } from './launcher-eye.js'
 import { getLauncherViewState, shouldShowInspectMode } from './launcher-view-state.js'
 
@@ -34,28 +38,11 @@ function asLauncherContext(ctx: unknown): LauncherContext {
 }
 
 export function getEffectiveHotKeys(ctx: unknown): HotKeys {
-  const state = asLauncherContext(ctx)
-  if (state.options.hotKeys !== undefined) return state.options.hotKeys
-  if (state.serverHotKeys !== null) return state.serverHotKeys
-  return 'alt'
+  return getEffectiveHotKeysValue(asLauncherContext(ctx))
 }
 
 export function getHotKeyLabel(ctx: unknown): string {
-  const hotKeys = getEffectiveHotKeys(ctx)
-  if (hotKeys === false) return 'Disabled'
-
-  const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform)
-
-  const keys = hotKeys.split('+').map(k => k.trim().toLowerCase())
-  const displayKeys = keys.map(k => {
-    if (k === 'alt' || k === 'option') return isMac ? '⌥' : 'Alt'
-    if (k === 'cmd' || k === 'meta' || k === 'win' || k === 'command') return isMac ? '⌘' : 'Win'
-    if (k === 'ctrl' || k === 'control') return isMac ? '⌃' : 'Ctrl'
-    if (k === 'shift') return isMac ? '⇧' : 'Shift'
-    return k.charAt(0).toUpperCase() + k.slice(1)
-  })
-
-  return displayKeys.join(' + ')
+  return formatHotKeyLabel(getEffectiveHotKeys(ctx))
 }
 
 export function createBadge(ctx: unknown): HTMLDivElement {
@@ -216,12 +203,11 @@ export function setActive(ctx: unknown, value: boolean): void {
 
 export function shouldQuickJumpOnTrigger(ctx: unknown, event: MouseEvent): boolean {
   const state = asLauncherContext(ctx)
-  if (state.mode !== 'inspect') return false
-  if (event.type !== 'click') return false
-
-  const hotKeys = getEffectiveHotKeys(state)
-  if (hotKeys === false) return false
-  return hotKeysHeld(event, hotKeys)
+  return shouldQuickJumpOnTriggerValue({
+    mode: state.mode,
+    hotKeys: getEffectiveHotKeys(state),
+    event,
+  })
 }
 
 export function updateLauncherEye(ctx: unknown): void {
