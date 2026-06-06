@@ -20,6 +20,7 @@ import {
 } from './helpers.js'
 import { t } from '../../../shared/i18n.js'
 import { isAiIntentConfig } from '@inspecto-dev/types'
+import { attachMenuClickAway } from './click-away.js'
 import { createIntentMenuDom } from './dom.js'
 import { attachMenuFocusLifecycle } from './focus.js'
 
@@ -166,33 +167,10 @@ export function showIntentMenu(
   menu.style.visibility = 'visible'
 
   const teardownFocusLifecycle = attachMenuFocusLifecycle(menu, shadowRoot, input)
-
-  const onDocClick = (e: MouseEvent): void => {
-    // Determine if the click target is within a dialog or modal
-    const eventTarget = e.target as HTMLElement | null
-    if (eventTarget) {
-      // Allow clicks on DOM elements that look like modals or popups to not close the menu
-      // E.g., clicking on elements with roles like dialog, menu, tooltip, or inside a portaled floating element
-      if (
-        eventTarget.closest(
-          '[role="dialog"], [role="menu"], [role="tooltip"], [role="presentation"], [role="listbox"], [data-radix-popper-content-wrapper], [data-radix-focus-guard]',
-        )
-      ) {
-        return
-      }
-    }
-
-    // Because the menu is inside a Shadow DOM, e.target from the document's perspective
-    // is just the <inspecto-overlay> custom element.
-    const path = e.composedPath()
-    if (path.includes(menu)) return
-    cleanup()
-  }
-  // Use a small timeout so the click that opened the menu doesn't immediately close it
-  setTimeout(() => document.addEventListener('click', onDocClick, { capture: true }), 0)
+  const teardownClickAway = attachMenuClickAway(menu, cleanup)
 
   function cleanup(): void {
-    document.removeEventListener('click', onDocClick, { capture: true })
+    teardownClickAway()
     teardownFocusLifecycle()
     menu.remove()
     onClose()
