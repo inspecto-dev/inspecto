@@ -1,5 +1,4 @@
 import type {
-  AnnotationThreadRole,
   AnnotationWorkSession,
   AnnotationWorkSessionSummary,
   FeedbackRecord,
@@ -26,6 +25,14 @@ import { t } from '../../../shared/i18n.js'
 import { pauseIconSvg, playIconSvg } from '../../../shared/icons.js'
 import { buildSessionTimelineItems } from '../session/timeline.js'
 import { renderSessionTimeline } from './session-timeline-dom.js'
+import {
+  applyLatestSessionStatusStyles,
+  classifySessionMessage,
+  getLatestSessionErrorMessage,
+  getLatestSessionFallbackMessage,
+  getLatestSessionHint,
+  getLatestSessionStatusLabel,
+} from './latest-session.js'
 
 type SidebarMode = 'capture-enabled' | 'capture-paused'
 type SendScope = AnnotateSendScope
@@ -138,106 +145,6 @@ export function createAnnotateSidebar(
   let renderedChipSignature = ''
   let lastRevealedSessionId = ''
   let isLatestSessionTimelineExpanded = false
-
-  type LatestSessionMessageKind = 'agent' | 'system-info'
-
-  function classifySessionMessage(input: {
-    role: AnnotationThreadRole
-    text: string
-  }): LatestSessionMessageKind {
-    if (input.role === 'agent') return 'agent'
-    return 'system-info'
-  }
-
-  function getLatestSessionFallbackMessage(status: string, hasDetail: boolean): string {
-    if (!hasDetail) {
-      return t('annotate.latestSession.noDetail')
-    }
-    if (status === 'pending' || status === 'acknowledged') {
-      return status === 'acknowledged'
-        ? t('annotate.latestSession.acknowledged')
-        : t('annotate.latestSession.pending')
-    }
-    if (status === 'in_progress') {
-      return t('annotate.latestSession.inProgress')
-    }
-    if (status === 'resolved') {
-      return t('annotate.latestSession.resolved')
-    }
-    if (status === 'dismissed') {
-      return t('annotate.latestSession.dismissed')
-    }
-    return t('annotate.latestSession.noDetail')
-  }
-
-  function getLatestSessionStatusLabel(status: string): string {
-    if (status === 'resolved') {
-      return `✓ ${t('annotate.latestSession.status.resolved')}`
-    }
-    if (status === 'in_progress') {
-      return `◔ ${t('annotate.latestSession.status.in_progress')}`
-    }
-    if (status === 'dismissed') {
-      return `− ${t('annotate.latestSession.status.dismissed')}`
-    }
-    if (status === 'acknowledged') {
-      return `◔ ${t('annotate.latestSession.status.acknowledged')}`
-    }
-    if (status === 'pending') {
-      return `• ${t(`annotate.latestSession.status.${status}`)}`
-    }
-    return t(`annotate.latestSession.status.${status}`)
-  }
-
-  function getLatestSessionHint(status: string): string {
-    if (status === 'pending' || status === 'acknowledged') {
-      if (status === 'acknowledged') {
-        return t('annotate.latestSession.hint.acknowledged')
-      }
-      return t('annotate.latestSession.hint.pending')
-    }
-    if (status === 'in_progress') {
-      return t('annotate.latestSession.hint.in_progress')
-    }
-    if (status === 'resolved') {
-      return t('annotate.latestSession.hint.resolved')
-    }
-    return ''
-  }
-
-  function getLatestSessionErrorMessage(error: string | undefined): string {
-    if (!error) return ''
-    if (error === 'Live session updates disconnected. You can refresh to reconnect.') {
-      return t('annotate.latestSession.error.disconnected')
-    }
-    return error
-  }
-
-  function applyLatestSessionStatusStyles(status: string): void {
-    latestSessionStatus.dataset.status = status
-    if (status === 'resolved') {
-      latestSessionStatus.style.background = 'rgba(18, 183, 106, 0.12)'
-      latestSessionStatus.style.borderColor = 'rgba(18, 183, 106, 0.25)'
-      latestSessionStatus.style.color = '#5ad496'
-      return
-    }
-    if (status === 'in_progress') {
-      latestSessionStatus.style.background = 'rgba(47, 128, 237, 0.12)'
-      latestSessionStatus.style.borderColor = 'rgba(47, 128, 237, 0.25)'
-      latestSessionStatus.style.color = '#73b2ff'
-      return
-    }
-    if (status === 'dismissed') {
-      latestSessionStatus.style.background = 'rgba(152, 162, 179, 0.12)'
-      latestSessionStatus.style.borderColor = 'rgba(152, 162, 179, 0.25)'
-      latestSessionStatus.style.color = '#b0b8c6'
-      return
-    }
-
-    latestSessionStatus.style.background = 'rgba(255, 255, 255, 0.06)'
-    latestSessionStatus.style.borderColor = 'rgba(255, 255, 255, 0.1)'
-    latestSessionStatus.style.color = 'var(--inspecto-text-secondary)'
-  }
 
   function getPromptChipRecordById(id: string): PromptChipRecord | null {
     return (
@@ -546,7 +453,7 @@ export function createAnnotateSidebar(
     if (workflowNotice && !latestSession && !latestSessionSummary) {
       latestSessionMeta.textContent = t('workflow.notice.meta.ide')
       latestSessionStatus.textContent = `• ${t('workflow.notice.status.ide')}`
-      applyLatestSessionStatusStyles('pending')
+      applyLatestSessionStatusStyles(latestSessionStatus, 'pending')
       latestSessionMessage.style.display = 'block'
       latestSessionMessage.textContent = t('workflow.notice.message.ide')
       latestSessionMessage.dataset.variant = 'system-info'
@@ -602,7 +509,7 @@ export function createAnnotateSidebar(
       const shouldShowTimeline = canShowTimeline && isLatestSessionTimelineExpanded
 
       latestSessionStatus.textContent = getLatestSessionStatusLabel(latestVisualStatus)
-      applyLatestSessionStatusStyles(latestVisualStatus)
+      applyLatestSessionStatusStyles(latestSessionStatus, latestVisualStatus)
 
       latestSessionMessage.style.display = 'none'
       latestSessionMessage.textContent = ''
