@@ -10,19 +10,16 @@ type SelectedTargetOverlayEntry = {
 export type { SelectedTargetOverlayEntry }
 
 import { createAnnotateOverlayDom } from './dom.js'
+import { resolveComposerPlacement } from './composer-placement.js'
 import { t } from '../../../shared/i18n.js'
 import {
   applyComposerRuntimeButtonState,
   applyOverlayState,
-  clamp,
   createOverlayBox,
   formatOverlayNoteBadge,
   formatRuntimeErrorCount,
-  getOverflowPenalty,
-  getPlacementPreference,
   placePreview,
   type ComposerPlacement,
-  type PlacementCandidate,
 } from './helpers.js'
 
 type ComposerOptions = {
@@ -117,78 +114,18 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
   })
 
   function placeComposer(target: SelectedTargetOverlayEntry, preservePlacement: boolean): void {
-    const rect = target.element.getBoundingClientRect()
-    const viewportLeft = 16
-    const viewportTop = 16
-    const viewportRight = window.innerWidth - 16
-    const viewportBottom = window.innerHeight - 16
-    const gap = 14
-    const fallbackWidth = 340
-    const fallbackHeight = 240
-    const composerRect = composer.getBoundingClientRect()
-    const composerWidth = Math.max(240, Math.min(fallbackWidth, window.innerWidth - 32))
-    const measuredHeight = composerRect.height
-    const composerHeight =
-      measuredHeight > 0 && measuredHeight < 360 ? measuredHeight : fallbackHeight
-    const targetLeft = rect.left
-    const targetRight = rect.right
-    const targetTop = rect.top
-    const targetBottom = rect.bottom
-    const targetCenterX = targetLeft + rect.width / 2
-    const targetCenterY = targetTop + rect.height / 2
-    const candidates: PlacementCandidate[] = [
-      {
-        side: 'below',
-        left: targetCenterX - composerWidth / 2,
-        top: targetBottom + gap,
-      },
-      {
-        side: 'right',
-        left: targetRight + gap,
-        top: targetCenterY - composerHeight / 2,
-      },
-      {
-        side: 'left',
-        left: targetLeft - composerWidth - gap,
-        top: targetCenterY - composerHeight / 2,
-      },
-      {
-        side: 'above',
-        left: targetCenterX - composerWidth / 2,
-        top: targetTop - composerHeight - gap,
-      },
-    ]
+    const placement = resolveComposerPlacement({
+      targetRect: target.element.getBoundingClientRect(),
+      composerHeight: composer.getBoundingClientRect().height,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      previousPlacement: activeComposerPlacement,
+      preservePlacement,
+    })
 
-    const ranked = candidates
-      .map(candidate => {
-        const overflowPenalty = getOverflowPenalty(
-          candidate,
-          composerWidth,
-          composerHeight,
-          viewportLeft,
-          viewportTop,
-          viewportRight,
-          viewportBottom,
-        )
-        const preferencePenalty = getPlacementPreference(candidate.side)
-        const previousSideBonus =
-          preservePlacement && activeComposerPlacement === candidate.side ? -30 : 0
-
-        return {
-          candidate,
-          score: overflowPenalty * 1000 + preferencePenalty + previousSideBonus,
-        }
-      })
-      .sort((a, b) => a.score - b.score)
-
-    const chosen = ranked[0]!.candidate
-    activeComposerPlacement = chosen.side
-
-    const left = clamp(chosen.left, viewportLeft, viewportRight - composerWidth)
-    const top = clamp(chosen.top, viewportTop, viewportBottom - composerHeight)
-
-    composer.style.left = `${left}px`
-    composer.style.top = `${top}px`
+    activeComposerPlacement = placement.side
+    composer.style.left = `${placement.left}px`
+    composer.style.top = `${placement.top}px`
   }
 
   function render(
