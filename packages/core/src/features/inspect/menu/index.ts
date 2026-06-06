@@ -23,6 +23,12 @@ import { isAiIntentConfig } from '@inspecto-dev/types'
 import { attachMenuClickAway } from './click-away.js'
 import { createIntentMenuDom } from './dom.js'
 import { attachMenuFocusLifecycle } from './focus.js'
+import {
+  applyRuntimeToggleButtonState,
+  getRuntimeToggleAriaPressed,
+  getRuntimeToggleVisualState,
+  type RuntimeContextDefaultMode,
+} from './runtime-toggle.js'
 
 const _DISPLAY_NAMES: Record<Provider, string> = {
   copilot: 'GitHub Copilot',
@@ -55,7 +61,7 @@ export function showIntentMenu(
   let canAttachRuntimeContext =
     options.runtimeContext?.enabled === true && typeof deps.getRuntimeContext === 'function'
   let runtimeContextPreference: boolean | null = null
-  let runtimeContextDefaultMode: 'off' | 'all-on' | 'mixed' = 'off'
+  let runtimeContextDefaultMode: RuntimeContextDefaultMode = 'off'
   let cssContextEnabled = false
   const canAttachCssContext = typeof deps.captureCssContextPrompt === 'function'
 
@@ -181,42 +187,15 @@ export function showIntentMenu(
   ): RuntimeContextEnvelope | null => {
     if (!canAttachRuntimeContext) return null
 
+    const ariaPressed = getRuntimeToggleAriaPressed(
+      runtimeContextPreference,
+      runtimeContextDefaultMode,
+    )
     const shouldAttach =
-      runtimeContextPreference !== null
-        ? runtimeContextPreference
-        : runtimeContextDefaultMode === 'all-on'
-          ? true
-          : runtimeContextDefaultMode === 'mixed'
-            ? Boolean(intent && isFixIntent(intent))
-            : false
+      ariaPressed === 'true' || (ariaPressed === 'mixed' && Boolean(intent && isFixIntent(intent)))
 
     if (!shouldAttach) return null
     return deps.getRuntimeContext?.(location) ?? null
-  }
-
-  const applyRuntimeToggleButtonState = (visualState: 'inactive' | 'mixed' | 'active'): void => {
-    runtimeToggleButton.dataset.visualState = visualState
-
-    if (visualState === 'active') {
-      runtimeToggleButton.style.background = 'var(--inspecto-accent-primary)'
-      runtimeToggleButton.style.borderColor = 'transparent'
-      runtimeToggleButton.style.color = '#ffffff'
-      runtimeToggleButton.style.boxShadow = 'var(--inspecto-shadow-accent)'
-      return
-    }
-
-    if (visualState === 'mixed') {
-      runtimeToggleButton.style.background = 'var(--inspecto-surface-subtle)'
-      runtimeToggleButton.style.borderColor = 'var(--inspecto-border-subtle)'
-      runtimeToggleButton.style.color = 'var(--inspecto-text-secondary)'
-      runtimeToggleButton.style.boxShadow = 'none'
-      return
-    }
-
-    runtimeToggleButton.style.background = 'var(--inspecto-surface-subtle)'
-    runtimeToggleButton.style.borderColor = 'var(--inspecto-border-subtle)'
-    runtimeToggleButton.style.color = 'var(--inspecto-text-secondary)'
-    runtimeToggleButton.style.boxShadow = 'none'
   }
 
   const renderRuntimeContextUi = () => {
@@ -234,21 +213,13 @@ export function showIntentMenu(
       : ''
     runtimeToggleBadge.textContent = formatRuntimeErrorCount(runtimeErrorCount)
 
-    const ariaPressed =
-      runtimeContextPreference !== null
-        ? runtimeContextPreference
-          ? 'true'
-          : 'false'
-        : runtimeContextDefaultMode === 'mixed'
-          ? 'mixed'
-          : runtimeContextDefaultMode === 'all-on'
-            ? 'true'
-            : 'false'
+    const ariaPressed = getRuntimeToggleAriaPressed(
+      runtimeContextPreference,
+      runtimeContextDefaultMode,
+    )
 
     runtimeToggleButton.setAttribute('aria-pressed', ariaPressed)
-    applyRuntimeToggleButtonState(
-      ariaPressed === 'true' ? 'active' : ariaPressed === 'mixed' ? 'mixed' : 'inactive',
-    )
+    applyRuntimeToggleButtonState(runtimeToggleButton, getRuntimeToggleVisualState(ariaPressed))
     runtimeToggleBadge.hidden = ariaPressed !== 'true' || runtimeErrorCount <= 0
     runtimeToggleButton.title =
       ariaPressed === 'true'
