@@ -1,4 +1,3 @@
-import { createIntentActionButtons } from './actions.js'
 import { openAndSendInspectPrompt } from './send.js'
 import type {
   Provider,
@@ -7,13 +6,12 @@ import type {
   SourceLocation,
   AiIntentConfig,
 } from '@inspecto-dev/types'
-import { openFileWithDiagnostics, fetchIdeInfo } from '../../../transport/http-client.js'
+import { fetchIdeInfo } from '../../../transport/http-client.js'
 import { createMenuHeaderDom } from './header.js'
 import { syncCssToggleButton, syncRuntimeToggleButton } from './header-actions.js'
 import { resolveMenuPosition } from './position.js'
-import { isFixIntent, showError } from './helpers.js'
+import { showError } from './helpers.js'
 import { t } from '../../../shared/i18n.js'
-import { isAiIntentConfig } from '@inspecto-dev/types'
 import { attachMenuClickAway } from './click-away.js'
 import { attachCustomAskSubmit } from './custom-ask.js'
 import { createIntentMenuDom } from './dom.js'
@@ -23,6 +21,7 @@ import {
   createInspectMenuCssContextToggle,
   resolveInspectMenuCssContextPrompt,
 } from './css-context-toggle.js'
+import { renderInspectMenuIdeInfo } from './ide-info-renderer.js'
 
 const _DISPLAY_NAMES: Record<Provider, string> = {
   copilot: 'GitHub Copilot',
@@ -189,34 +188,23 @@ export function showIntentMenu(
         typeof deps.getRuntimeContext === 'function'
       ) {
         canAttachRuntimeContext = true
-        syncRuntimeToggleButton({
-          headerActions,
-          runtimeToggleButton,
-          openButton,
-          canAttachRuntimeContext,
-        })
-        runtimeContextController.setCanAttachRuntimeContext(true)
       }
-      const intents = ideInfo?.prompts || []
-      if (!options.askPlaceholder) {
-        input.placeholder =
-          intents.length > 0
-            ? t('menu.ask.placeholder.default')
-            : t('menu.ask.placeholder.fallback')
-      }
-      const aiIntents = intents.filter(isAiIntentConfig)
-      const hasFixIntent = aiIntents.some(isFixIntent)
-      const hasNonFixIntent = aiIntents.some(intent => !isFixIntent(intent))
-      runtimeContextController.setDefaultMode(
-        hasFixIntent ? (hasNonFixIntent ? 'mixed' : 'all-on') : 'off',
-      )
-      runtimeContextController.render()
-      const aiActions = createIntentActionButtons({
-        intents: aiIntents,
+
+      renderInspectMenuIdeInfo({
+        ideInfo,
+        input,
+        loadingElement,
+        actionsSection,
+        headerActions,
+        runtimeToggleButton,
+        openButton,
         location,
         includeSnippet,
         maxSnippetLines,
-        resolveRuntimeContext: intent => runtimeContextController.resolve(intent),
+        options,
+        canAttachRuntimeContext,
+        hasRuntimeContextProvider: typeof deps.getRuntimeContext === 'function',
+        runtimeContextController,
         resolveCssContextPrompt,
         onSend: async payload => {
           await openAndSendInspectPrompt({
@@ -233,24 +221,9 @@ export function showIntentMenu(
           })
         },
         onError: (message, errorCode) => showError(menu, message, errorCode),
+        onCleanup: cleanup,
+        updatePosition,
       })
-
-      openButton.addEventListener('click', async e => {
-        e.stopPropagation()
-        openButton.disabled = true
-        const openResult = await openFileWithDiagnostics(location)
-        if (openResult.success) {
-          cleanup()
-          return
-        }
-        openButton.disabled = false
-        showError(menu, t('menu.error.openIde'), openResult.errorCode ?? 'IDE_UNAVAILABLE')
-      })
-
-      for (const action of aiActions) {
-        actionsSection.appendChild(action)
-      }
-      updatePosition()
     })
     .catch((err: Error) => {
       loadingElement.remove()
