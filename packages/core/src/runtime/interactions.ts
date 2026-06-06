@@ -11,6 +11,7 @@ import {
   markTargetInAnnotateSession,
 } from '../features/annotate/targets/index.js'
 import { captureCssContextPromptForElement, getRuntimeContextLimits } from './evidence.js'
+import { isFloatingUiEventTarget } from './interaction-targets.js'
 import { setPaused, shouldQuickJumpOnTrigger, updateLauncherEye } from './launcher.js'
 import { isInspectorActive } from './mode-ui.js'
 import type { InspectorOptions, SourceLocation } from '@inspecto-dev/types'
@@ -50,17 +51,7 @@ export function handleMouseMove(ctx: unknown, event: MouseEvent): void {
   updateLauncherEye(state)
 
   if (state.cleanupMenu !== null) {
-    // Determine if the click target is within a dialog or modal
-    const eventTarget = event.target as HTMLElement | null
-    if (eventTarget) {
-      if (
-        eventTarget.closest(
-          '[role="dialog"], [role="menu"], [role="tooltip"], [role="presentation"], [role="listbox"], [data-radix-popper-content-wrapper], [data-radix-focus-guard]',
-        )
-      ) {
-        return
-      }
-    }
+    if (isFloatingUiEventTarget(event.target)) return
     state.overlay.hide()
     return
   }
@@ -92,17 +83,7 @@ export function handleMouseMove(ctx: unknown, event: MouseEvent): void {
 export function handleTrigger(ctx: unknown, event: MouseEvent): void {
   const state = asInteractionContext(ctx)
   if (state.cleanupMenu !== null) {
-    // Determine if the click target is within a dialog or modal
-    const eventTarget = event.target as HTMLElement | null
-    if (eventTarget) {
-      if (
-        eventTarget.closest(
-          '[role="dialog"], [role="menu"], [role="tooltip"], [role="presentation"], [role="listbox"], [data-radix-popper-content-wrapper], [data-radix-focus-guard]',
-        )
-      ) {
-        return
-      }
-    }
+    if (isFloatingUiEventTarget(event.target)) return
     return
   }
   if (!isInspectorActive(state, event)) return
