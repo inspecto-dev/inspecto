@@ -1,17 +1,15 @@
+import { buildStackFromErrorEvent, extractConsoleErrorDetails, stringifyReason } from './shared.js'
+import { createRuntimeContextCollector } from './collector.js'
 import {
   buildRequestDetails,
   buildRequestRecord,
-  buildStackFromErrorEvent,
   buildXhrState,
-  extractConsoleErrorDetails,
   isAbortLikeError,
   safePathname,
-  stringifyReason,
   stringifyRequestUrl,
   type FetchLike,
   type XhrState,
-} from './shared.js'
-import { createRuntimeContextCollector } from './collector.js'
+} from './request.js'
 
 type RuntimeCollector = ReturnType<typeof createRuntimeContextCollector>
 
