@@ -4,7 +4,7 @@ import {
   openAnnotationSessionEventStream,
 } from '../transport/http-client.js'
 import { asAnnotateContext } from './annotate-shared.js'
-import { toAnnotateErrorMessage } from './annotate-ui.js'
+import { toAnnotateErrorMessage } from './annotate-errors.js'
 
 function updateLatestSessionState(ctx: unknown, session: AnnotationWorkSession): void {
   const state = asAnnotateContext(ctx)

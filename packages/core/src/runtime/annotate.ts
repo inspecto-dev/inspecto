@@ -21,11 +21,12 @@ export {
   getNextRecordDisplayOrderUi as getNextRecordDisplayOrder,
   hasCurrentRecordUi as hasCurrentRecord,
   renderAnnotateSelectionOverlay,
-  sendAnnotationBatch,
   showAnnotateSuccess,
-  toAnnotateErrorMessage,
   toAnnotationTransportFromRecordUi as toAnnotationTransportFromRecord,
 } from './annotate-ui.js'
+
+export { toAnnotateErrorMessage } from './annotate-errors.js'
+export { sendAnnotationBatch, triggerWorkflow } from './annotate-send.js'
 
 export {
   refreshLatestAnnotateSession,

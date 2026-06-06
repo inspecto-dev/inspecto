@@ -8,18 +8,10 @@ import {
 } from '../features/annotate/session/index.js'
 import { buildAnnotateFullPrompt } from '../features/annotate/prompts/full-prompt.js'
 import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/index.js'
-import {
-  isStandardAnnotateSendScope,
-  type AnnotateSendScope,
-} from '../features/annotate/sidebar/helpers.js'
+import type { AnnotateSendScope } from '../features/annotate/sidebar/helpers.js'
 import type { SelectedTargetOverlayEntry } from '../features/annotate/overlay/index.js'
-import { openFile, sendToAi, sendAnnotationsToAi } from '../transport/http-client.js'
-import type {
-  AiErrorCode,
-  AnnotationDeliveryMode,
-  AnnotationTransport,
-  FeedbackRecord,
-} from '@inspecto-dev/types'
+import { openFile } from '../transport/http-client.js'
+import type { AnnotationTransport, FeedbackRecord } from '@inspecto-dev/types'
 import { asAnnotateContext } from './annotate-shared.js'
 import {
   beginEditingRecord,
@@ -29,6 +21,9 @@ import {
   restoreEditingRecord,
 } from '../features/annotate/targets/index.js'
 import { t } from '../shared/i18n.js'
+import { sendAnnotationBatch, triggerWorkflow } from './annotate-send.js'
+
+export { toAnnotateErrorMessage } from './annotate-errors.js'
 
 function formatContextAsMarkdown(instruction: string, annotations: AnnotationTransport[]): string {
   let md = ''
@@ -105,23 +100,6 @@ export function showAnnotateSuccess(ctx: unknown, scope: 'quick-ask' | 'create-t
   }, 1500)
 }
 
-export function toAnnotateErrorMessage(
-  _ctx: unknown,
-  errorCode?: AiErrorCode,
-  fallback?: string,
-): string {
-  if (errorCode === 'FORBIDDEN_PATH') {
-    return 'Some selected targets are outside the current project workspace.'
-  }
-  if (errorCode === 'INVALID_REQUEST') {
-    return 'The current annotation batch is incomplete. Check your targets and try again.'
-  }
-  if (errorCode === 'SERVER_UNAVAILABLE') {
-    return 'Inspecto could not reach the local dev server. Restart your dev server, then try again. If it still fails, run `inspecto doctor` or `npx @inspecto-dev/cli doctor` from the project root.'
-  }
-  return fallback ?? 'Request failed'
-}
-
 export function toAnnotationTransportFromRecordUi(
   _ctx: unknown,
   record: FeedbackRecord,
@@ -137,159 +115,6 @@ export function toAnnotationTransportFromRecordUi(
       },
     ],
   }
-}
-
-export async function sendAnnotationBatch(
-  ctx: unknown,
-  annotations: AnnotationTransport[],
-  scope: AnnotateSendScope,
-  instruction: string,
-  deliveryMode: AnnotationDeliveryMode,
-  onSuccess: () => void,
-  extraPayload?: { source?: 'annotation' | 'workflow'; workflowId?: string },
-): Promise<void> {
-  const state = asAnnotateContext(ctx)
-  if (state.annotateSendState.isSending) return
-  if (annotations.length === 0 && extraPayload?.source !== 'workflow') return
-
-  state.annotateSendState = { isSending: true, scope }
-  state.updateAnnotateSidebar()
-
-  try {
-    await state.configLoadPromise
-    const runtimeContext = state.getAnnotateRuntimeContext(annotations)
-    const cssContextPrompt = state.getAnnotateCssContextPrompt(annotations)
-
-    const result = await sendAnnotationsToAi({
-      instruction,
-      annotations,
-      ...(runtimeContext ? { runtimeContext } : {}),
-      ...(cssContextPrompt ? { cssContextPrompt } : {}),
-      deliveryMode,
-      ...(extraPayload || {}),
-    })
-
-    if (!result.success) {
-      state.annotateErrorMessage = toAnnotateErrorMessage(state, result.errorCode, result.error)
-      state.updateAnnotateSidebar()
-      return
-    }
-
-    if (deliveryMode === 'mcp') {
-      state.annotateLatestSessionSummary = result.session ?? null
-      state.annotateLatestSessionDetail = null
-      state.annotateLatestSessionError = ''
-      if (result.session?.id) {
-        state.startLatestAnnotateSessionStream(result.session.id)
-        void state.refreshLatestAnnotateSession()
-      } else {
-        state.stopLatestAnnotateSessionStream()
-      }
-    } else {
-      state.annotateLatestSessionSummary = null
-      state.annotateLatestSessionDetail = null
-      state.annotateLatestSessionError = ''
-      state.stopLatestAnnotateSessionStream()
-    }
-
-    onSuccess()
-
-    state.annotateErrorMessage = ''
-    // For quick-ask: show transient success banner.
-    // For create-task: only announce via aria-live (no visual banner); the
-    // sidebar's live session section shows status from that point on.
-    if (isStandardAnnotateSendScope(scope)) {
-      state.showAnnotateSuccess(scope)
-    }
-    state.renderAnnotateSelectionOverlay()
-    state.updateAnnotateSidebar()
-  } catch (err) {
-    state.annotateErrorMessage = toAnnotateErrorMessage(
-      state,
-      (err as { errorCode?: AiErrorCode }).errorCode,
-      (err as Error).message,
-    )
-    state.updateAnnotateSidebar()
-  } finally {
-    state.annotateSendState = { isSending: false, scope: null }
-    state.updateAnnotateSidebar()
-  }
-}
-
-export async function triggerWorkflow(ctx: unknown, workflowId: string): Promise<void> {
-  const state = asAnnotateContext(ctx)
-  if (state.annotateSendState.isSending) return
-
-  const workflow = state.annotateWorkflows.find(w => w.id === workflowId)
-  const workflowPrompt = workflow?.prompt || ''
-  if (!workflowPrompt.trim()) return
-
-  const deliveryMode = state.deliveryMode ?? 'mcp'
-
-  if (deliveryMode === 'ide') {
-    const scope: AnnotateSendScope = `workflow:${workflowId}`
-    state.annotateSendState = { isSending: true, scope }
-    state.updateAnnotateSidebar()
-
-    try {
-      await state.configLoadPromise
-      const result = await sendToAi({
-        prompt: workflowPrompt,
-      })
-
-      if (!result.success) {
-        state.annotateErrorMessage = toAnnotateErrorMessage(state, result.errorCode, result.error)
-        state.updateAnnotateSidebar()
-        return
-      }
-
-      state.annotateInstructionDraft = ''
-      state.annotateSession = createEmptySession()
-      state.annotateEditingRecord = null
-      state.annotateElements.clear()
-      state.annotateLatestSessionSummary = null
-      state.annotateLatestSessionDetail = null
-      state.stopLatestAnnotateSessionStream()
-      state.annotateLatestSessionError = ''
-      state.annotateWorkflowNotice = {
-        kind: 'ide-dispatch',
-        workflowId,
-        workflowLabel: workflow?.label ?? workflowId,
-      }
-      state.annotateErrorMessage = ''
-      state.renderAnnotateSelectionOverlay()
-      state.updateAnnotateSidebar()
-    } catch (err) {
-      state.annotateErrorMessage = toAnnotateErrorMessage(
-        state,
-        (err as { errorCode?: AiErrorCode }).errorCode,
-        (err as Error).message,
-      )
-      state.updateAnnotateSidebar()
-    } finally {
-      state.annotateSendState = { isSending: false, scope: null }
-      state.updateAnnotateSidebar()
-    }
-    return
-  }
-
-  state.annotateWorkflowNotice = null
-
-  await sendAnnotationBatch(
-    ctx,
-    [],
-    `workflow:${workflowId}`,
-    workflowPrompt,
-    'mcp',
-    () => {
-      state.annotateInstructionDraft = ''
-      state.annotateSession = createEmptySession()
-      state.annotateEditingRecord = null
-      state.annotateElements.clear()
-      state.renderAnnotateSelectionOverlay()
-    },
-    { source: 'workflow', workflowId },
-  )
 }
 
 export function getAnnotateSidebarOptions(ctx: unknown): AnnotateSidebarOptions {
