@@ -37,7 +37,7 @@ import type { AnnotationTarget, AnnotationTransport } from '@inspecto-dev/types'
 
 // Runtime host hooks consumed through structural context casts.
 // Keep these grouped by owning runtime module.
-export class InspectoRuntimeHost extends InspectoElementState {
+export abstract class InspectoRuntimeHost extends InspectoElementState {
   // launcher
   protected updateBadgeContent(): void {
     updateLauncherBadgeContent(this)

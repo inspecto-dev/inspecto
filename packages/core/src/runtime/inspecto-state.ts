@@ -1,9 +1,9 @@
-import { createAnnotateOverlay } from '../features/annotate/overlay/index.js'
 import { createEmptySession } from '../features/annotate/session/index.js'
-import { createAnnotateSidebar } from '../features/annotate/sidebar/index.js'
+import type { createAnnotateOverlay } from '../features/annotate/overlay/index.js'
+import type { createAnnotateSidebar } from '../features/annotate/sidebar/index.js'
 import type { AnnotateWorkflowNotice } from '../features/annotate/sidebar/index.js'
 import type { AnnotateSendScope } from '../features/annotate/sidebar/helpers.js'
-import { createOverlay } from '../features/inspect/overlay/index.js'
+import type { createOverlay } from '../features/inspect/overlay/index.js'
 import { createRuntimeContextCollector } from '../features/evidence/runtime-context/index.js'
 import type {
   AnnotationWorkSession,
@@ -22,7 +22,7 @@ const DEFAULT_ANNOTATE_INSTRUCTION = ''
 const BaseElement =
   typeof HTMLElement !== 'undefined' ? HTMLElement : (class {} as typeof HTMLElement)
 
-export class InspectoElementState extends BaseElement {
+export abstract class InspectoElementState extends BaseElement {
   protected options: InspectoOptions = {}
   protected serverHotKeys: HotKeys | null = null
   protected active = false
