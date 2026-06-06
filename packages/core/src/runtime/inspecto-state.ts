@@ -1,7 +1,7 @@
 import { createEmptySession } from '../features/annotate/session/index.js'
 import type { createAnnotateOverlay } from '../features/annotate/overlay/index.js'
 import type { createAnnotateSidebar } from '../features/annotate/sidebar/index.js'
-import type { AnnotateWorkflowNotice } from '../features/annotate/sidebar/index.js'
+import type { AnnotateWorkflowNotice } from '../features/annotate/sidebar/latest-session-renderer.js'
 import type { AnnotateSendScope } from '../features/annotate/sidebar/helpers.js'
 import type { createOverlay } from '../features/inspect/overlay/index.js'
 import { createRuntimeContextCollector } from '../features/evidence/runtime-context/index.js'

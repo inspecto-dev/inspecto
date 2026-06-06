@@ -22,33 +22,19 @@ import { createAnnotateSidebarDom } from './dom.js'
 import { createAnnotateSidebarRenderers } from './renderers.js'
 import { t } from '../../../shared/i18n.js'
 import { pauseIconSvg, playIconSvg } from '../../../shared/icons.js'
-import { buildSessionTimelineItems } from '../session/timeline.js'
-import { renderSessionTimeline } from './session-timeline-dom.js'
 import { renderWorkflowRow } from './workflow-row.js'
 import {
-  applyLatestSessionStatusStyles,
-  classifySessionMessage,
-  getLatestSessionErrorMessage,
-  getLatestSessionFallbackMessage,
-  getLatestSessionHint,
-  getLatestSessionStatusLabel,
-} from './latest-session.js'
-import {
-  renderEmptyLatestSession,
-  renderWorkflowNotice,
+  renderLatestSession,
+  type AnnotateWorkflowNotice,
   type LatestSessionDom,
 } from './latest-session-renderer.js'
+export type { AnnotateWorkflowNotice } from './latest-session-renderer.js'
 
 type SidebarMode = 'capture-enabled' | 'capture-paused'
 type SendScope = AnnotateSendScope
 type SuccessScope = 'quick-ask' | 'create-task' | null
 type PreferredAction = 'quick-ask' | 'create-task'
 export type DeliveryMode = 'ide' | 'mcp'
-export type AnnotateWorkflowNotice = {
-  kind: 'ide-dispatch'
-  workflowId: string
-  workflowLabel: string
-}
 
 export interface AnnotateSidebarOptions {
   mode: SidebarMode
@@ -113,7 +99,6 @@ export function createAnnotateSidebar(
     exitButton,
     emptyState,
     draftSection,
-    workflowRow,
     instructionInput,
     includedSummary,
     recordsList,
@@ -168,6 +153,8 @@ export function createAnnotateSidebar(
     getPromptChipRecordById,
   })
   const latestSessionDom: LatestSessionDom = {
+    latestSessionSection,
+    latestSessionTitle,
     latestSessionMeta,
     latestSessionStatus,
     latestSessionMessage,
@@ -427,146 +414,22 @@ export function createAnnotateSidebar(
 
     renderWorkflowRow(dom, next)
 
-    const latestSession = next.latestSessionDetail
-    const latestSessionSummary = next.latestSessionSummary
-    const workflowNotice = next.workflowNotice ?? null
-    latestSessionSection.style.display =
-      latestSession || latestSessionSummary || workflowNotice ? '' : 'none'
-    latestSessionRefreshButton.disabled = Boolean(next.latestSessionLoading)
-    latestSessionTitle.textContent = workflowNotice
-      ? t('workflow.notice.title')
-      : t('annotate.latestSession.title')
-
-    if (workflowNotice && !latestSession && !latestSessionSummary) {
-      renderWorkflowNotice(latestSessionDom)
-    } else if (latestSession || latestSessionSummary) {
-      const latestStatus = latestSession?.status ?? latestSessionSummary?.status ?? 'pending'
-      const latestSessionId = latestSession?.id ?? latestSessionSummary?.id ?? ''
-      const isNewLatestSession = Boolean(
-        latestSessionId && latestSessionId !== lastRevealedSessionId,
-      )
-      if (isNewLatestSession) {
-        isLatestSessionTimelineExpanded = false
+    const latestSessionRenderResult = renderLatestSession(latestSessionDom, {
+      latestSession: next.latestSessionDetail ?? null,
+      latestSessionSummary: next.latestSessionSummary ?? null,
+      workflowNotice: next.workflowNotice ?? null,
+      isTimelineExpanded: isLatestSessionTimelineExpanded,
+      lastRevealedSessionId,
+      isLoading: Boolean(next.latestSessionLoading),
+      error: next.latestSessionError,
+    })
+    isLatestSessionTimelineExpanded = latestSessionRenderResult.isTimelineExpanded
+    if (latestSessionRenderResult.isNewLatestSession) {
+      lastRevealedSessionId = latestSessionRenderResult.latestSessionId
+      // Avoid auto-scrolling to the latest session if we have unsaved local changes
+      if (!hasCurrentDraft && !hasSavedRecords) {
+        latestSessionSection.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
       }
-      latestSessionMeta.textContent = latestSession
-        ? t('annotate.latestSession.meta.loaded', {
-            id: latestSession.id.slice(0, 8),
-            count: latestSession.annotations.length,
-          })
-        : latestSessionSummary
-          ? t('annotate.latestSession.meta.summary', {
-              id: latestSessionSummary.id.slice(0, 8),
-            })
-          : ''
-
-      const lastAgentOrSystemMessageRecord =
-        latestSession?.messages
-          ?.filter(message => message.role === 'agent' || message.role === 'system')
-          .slice(-1)[0] ?? null
-      const lastAgentOrSystemMessage = lastAgentOrSystemMessageRecord?.text?.trim() ?? ''
-      const latestMessageKind =
-        lastAgentOrSystemMessageRecord && lastAgentOrSystemMessage
-          ? classifySessionMessage({
-              role: lastAgentOrSystemMessageRecord.role,
-              text: lastAgentOrSystemMessage,
-            })
-          : null
-      const latestVisualStatus = latestStatus
-      const canShowTimeline = Boolean(latestSession)
-      const shouldShowTimeline = canShowTimeline && isLatestSessionTimelineExpanded
-
-      latestSessionStatus.textContent = getLatestSessionStatusLabel(latestVisualStatus)
-      applyLatestSessionStatusStyles(latestSessionStatus, latestVisualStatus)
-
-      latestSessionMessage.style.display = 'none'
-      latestSessionMessage.textContent = ''
-      delete latestSessionMessage.dataset.inspectoLatestSessionPreview
-      latestSessionMessage.style.overflow = ''
-      latestSessionMessage.style.textOverflow = ''
-      latestSessionMessage.style.maxHeight = ''
-      latestSessionMessage.style.setProperty('-webkit-line-clamp', '')
-      latestSessionMessage.style.setProperty('-webkit-box-orient', '')
-
-      const fallbackMsg = getLatestSessionFallbackMessage(latestStatus, Boolean(latestSession))
-      const hasMessage =
-        next.latestSessionLoading ||
-        (!shouldShowTimeline && (lastAgentOrSystemMessage || fallbackMsg))
-
-      if (hasMessage) {
-        latestSessionMessage.textContent = next.latestSessionLoading
-          ? t('annotate.latestSession.loading')
-          : lastAgentOrSystemMessage || fallbackMsg
-        if (next.latestSessionLoading) {
-          latestSessionMessage.style.display = 'block'
-        } else {
-          latestSessionMessage.dataset.inspectoLatestSessionPreview = 'true'
-          latestSessionMessage.style.display = 'block'
-          latestSessionMessage.style.overflow = 'hidden'
-          latestSessionMessage.style.textOverflow = 'ellipsis'
-          latestSessionMessage.style.maxHeight = '42px'
-          latestSessionMessage.style.setProperty('-webkit-line-clamp', '2')
-          latestSessionMessage.style.setProperty('-webkit-box-orient', 'vertical')
-        }
-      }
-      const latestMessageVariant = latestMessageKind
-      latestSessionMessage.dataset.variant = latestMessageVariant ?? 'default'
-      if (latestMessageVariant === 'system-info') {
-        latestSessionMessage.style.color = '#9ed8ff'
-      } else {
-        latestSessionMessage.style.color = 'var(--inspecto-text-secondary)'
-      }
-      const latestSessionHintText = next.latestSessionLoading
-        ? ''
-        : shouldShowTimeline && latestStatus !== 'resolved'
-          ? ''
-          : getLatestSessionHint(latestStatus)
-      const latestSessionErrorText = getLatestSessionErrorMessage(next.latestSessionError)
-      const showReconnectAction = Boolean(latestSessionErrorText)
-      latestSessionHint.textContent = latestSessionHintText
-      latestSessionHint.style.display =
-        latestSessionHintText && !showReconnectAction ? 'block' : 'none'
-      latestSessionHint.style.color =
-        latestStatus === 'resolved' ? '#b7f5cd' : 'var(--inspecto-text-secondary)'
-      latestSessionError.textContent = latestSessionErrorText
-      latestSessionError.style.display = latestSessionErrorText ? 'block' : 'none'
-      latestSessionRefreshButton.textContent = showReconnectAction
-        ? t('annotate.latestSession.reconnect')
-        : '↻'
-      latestSessionRefreshButton.style.display =
-        showReconnectAction || next.latestSessionLoading ? '' : 'none'
-      latestSessionRefreshButton.style.minWidth = showReconnectAction ? 'auto' : ''
-      latestSessionRefreshButton.style.padding = showReconnectAction ? '6px 10px' : ''
-      latestSessionRefreshButton.style.fontSize = showReconnectAction ? '11px' : '12px'
-
-      latestSessionTimelineToggle.style.display = canShowTimeline ? '' : 'none'
-      latestSessionTimelineToggle.textContent = isLatestSessionTimelineExpanded
-        ? t('annotate.latestSession.collapseTimeline')
-        : t('annotate.latestSession.expandTimeline')
-      latestSessionTimelineToggle.setAttribute(
-        'aria-expanded',
-        String(isLatestSessionTimelineExpanded),
-      )
-
-      latestSessionTimelineTitle.style.display = shouldShowTimeline ? 'block' : 'none'
-      latestSessionTimelineContainer.style.display = shouldShowTimeline ? 'block' : 'none'
-      if (latestSession && shouldShowTimeline) {
-        renderSessionTimeline(
-          latestSessionTimelineContainer,
-          buildSessionTimelineItems(latestSession),
-        )
-      } else {
-        latestSessionTimelineContainer.replaceChildren()
-      }
-
-      if (isNewLatestSession) {
-        lastRevealedSessionId = latestSessionId
-        // Avoid auto-scrolling to the latest session if we have unsaved local changes
-        if (!hasCurrentDraft && !hasSavedRecords) {
-          latestSessionSection.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-        }
-      }
-    } else {
-      renderEmptyLatestSession(latestSessionDom)
     }
 
     statusMessage.textContent = getLiveStatusMessage(next)

@@ -1,4 +1,5 @@
-import type { AnnotateSidebarOptions, AnnotateWorkflowNotice } from './sidebar/index.js'
+import type { AnnotateSidebarOptions } from './sidebar/index.js'
+import type { AnnotateWorkflowNotice } from './sidebar/latest-session-renderer.js'
 import type { AnnotateSendScope } from './sidebar/helpers.js'
 import type { SelectedTargetOverlayEntry } from './overlay/index.js'
 import type {
