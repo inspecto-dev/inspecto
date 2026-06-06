@@ -1,14 +1,11 @@
-import {
-  clearCurrentRecord,
-  createEmptySession,
-  removeRecord,
-} from '../features/annotate/session/index.js'
+import { createEmptySession } from '../features/annotate/session/index.js'
 import { buildAnnotateFullPrompt } from '../features/annotate/prompts/full-prompt.js'
 import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/types.js'
 import type { AnnotationTransport, FeedbackRecord } from '@inspecto-dev/types'
 import { asAnnotateContext } from './annotate-shared.js'
 import { beginEditingRecord, clearDraftForTarget } from '../features/annotate/targets/index.js'
 import { t } from '../shared/i18n.js'
+import { removeAnnotatePromptChip } from './annotate-sidebar-remove-chip.js'
 import { sendAnnotationBatch, triggerWorkflow } from './annotate-send.js'
 import { canAttachRuntimeContext } from './evidence.js'
 import {
@@ -108,21 +105,7 @@ export function getAnnotateSidebarOptions(ctx: unknown): AnnotateSidebarOptions 
     onRemovePromptChip: (recordId: string) => {
       state.clearAnnotateError()
       state.clearAnnotateSuccess()
-
-      const currentTarget =
-        state.annotateSession.current.id === recordId ? state.annotateSession.current.target : null
-      const savedRecord =
-        state.annotateSession.records.find(record => record.id === recordId) ?? null
-
-      if (currentTarget) {
-        clearDraftForTarget(state, currentTarget)
-        state.annotateSession = clearCurrentRecord(state.annotateSession)
-        state.annotateEditingRecord = null
-        state.annotateElements.clear()
-      } else if (savedRecord) {
-        clearDraftForTarget(state, savedRecord.target)
-        state.annotateSession = removeRecord(state.annotateSession, recordId)
-      }
+      removeAnnotatePromptChip(state, recordId, target => clearDraftForTarget(state, target))
 
       state.renderAnnotateSelectionOverlay()
       state.updateAnnotateSidebar()
