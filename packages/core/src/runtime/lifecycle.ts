@@ -3,13 +3,12 @@ import { fetchIdeInfo } from '../transport/http-client.js'
 import { inspectorStyles } from '../shared/styles/index.js'
 import { setBaseUrl } from '../transport/http-client.js'
 import { configureI18n } from '../shared/i18n.js'
-import type { HotKeys, IdeType, InspectorOptions } from '@inspecto-dev/types'
-
-type InspectoOptions = InspectorOptions & { mode?: 'inspect' | 'annotate' }
+import type { InspectoOptions, InspectorMode } from './inspecto-state.js'
+import type { HotKeys, IdeType } from '@inspecto-dev/types'
 
 type LifecycleContext = {
   options: InspectoOptions
-  mode: 'inspect' | 'annotate'
+  mode: InspectorMode
   ide: IdeType
   ideConnected: boolean
   ideConnectionKnown: boolean

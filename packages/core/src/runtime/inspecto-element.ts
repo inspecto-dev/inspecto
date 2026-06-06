@@ -1,11 +1,4 @@
-import { createOverlay } from '../features/inspect/overlay/index.js'
-import { createEmptySession } from '../features/annotate/session/index.js'
-import { createAnnotateSidebar } from '../features/annotate/sidebar/index.js'
-import type {
-  AnnotateSidebarOptions,
-  AnnotateWorkflowNotice,
-} from '../features/annotate/sidebar/index.js'
-import type { AnnotateSendScope } from '../features/annotate/sidebar/helpers.js'
+import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/index.js'
 import { createAnnotateOverlay } from '../features/annotate/overlay/index.js'
 import {
   addTargetToCurrentAnnotation as addAnnotateTarget,
@@ -80,87 +73,18 @@ import {
   isCssContextEnabledForTransportTarget as isCssEnabledForTransportTarget,
   syncRuntimeContextCapture as syncRuntimeCapture,
 } from './evidence.js'
-import {
-  createRuntimeContextCollector,
-  createRuntimeContextEnvelope,
-} from '../features/evidence/runtime-context/index.js'
+import { createRuntimeContextEnvelope } from '../features/evidence/runtime-context/index.js'
+import type { InspectorMode, InspectoOptions } from './inspecto-state.js'
+import { InspectoElementState } from './inspecto-state.js'
 import type {
   AnnotationTransport,
   AnnotationTarget,
-  AnnotationWorkSession,
-  AnnotationWorkSessionSummary,
   AiErrorCode,
   FeedbackRecord,
-  FeedbackRecordDraft,
-  InspectorOptions,
   SourceLocation,
   HotKeys,
 } from '@inspecto-dev/types'
-export type InspectorMode = 'inspect' | 'annotate'
-type InspectoOptions = InspectorOptions & { mode?: InspectorMode }
-
-const DEFAULT_ANNOTATE_INSTRUCTION = ''
-
-// Fallback class for SSR environments
-const BaseElement =
-  typeof HTMLElement !== 'undefined' ? HTMLElement : (class {} as typeof HTMLElement)
-
-class InspectoElement extends BaseElement {
-  private options: InspectoOptions = {}
-  private serverHotKeys: HotKeys | null = null
-  private active = false
-  private disabled = false
-  private prePauseState: { active: boolean; mode: InspectorMode } = {
-    active: false,
-    mode: 'inspect',
-  }
-  private mode: InspectorMode = 'inspect'
-  private ide: import('@inspecto-dev/types').IdeType = 'vscode'
-  private ideConnected = false
-  private ideConnectionKnown = false
-  private launcherPanelOpen = false
-  private shadowRootEl!: ShadowRoot
-  private overlay!: ReturnType<typeof createOverlay>
-  private annotateOverlay: ReturnType<typeof createAnnotateOverlay> | null = null
-  private cleanupMenu: (() => void) | null = null
-  private annotateSession = createEmptySession()
-  private annotateCapturePaused = false
-  private annotateQuickCaptureEnabled = false
-  private annotateSidebar: ReturnType<typeof createAnnotateSidebar> | null = null
-  private annotateElements = new Map<string, Element>()
-  private annotateDrafts = new Map<string, FeedbackRecordDraft>()
-  private annotateEditingRecord: FeedbackRecord | null = null
-  private badge!: HTMLDivElement
-  private configLoadPromise: Promise<void> | null = null
-  private annotateInstructionDraft = DEFAULT_ANNOTATE_INSTRUCTION
-  private annotateErrorMessage = ''
-  private annotateRuntimeContextEnabled = false
-  private annotateCssContextEnabled = false
-  private deliveryMode: 'ide' | 'mcp' = 'mcp'
-  private annotateWorkflows: import('@inspecto-dev/types').WorkflowSlotOption[] = []
-  private annotateSendState: {
-    isSending: boolean
-    scope: AnnotateSendScope
-  } = {
-    isSending: false,
-    scope: null,
-  }
-  private annotateLatestSessionSummary: AnnotationWorkSessionSummary | null = null
-  private annotateLatestSessionDetail: AnnotationWorkSession | null = null
-  private annotateLatestSessionStream:
-    | import('../transport/http-client.js').AnnotationSessionEventStreamConnection
-    | null = null
-  private annotateLatestSessionLoading = false
-  private annotateLatestSessionError = ''
-  private annotateWorkflowNotice: AnnotateWorkflowNotice | null = null
-  private annotateSuccessScope: 'quick-ask' | 'create-task' | null = null
-  private annotateSuccessTimeout: ReturnType<typeof setTimeout> | null = null
-  private annotateSuccessOnClear: (() => void) | null = null
-  private pendingAnnotateViewportFrame: number | null = null
-  private runtimeContextCollector = createRuntimeContextCollector()
-  private cleanupRuntimeContextCapture: (() => void) | null = null
-  private lastPointerX = 0
-  private lastPointerY = 0
+class InspectoElement extends InspectoElementState {
   private readonly onFocusChange = (): void => {
     this.updateLauncherEye()
   }
@@ -474,4 +398,5 @@ if (typeof customElements !== 'undefined' && !customElements.get('inspecto-overl
   customElements.define('inspecto-overlay', InspectoElement)
 }
 
+export type { InspectorMode } from './inspecto-state.js'
 export { InspectoElement }

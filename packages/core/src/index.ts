@@ -1,10 +1,10 @@
 import type { InspectorOptions } from '@inspecto-dev/types'
-import type { InspectorMode } from './runtime/inspecto-element.js'
+import type { InspectorMode } from './runtime/inspecto-state.js'
 
 // Export types only, avoid top-level imports of DOM-dependent code
 export type { InspectorOptions }
 export type { InspectoElement } from './runtime/inspecto-element.js'
-export type { InspectorMode } from './runtime/inspecto-element.js'
+export type { InspectorMode } from './runtime/inspecto-state.js'
 
 type MountInspectorOptions = InspectorOptions & { mode?: InspectorMode }
 
