@@ -18,7 +18,8 @@ import { pauseIconSvg, playIconSvg } from '../../../shared/icons.js'
 import { renderWorkflowRow } from './workflow-row.js'
 import { renderLatestSession, type LatestSessionDom } from './latest-session-renderer.js'
 import { attachAnnotateSidebarEvents } from './events.js'
-import type { AnnotateSidebarOptions, PreferredAction, SidebarController } from './types.js'
+import { getAnnotateSidebarViewState } from './view-state.js'
+import type { AnnotateSidebarOptions, SidebarController } from './types.js'
 export type {
   AnnotateSidebarOptions,
   AnnotateWorkflowNotice,
@@ -178,28 +179,12 @@ export function createAnnotateSidebar(
   }
 
   function patch(next: AnnotateSidebarOptions): void {
-    const hasSavedRecords = next.session.records.length > 0
-    const hasCurrentDraft = Boolean(next.session.current.target)
-    const hasBatchContent = hasSavedRecords || hasCurrentDraft
-    const hasLatestSession = Boolean(next.latestSessionDetail || next.latestSessionSummary)
-    const hasWorkflowNotice = Boolean(next.workflowNotice)
-    const shouldShowBody =
-      hasSavedRecords ||
-      hasCurrentDraft ||
-      hasLatestSession ||
-      hasWorkflowNotice ||
-      next.isSending ||
-      next.successScope === 'quick-ask' ||
-      Boolean(next.errorMessage)
-    const canSend = next.isSending ? false : next.includedRecords.length > 0 || hasCurrentDraft
-    const preferredAction: PreferredAction = next.preferredAction ?? 'create-task'
-    const deliveryMode = next.deliveryMode ?? 'mcp'
-    const showDebugHelperActions = deliveryMode !== 'mcp'
+    const viewState = getAnnotateSidebarViewState(next)
 
     element.style.display = ''
-    emptyState.style.display = shouldShowBody ? 'none' : ''
-    draftSection.style.display = shouldShowBody ? '' : 'none'
-    footer.style.display = shouldShowBody ? '' : 'none'
+    emptyState.style.display = viewState.shouldShowBody ? 'none' : ''
+    draftSection.style.display = viewState.shouldShowBody ? '' : 'none'
+    footer.style.display = viewState.shouldShowBody ? '' : 'none'
 
     quickCaptureButton.setAttribute('aria-pressed', String(Boolean(next.quickCaptureEnabled)))
     quickCaptureButton.dataset.active = String(Boolean(next.quickCaptureEnabled))
@@ -208,13 +193,14 @@ export function createAnnotateSidebar(
       ? `${t('annotate.quickCapture.toggle')} on`
       : t('annotate.quickCapture.toggle')
 
-    cssContextButton.style.display = hasBatchContent && next.canAttachCssContext ? '' : 'none'
+    cssContextButton.style.display =
+      viewState.hasBatchContent && next.canAttachCssContext ? '' : 'none'
     cssContextButton.setAttribute('aria-pressed', next.cssContextEnabled ? 'true' : 'false')
     cssContextButton.dataset.visualState = next.cssContextEnabled ? 'active' : 'inactive'
     cssContextButton.title = next.cssContextEnabled ? t('menu.cssEnabled') : t('menu.attachCss')
 
     runtimeContextButton.style.display =
-      hasBatchContent && next.canAttachRuntimeContext ? '' : 'none'
+      viewState.hasBatchContent && next.canAttachRuntimeContext ? '' : 'none'
     runtimeContextButton.setAttribute('aria-pressed', next.runtimeContextEnabled ? 'true' : 'false')
     runtimeContextButton.dataset.visualState = next.runtimeContextEnabled ? 'active' : 'inactive'
     runtimeContextBadge.textContent = formatRuntimeErrorCount(next.runtimeErrorCount ?? 0)
@@ -260,10 +246,13 @@ export function createAnnotateSidebar(
     renderPromptChips(next.session)
     allPromptText.textContent = next.fullPrompt
     previewFloatContent.textContent = next.fullPrompt
-    footerLeftActions.style.display = canSend && showDebugHelperActions ? 'flex' : 'none'
-    previewButton.style.display = canSend && showDebugHelperActions ? '' : 'none'
-    copyContextButton.style.display = canSend && showDebugHelperActions ? '' : 'none'
-    if (!canSend) {
+    footerLeftActions.style.display =
+      viewState.canSend && viewState.showDebugHelperActions ? 'flex' : 'none'
+    previewButton.style.display =
+      viewState.canSend && viewState.showDebugHelperActions ? '' : 'none'
+    copyContextButton.style.display =
+      viewState.canSend && viewState.showDebugHelperActions ? '' : 'none'
+    if (!viewState.canSend) {
       setRawPromptPreviewVisible(false)
     }
     if (previewFloat.style.display === 'block') {
@@ -273,14 +262,11 @@ export function createAnnotateSidebar(
     includedSummary.textContent = `Element notes (${next.includedRecords.length})`
     renderers.renderIncludedRecords(next.includedRecords, recordsList)
 
-    const allowQuickAsk = deliveryMode === 'ide'
-    const allowCreateTask = deliveryMode === 'mcp'
+    quickAskButton.style.display = viewState.allowQuickAsk ? '' : 'none'
+    createTaskButton.style.display = viewState.allowCreateTask ? '' : 'none'
 
-    quickAskButton.style.display = allowQuickAsk ? '' : 'none'
-    createTaskButton.style.display = allowCreateTask ? '' : 'none'
-
-    quickAskButton.disabled = !canSend
-    createTaskButton.disabled = !canSend
+    quickAskButton.disabled = !viewState.canSend
+    createTaskButton.disabled = !viewState.canSend
 
     quickAskButton.classList.toggle('primary', true)
     createTaskButton.classList.toggle('primary', true)
@@ -295,7 +281,7 @@ export function createAnnotateSidebar(
     createTaskButton.title = t('annotate.createTaskHint')
     recommendedActionLabel.style.display = 'none'
     recommendedActionLabel.textContent =
-      preferredAction === 'quick-ask'
+      viewState.preferredAction === 'quick-ask'
         ? t('annotate.recommendedAction.askHint', {
             action: t('annotate.askAi'),
           })
@@ -328,7 +314,7 @@ export function createAnnotateSidebar(
     if (latestSessionRenderResult.isNewLatestSession) {
       lastRevealedSessionId = latestSessionRenderResult.latestSessionId
       // Avoid auto-scrolling to the latest session if we have unsaved local changes
-      if (!hasCurrentDraft && !hasSavedRecords) {
+      if (!viewState.hasCurrentDraft && !viewState.hasSavedRecords) {
         latestSessionSection.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
       }
     }
