@@ -83,7 +83,7 @@ class InspectoElement extends InspectoElementState {
     return this.mode
   }
 
-  private updateBadgeContent(): void {
+  protected updateBadgeContent(): void {
     updateLauncherBadgeContent(this)
   }
 
@@ -126,113 +126,113 @@ class InspectoElement extends InspectoElementState {
     onViewportChange: this.onViewportChange,
   }
 
-  private syncRuntimeContextCapture(): void {
+  protected syncRuntimeContextCapture(): void {
     syncRuntimeCapture(this)
   }
 
-  private isCssContextEnabledForTarget(target: AnnotationTarget): boolean {
+  protected isCssContextEnabledForTarget(target: AnnotationTarget): boolean {
     return isCssEnabledForTarget(this, target)
   }
 
-  private isCssContextEnabledForTransportTarget(
+  protected isCssContextEnabledForTransportTarget(
     target: AnnotationTransport['targets'][number],
   ): boolean {
     return isCssEnabledForTransportTarget(this, target)
   }
 
-  private getAnnotateCssContextPrompt(
+  protected getAnnotateCssContextPrompt(
     annotations: AnnotationTransport[],
     includeWhenDisabled = false,
   ): string | null {
     return getAnnotateCssPrompt(this, annotations, includeWhenDisabled)
   }
 
-  private getAnnotateRuntimeContext(
+  protected getAnnotateRuntimeContext(
     annotations: AnnotationTransport[],
     includeWhenDisabled = false,
   ): ReturnType<typeof createRuntimeContextEnvelope> | null {
     return getAnnotateRuntimeEvidence(this, annotations, includeWhenDisabled)
   }
 
-  private formatRuntimeContextSummary(
+  protected formatRuntimeContextSummary(
     runtimeContext: ReturnType<typeof createRuntimeContextEnvelope> | null,
   ): string {
     return formatRuntimeSummary(runtimeContext)
   }
 
-  private getCollectedRuntimeErrorCount(): number {
+  protected getCollectedRuntimeErrorCount(): number {
     return getRuntimeErrorCount(this)
   }
 
-  private persistCurrentDraft(): void {
+  protected persistCurrentDraft(): void {
     persistAnnotateDraft(this)
   }
 
-  private clearDraftForTarget(target: AnnotationTarget | null | undefined): void {
+  protected clearDraftForTarget(target: AnnotationTarget | null | undefined): void {
     clearAnnotateDraftForTarget(this, target)
   }
 
-  private restoreEditingRecord(): void {
+  protected restoreEditingRecord(): void {
     restoreAnnotateEditingRecord(this)
   }
 
-  private beginEditingRecord(recordId: string): void {
+  protected beginEditingRecord(recordId: string): void {
     beginAnnotateEditing(this, recordId)
   }
 
-  private findElementForAnnotationTarget(target: AnnotationTarget): Element | null {
+  protected findElementForAnnotationTarget(target: AnnotationTarget): Element | null {
     return findAnnotateTargetElement(this, target)
   }
 
-  private rebindCurrentAnnotationElements(): void {
+  protected rebindCurrentAnnotationElements(): void {
     rebindAnnotateElements(this)
   }
 
-  private getNextRecordDisplayOrder(): number {
+  protected getNextRecordDisplayOrder(): number {
     return getAnnotateNextRecordDisplayOrder(this)
   }
 
-  private clearAnnotateError(): void {
+  protected clearAnnotateError(): void {
     clearAnnotateErrorState(this)
   }
 
-  private clearAnnotateSuccess(): void {
+  protected clearAnnotateSuccess(): void {
     clearAnnotateSuccessState(this)
   }
 
-  private showAnnotateSuccess(scope: 'quick-ask' | 'create-task'): void {
+  protected showAnnotateSuccess(scope: 'quick-ask' | 'create-task'): void {
     showAnnotateBatchSuccess(this, scope)
   }
 
-  private async refreshLatestAnnotateSession(): Promise<void> {
+  protected async refreshLatestAnnotateSession(): Promise<void> {
     return refreshLatestAnnotateSessionState(this)
   }
 
-  private startLatestAnnotateSessionStream(sessionId: string): void {
+  protected startLatestAnnotateSessionStream(sessionId: string): void {
     startLatestAnnotateSessionStreamState(this, sessionId)
   }
 
-  private stopLatestAnnotateSessionStream(): void {
+  protected stopLatestAnnotateSessionStream(): void {
     stopLatestAnnotateSessionStreamState(this)
   }
 
-  private syncModeUi(): void {
+  protected syncModeUi(): void {
     syncInspectorModeUi(this)
   }
 
-  private mountAnnotateSidebar(): void {
+  protected mountAnnotateSidebar(): void {
     mountAnnotateSidebarUi(this)
   }
 
-  private updateAnnotateSidebar(): void {
+  protected updateAnnotateSidebar(): void {
     updateAnnotateSidebarUi(this)
   }
 
-  private getAnnotateSidebarOptions(): AnnotateSidebarOptions {
+  protected getAnnotateSidebarOptions(): AnnotateSidebarOptions {
     return buildAnnotateSidebarOptions(this)
   }
 
-  private renderAnnotateSelectionOverlay(): void {
+  protected renderAnnotateSelectionOverlay(): void {
     renderAnnotateOverlay(this)
   }
 }
