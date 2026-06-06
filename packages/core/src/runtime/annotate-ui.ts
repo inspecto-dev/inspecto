@@ -1,5 +1,4 @@
 import {
-  clearCurrentRecord,
   updateCurrentRecordCssContextEnabled,
   updateCurrentRecordNote,
 } from '../features/annotate/session/index.js'
@@ -15,6 +14,10 @@ import {
   restoreEditingRecord,
 } from '../features/annotate/targets/index.js'
 import { t } from '../shared/i18n.js'
+import {
+  cancelCurrentAnnotationRecord,
+  deleteEditingAnnotationRecord,
+} from './annotate-current-discard.js'
 import { saveCurrentAnnotationRecord } from './annotate-current-save.js'
 
 export { toAnnotateErrorMessage } from './annotate-errors.js'
@@ -159,10 +162,11 @@ export function renderAnnotateSelectionOverlay(ctx: unknown): void {
     onCancel: () => {
       state.clearAnnotateError()
       state.clearAnnotateSuccess()
-      clearDraftForTarget(state, state.annotateSession.current.target)
-      state.annotateSession = clearCurrentRecord(state.annotateSession)
-      restoreEditingRecord(state)
-      state.annotateElements.clear()
+      cancelCurrentAnnotationRecord(
+        state,
+        target => clearDraftForTarget(state, target),
+        () => restoreEditingRecord(state),
+      )
       state.renderAnnotateSelectionOverlay()
       state.updateAnnotateSidebar()
     },
@@ -171,10 +175,7 @@ export function renderAnnotateSelectionOverlay(ctx: unknown): void {
           onDelete: () => {
             state.clearAnnotateError()
             state.clearAnnotateSuccess()
-            clearDraftForTarget(state, state.annotateSession.current.target)
-            state.annotateEditingRecord = null
-            state.annotateSession = clearCurrentRecord(state.annotateSession)
-            state.annotateElements.clear()
+            deleteEditingAnnotationRecord(state, target => clearDraftForTarget(state, target))
             state.renderAnnotateSelectionOverlay()
             state.updateAnnotateSidebar()
           },
