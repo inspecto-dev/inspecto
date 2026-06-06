@@ -1,4 +1,4 @@
-import type { SelectedTargetOverlayEntry } from './index.js'
+import type { SelectedTargetOverlayEntry } from './types.js'
 
 export type ComposerPlacement = 'right' | 'left' | 'below' | 'above'
 

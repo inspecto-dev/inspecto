@@ -1,26 +1,15 @@
-type SelectedTargetOverlayEntry = {
-  id: string
-  element: Element
-  order: number
-  state?: 'current' | 'saved' | 'completed'
-  note?: string
-  onActivate?: () => void
-}
-
-export type { SelectedTargetOverlayEntry }
-
 import { createAnnotateOverlayDom } from './dom.js'
+import { renderOverlayBoxes } from './boxes.js'
 import { resolveComposerPlacement } from './composer-placement.js'
 import { t } from '../../../shared/i18n.js'
 import {
   applyComposerRuntimeButtonState,
-  applyOverlayState,
-  createOverlayBox,
-  formatOverlayNoteBadge,
   formatRuntimeErrorCount,
-  placePreview,
   type ComposerPlacement,
 } from './helpers.js'
+import type { SelectedTargetOverlayEntry } from './types.js'
+
+export type { SelectedTargetOverlayEntry } from './types.js'
 
 type ComposerOptions = {
   targetId?: string
@@ -132,67 +121,7 @@ export function createAnnotateOverlay(shadowRoot: ShadowRoot): {
     targets: SelectedTargetOverlayEntry[],
     composerOptions?: ComposerOptions | null,
   ): void {
-    const nextIds = new Set(targets.map(target => target.id))
-
-    for (const [id, box] of boxes) {
-      if (!nextIds.has(id)) {
-        box.remove()
-        boxes.delete(id)
-      }
-    }
-
-    for (const target of targets) {
-      const rect = target.element.getBoundingClientRect()
-      const scrollX = window.scrollX
-      const scrollY = window.scrollY
-      let box = boxes.get(target.id)
-      if (!box) {
-        box = createOverlayBox(tokens)
-        boxes.set(target.id, box)
-      }
-      applyOverlayState(box, target.state ?? 'current', tokens)
-      box.style.left = `${scrollX + rect.left}px`
-      box.style.top = `${scrollY + rect.top}px`
-      box.style.width = `${rect.width}px`
-      box.style.height = `${rect.height}px`
-
-      const badge = box.querySelector('[data-inspecto-annotate-overlay-order]') as HTMLDivElement
-      const noteBadge = box.querySelector('[data-inspecto-annotate-overlay-note]') as HTMLDivElement
-      badge.textContent = String(target.order)
-
-      if ((target.state ?? 'current') === 'saved' || (target.state ?? 'current') === 'completed') {
-        const trimmedNote = target.note?.trim() ?? ''
-        const hasNote = trimmedNote.length > 0
-        noteBadge.style.display = hasNote ? 'block' : 'none'
-        noteBadge.textContent = hasNote ? formatOverlayNoteBadge(trimmedNote) : ''
-        box.style.cursor = 'pointer'
-        box.onmouseenter = () => {
-          badge.textContent = '✎'
-          if (hasNote) {
-            preview.textContent = trimmedNote
-            preview.style.display = 'block'
-            placePreview(preview, target)
-          }
-        }
-        box.onmouseleave = () => {
-          badge.textContent = String(target.order)
-          preview.style.display = 'none'
-          preview.textContent = ''
-        }
-        box.onclick = () => target.onActivate?.()
-      } else {
-        noteBadge.style.display = 'none'
-        noteBadge.textContent = ''
-        box.style.cursor = 'default'
-        box.onmouseenter = null
-        box.onmouseleave = null
-        box.onclick = null
-      }
-
-      if (box.parentElement !== layer) {
-        layer.appendChild(box)
-      }
-    }
+    renderOverlayBoxes({ layer, boxes, preview, targets, tokens })
 
     if (targets.length > 0 && composerOptions) {
       const targetChanged =
