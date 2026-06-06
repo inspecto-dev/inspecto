@@ -1,15 +1,10 @@
 import type { FeedbackRecord } from '@inspecto-dev/types'
-import {
-  annotateSidebarChipClass,
-  annotateSidebarEmptyClass,
-  annotateSidebarQueueItemClass,
-  annotateSidebarQueueMetaClass,
-} from '../../../shared/styles/index.js'
+import { annotateSidebarChipClass } from '../../../shared/styles/index.js'
 import { closeIconSvg, inspectFilledIconSvg } from '../../../shared/icons.js'
 import type { PromptChipRecord } from './helpers.js'
 import type { AnnotateSidebarOptions } from './types.js'
-import { t } from '../../../shared/i18n.js'
 import { createAnnotateSidebarChipPreview } from './chip-preview.js'
+import { renderIncludedRecords as renderIncludedRecordRows } from './included-records.js'
 
 type PromptChipElement = HTMLSpanElement & {
   dataset: DOMStringMap & {
@@ -182,41 +177,10 @@ export function createAnnotateSidebarRenderers({
   }
 
   function renderIncludedRecords(records: FeedbackRecord[], recordsList: HTMLElement): void {
-    recordsList.replaceChildren()
-
-    if (records.length === 0) {
-      const empty = document.createElement('div')
-      empty.className = annotateSidebarEmptyClass
-      empty.textContent = t('annotate.records.none')
-      recordsList.appendChild(empty)
-      return
-    }
-
-    for (const record of records) {
-      const item = document.createElement('div')
-      item.className = annotateSidebarQueueItemClass
-      item.tabIndex = 0
-      item.setAttribute('role', 'button')
-      item.setAttribute('aria-pressed', 'false')
-      item.addEventListener('click', () => getOptions().onEditRecord?.(record.id))
-      item.addEventListener('keydown', event => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          getOptions().onEditRecord?.(record.id)
-        }
-      })
-
-      const label = document.createElement('div')
-      label.textContent = record.target.label || t('annotate.target.unknown')
-
-      const meta = document.createElement('div')
-      meta.className = annotateSidebarQueueMetaClass
-      meta.textContent =
-        record.note.trim().length > 0 ? record.note : t('annotate.note.optionalEmpty')
-
-      item.append(label, meta)
-      recordsList.appendChild(item)
-    }
+    const onEditRecord = getOptions().onEditRecord
+    renderIncludedRecordRows(records, recordsList, {
+      ...(onEditRecord ? { onEditRecord } : {}),
+    })
   }
 
   return {
