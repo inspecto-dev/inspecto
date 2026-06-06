@@ -3,6 +3,7 @@ import type {
   AnnotationWorkSessionSummary,
   FeedbackRecord,
   FeedbackRecordSession,
+  WorkflowSlotOption,
 } from '@inspecto-dev/types'
 import {
   captureInstructionSegmentsFromDom,
@@ -67,7 +68,7 @@ export interface AnnotateSidebarOptions {
   latestSessionLoading?: boolean
   latestSessionError?: string
   workflowNotice?: AnnotateWorkflowNotice | null
-  workflows?: import('@inspecto-dev/types').WorkflowSlotOption[]
+  workflows?: WorkflowSlotOption[]
   onWorkflow?: (workflowId: string) => void
   quickCaptureEnabled?: boolean
   errorMessage?: string

@@ -8,7 +8,12 @@ import type {
   AnnotationWorkSessionSummary,
   FeedbackRecord,
   FeedbackRecordDraft,
+  WorkflowSlotOption,
 } from '@inspecto-dev/types'
+import type { AnnotationSessionEventStreamConnection } from '../../transport/http-client.js'
+import type { createRuntimeContextEnvelope } from '../evidence/runtime-context/index.js'
+
+type RuntimeContextEnvelope = ReturnType<typeof createRuntimeContextEnvelope>
 
 export type AnnotateContext = {
   cleanupMenu: (() => void) | null
@@ -59,16 +64,14 @@ export type AnnotateContext = {
   annotateRuntimeContextEnabled: boolean
   annotateCssContextEnabled: boolean
   deliveryMode: 'ide' | 'mcp'
-  annotateWorkflows: import('@inspecto-dev/types').WorkflowSlotOption[]
+  annotateWorkflows: WorkflowSlotOption[]
   annotateSendState: {
     isSending: boolean
     scope: AnnotateSendScope
   }
   annotateLatestSessionSummary: AnnotationWorkSessionSummary | null
   annotateLatestSessionDetail: AnnotationWorkSession | null
-  annotateLatestSessionStream:
-    | import('../../transport/http-client.js').AnnotationSessionEventStreamConnection
-    | null
+  annotateLatestSessionStream: AnnotationSessionEventStreamConnection | null
   annotateLatestSessionLoading: boolean
   annotateLatestSessionError: string
   annotateWorkflowNotice: AnnotateWorkflowNotice | null
@@ -94,18 +97,12 @@ export type AnnotateContext = {
   getAnnotateRuntimeContext(
     annotations: AnnotationTransport[],
     includeWhenDisabled?: boolean,
-  ): ReturnType<
-    typeof import('../evidence/runtime-context/index.js').createRuntimeContextEnvelope
-  > | null
+  ): RuntimeContextEnvelope | null
   getAnnotateCssContextPrompt(
     annotations: AnnotationTransport[],
     includeWhenDisabled?: boolean,
   ): string | null
-  formatRuntimeContextSummary(
-    runtimeContext: ReturnType<
-      typeof import('../evidence/runtime-context/index.js').createRuntimeContextEnvelope
-    > | null,
-  ): string
+  formatRuntimeContextSummary(runtimeContext: RuntimeContextEnvelope | null): string
   getCollectedRuntimeErrorCount(): number
 }
 

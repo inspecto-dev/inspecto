@@ -7,7 +7,7 @@ import { createBadge, setActive, updateBadgeContent } from './launcher.js'
 import { syncRuntimeContextCapture } from './evidence.js'
 import { syncModeUi, updateAnnotateSidebar } from './mode-ui.js'
 import type { InspectoOptions, InspectorMode } from './inspecto-state.js'
-import type { HotKeys, IdeType } from '@inspecto-dev/types'
+import type { HotKeys, IdeType, WorkflowSlotOption } from '@inspecto-dev/types'
 
 type LifecycleContext = {
   options: InspectoOptions
@@ -32,7 +32,7 @@ type LifecycleContext = {
   annotateRuntimeContextEnabled: boolean
   annotateCssContextEnabled: boolean
   deliveryMode: 'ide' | 'mcp'
-  annotateWorkflows: import('@inspecto-dev/types').WorkflowSlotOption[]
+  annotateWorkflows: WorkflowSlotOption[]
   stopLatestAnnotateSessionStream(): void
   setAttribute(name: string, value: string): void
   removeAttribute(name: string): void
