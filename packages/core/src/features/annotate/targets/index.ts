@@ -4,7 +4,7 @@ import {
   saveCurrentRecord,
   setCurrentRecordTarget,
 } from '../session/index.js'
-import type { AnnotationTarget, FeedbackRecord, SourceLocation } from '@inspecto-dev/types'
+import type { AnnotationTarget, SourceLocation } from '@inspecto-dev/types'
 import { asAnnotateContext } from '../context.js'
 import {
   createAnnotationTarget as createAnnotationTargetFromElement,
@@ -13,6 +13,9 @@ import {
   getAnnotationTargetKey as getTargetKey,
 } from './identity.js'
 import { findElementForLocation as findTargetElementForLocation } from './lookup.js'
+import { clearDraftForTarget, persistCurrentDraft, restoreEditingRecord } from './draft-store.js'
+
+export { clearDraftForTarget, persistCurrentDraft, restoreEditingRecord } from './draft-store.js'
 
 export function addTargetToCurrentAnnotation(
   ctx: unknown,
@@ -121,62 +124,6 @@ export function markTargetInAnnotateSession(
 
 export function getAnnotationTargetKey(_ctx: unknown, target: AnnotationTarget): string {
   return getTargetKey(target)
-}
-
-export function persistCurrentDraft(ctx: unknown): void {
-  const state = asAnnotateContext(ctx)
-  const current = state.annotateSession.current
-  if (!current.target) return
-
-  const key = getAnnotationTargetKey(state, current.target)
-  if (
-    current.note.trim().length === 0 &&
-    current.intent === 'review' &&
-    !(current.cssContextEnabled ?? false)
-  ) {
-    state.annotateDrafts.delete(key)
-    return
-  }
-
-  state.annotateDrafts.set(key, {
-    ...current,
-    target: current.target,
-  })
-}
-
-export function clearDraftForTarget(
-  ctx: unknown,
-  target: AnnotationTarget | null | undefined,
-): void {
-  const state = asAnnotateContext(ctx)
-  if (!target) return
-  state.annotateDrafts.delete(getAnnotationTargetKey(state, target))
-}
-
-export function restoreEditingRecord(ctx: unknown): void {
-  const state = asAnnotateContext(ctx)
-  if (!state.annotateEditingRecord) return
-
-  const current = state.annotateSession.current
-  const restoredRecord: FeedbackRecord =
-    current.target && current.id === state.annotateEditingRecord.id
-      ? {
-          id: current.id,
-          displayOrder: current.displayOrder ?? state.annotateEditingRecord.displayOrder,
-          target: current.target,
-          note: current.note,
-          intent: current.intent,
-        }
-      : state.annotateEditingRecord
-
-  state.annotateSession = {
-    ...state.annotateSession,
-    records: [
-      ...state.annotateSession.records.filter(record => record.id !== restoredRecord.id),
-      restoredRecord,
-    ].sort((a, b) => a.displayOrder - b.displayOrder),
-  }
-  state.annotateEditingRecord = null
 }
 
 export function beginEditingRecord(ctx: unknown, recordId: string): void {
