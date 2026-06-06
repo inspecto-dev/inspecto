@@ -4,13 +4,15 @@ import {
   saveCurrentRecord,
   setCurrentRecordTarget,
 } from '../session/index.js'
-import {
-  ATTR_NAME,
-  createElementSelector,
-  getInspectableLocation,
-} from '../../../shared/component-utils.js'
+import { ATTR_NAME, getInspectableLocation } from '../../../shared/component-utils.js'
 import type { AnnotationTarget, FeedbackRecord, SourceLocation } from '@inspecto-dev/types'
 import { asAnnotateContext } from '../context.js'
+import {
+  createAnnotationTarget as createAnnotationTargetFromElement,
+  createSelector,
+  describeElement as describeTargetElement,
+  getAnnotationTargetKey as getTargetKey,
+} from './identity.js'
 
 export function addTargetToCurrentAnnotation(
   ctx: unknown,
@@ -118,7 +120,7 @@ export function markTargetInAnnotateSession(
 }
 
 export function getAnnotationTargetKey(_ctx: unknown, target: AnnotationTarget): string {
-  return `${target.location.file}:${target.location.line}:${target.location.column}::${target.selector ?? ''}`
+  return getTargetKey(target)
 }
 
 export function persistCurrentDraft(ctx: unknown): void {
@@ -258,36 +260,11 @@ export function createAnnotationTarget(
   element: Element,
   location: SourceLocation,
 ): AnnotationTarget {
-  const rect = element.getBoundingClientRect()
-
-  return {
-    id:
-      globalThis.crypto?.randomUUID?.() ??
-      `target-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    location,
-    label: describeElement(ctx, element),
-    selector: createSelector(element),
-    rect: {
-      x: rect.x,
-      y: rect.y,
-      width: rect.width,
-      height: rect.height,
-    },
-  }
+  return createAnnotationTargetFromElement(element, location)
 }
 
 export function describeElement(_ctx: unknown, element: Element): string {
-  const id = element.id ? `#${element.id}` : ''
-  const className =
-    typeof element.className === 'string'
-      ? element.className
-          .split(/\s+/)
-          .filter(Boolean)
-          .map(name => `.${name}`)
-          .join('')
-      : ''
-
-  return `${element.tagName.toLowerCase()}${id}${className}` || element.tagName.toLowerCase()
+  return describeTargetElement(element)
 }
 
-export const createSelector = createElementSelector
+export { createSelector }
