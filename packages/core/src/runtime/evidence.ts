@@ -4,22 +4,19 @@ import {
   createRuntimeContextEnvelope,
   selectRuntimeEvidence,
 } from '../features/evidence/runtime-context/index.js'
-import {
-  buildCssContextPrompt,
-  captureCssContextEntry,
-} from '../features/evidence/css-context/index.js'
-import {
-  createAnnotationTarget,
-  findElementForLocation,
-  getAnnotationTargetKey,
-} from '../features/annotate/targets/index.js'
 import type { AnnotationTarget, AnnotationTransport, SourceLocation } from '@inspecto-dev/types'
-import { isCssContextEnabledForTargetKey, type CssContextState } from './css-context-state.js'
 import {
   formatRuntimeContextSummary as formatRuntimeContextSummaryValue,
   getCollectedRuntimeErrorCount as getCollectedRuntimeErrorCountValue,
   getRuntimeContextLimits as getRuntimeContextLimitValues,
 } from './evidence-summary.js'
+import {
+  canAttachCssContext as canAttachCssContextValue,
+  captureCssContextPromptForElement as captureCssContextPromptForElementValue,
+  getAnnotateCssContextPrompt as getAnnotateCssContextPromptValue,
+  isCssContextEnabledForTarget as isCssContextEnabledForTargetValue,
+  isCssContextEnabledForTransportTarget as isCssContextEnabledForTransportTargetValue,
+} from './css-context.js'
 
 type EvidenceContext = {
   options: {
@@ -46,8 +43,6 @@ type EvidenceContext = {
       cssContextEnabled?: boolean
     }>
   }
-  annotateElements: Map<string, Element>
-  findElementForAnnotationTarget(target: AnnotationTarget): Element | null
   isCssContextEnabledForTransportTarget(target: AnnotationTransport['targets'][number]): boolean
 }
 
@@ -80,7 +75,7 @@ export function canAttachRuntimeContext(ctx: unknown): boolean {
 }
 
 export function canAttachCssContext(): boolean {
-  return typeof window !== 'undefined' && typeof window.getComputedStyle === 'function'
+  return canAttachCssContextValue()
 }
 
 export function captureCssContextPromptForElement(
@@ -88,48 +83,18 @@ export function captureCssContextPromptForElement(
   element: Element,
   location: SourceLocation,
 ): string | null {
-  const state = asEvidenceContext(ctx)
-  const target = createAnnotationTarget(state, element, location)
-  const entry = captureCssContextEntry({
-    element,
-    location,
-    ...(target.label ? { label: target.label } : {}),
-    ...(target.selector ? { selector: target.selector } : {}),
-  })
-  return entry ? buildCssContextPrompt([entry]) : null
-}
-
-function getCssContextState(state: EvidenceContext): CssContextState {
-  return {
-    annotateCssContextEnabled: state.annotateCssContextEnabled,
-    currentTargetKey: state.annotateSession.current.target
-      ? getAnnotationTargetKey(state, state.annotateSession.current.target)
-      : null,
-    ...(state.annotateSession.current.cssContextEnabled !== undefined
-      ? { currentCssContextEnabled: state.annotateSession.current.cssContextEnabled }
-      : {}),
-    savedRecords: state.annotateSession.records.map(record => ({
-      targetKey: getAnnotationTargetKey(state, record.target),
-      ...(record.cssContextEnabled !== undefined
-        ? { cssContextEnabled: record.cssContextEnabled }
-        : {}),
-    })),
-  }
+  return captureCssContextPromptForElementValue(ctx, element, location)
 }
 
 export function isCssContextEnabledForTarget(ctx: unknown, target: AnnotationTarget): boolean {
-  const state = asEvidenceContext(ctx)
-  const targetKey = getAnnotationTargetKey(state, target)
-  return isCssContextEnabledForTargetKey(getCssContextState(state), targetKey)
+  return isCssContextEnabledForTargetValue(asEvidenceContext(ctx), target)
 }
 
 export function isCssContextEnabledForTransportTarget(
   ctx: unknown,
   target: AnnotationTransport['targets'][number],
 ): boolean {
-  const state = asEvidenceContext(ctx)
-  const targetKey = `${target.location.file}:${target.location.line}:${target.location.column}::${target.selector ?? ''}`
-  return isCssContextEnabledForTargetKey(getCssContextState(state), targetKey)
+  return isCssContextEnabledForTransportTargetValue(asEvidenceContext(ctx), target)
 }
 
 export function getAnnotateCssContextPrompt(
@@ -137,36 +102,7 @@ export function getAnnotateCssContextPrompt(
   annotations: AnnotationTransport[],
   includeWhenDisabled = false,
 ): string | null {
-  const state = asEvidenceContext(ctx)
-  if (
-    (!includeWhenDisabled &&
-      !state.annotateCssContextEnabled &&
-      !annotations.some(annotation =>
-        annotation.targets.some(target => state.isCssContextEnabledForTransportTarget(target)),
-      )) ||
-    !canAttachCssContext()
-  ) {
-    return null
-  }
-
-  const entries = annotations.flatMap(annotation =>
-    annotation.targets.flatMap(target => {
-      if (!includeWhenDisabled && !state.isCssContextEnabledForTransportTarget(target)) {
-        return []
-      }
-      const element = findElementForLocation(state, target.location, target.selector)
-      if (!element) return []
-      const entry = captureCssContextEntry({
-        element,
-        location: target.location,
-        ...(target.label ? { label: target.label } : {}),
-        ...(target.selector ? { selector: target.selector } : {}),
-      })
-      return entry ? [entry] : []
-    }),
-  )
-
-  return buildCssContextPrompt(entries)
+  return getAnnotateCssContextPromptValue(asEvidenceContext(ctx), annotations, includeWhenDisabled)
 }
 
 export function getRuntimeContextLimits(ctx: unknown): {
