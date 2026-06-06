@@ -1,5 +1,4 @@
 import type { AiErrorCode, AnnotationDeliveryMode, AnnotationTransport } from '@inspecto-dev/types'
-import { createEmptySession } from '../features/annotate/session/index.js'
 import {
   isStandardAnnotateSendScope,
   type AnnotateSendScope,
@@ -7,6 +6,10 @@ import {
 import { sendAnnotationsToAi, sendToAi } from '../transport/http-client.js'
 import { asAnnotateContext } from './annotate-shared.js'
 import { toAnnotateErrorMessage } from './annotate-errors.js'
+import {
+  completeIdeWorkflowDispatch,
+  completeMcpWorkflowDispatch,
+} from './annotate-workflow-complete.js'
 
 export async function sendAnnotationBatch(
   ctx: unknown,
@@ -109,19 +112,10 @@ export async function triggerWorkflow(ctx: unknown, workflowId: string): Promise
         return
       }
 
-      state.annotateInstructionDraft = ''
-      state.annotateSession = createEmptySession()
-      state.annotateEditingRecord = null
-      state.annotateElements.clear()
-      state.annotateLatestSessionSummary = null
-      state.annotateLatestSessionDetail = null
-      state.stopLatestAnnotateSessionStream()
-      state.annotateLatestSessionError = ''
-      state.annotateWorkflowNotice = {
-        kind: 'ide-dispatch',
+      completeIdeWorkflowDispatch(state, {
         workflowId,
         workflowLabel: workflow?.label ?? workflowId,
-      }
+      })
       state.annotateErrorMessage = ''
       state.renderAnnotateSelectionOverlay()
       state.updateAnnotateSidebar()
@@ -148,10 +142,7 @@ export async function triggerWorkflow(ctx: unknown, workflowId: string): Promise
     workflowPrompt,
     'mcp',
     () => {
-      state.annotateInstructionDraft = ''
-      state.annotateSession = createEmptySession()
-      state.annotateEditingRecord = null
-      state.annotateElements.clear()
+      completeMcpWorkflowDispatch(state)
       state.renderAnnotateSelectionOverlay()
     },
     { source: 'workflow', workflowId },
