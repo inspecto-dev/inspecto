@@ -18,7 +18,6 @@ import {
   stopLatestAnnotateSessionStream as stopLatestAnnotateSessionStreamState,
 } from './annotate.js'
 import {
-  createBadge as createLauncherBadge,
   setActive as setLauncherActive,
   setPaused as setLauncherPaused,
   updateBadgeContent as updateLauncherBadgeContent,
@@ -63,11 +62,15 @@ class InspectoElement extends InspectoElementState {
   }
 
   connectedCallback(): void {
-    connectInspector(this, root => createAnnotateOverlay(root))
+    connectInspector(
+      this,
+      root => createAnnotateOverlay(root),
+      () => setupInspectorListeners(this, this.listenerHandlers),
+    )
   }
 
   disconnectedCallback(): void {
-    disconnectInspector(this)
+    disconnectInspector(this, () => teardownInspectorListeners(this, this.listenerHandlers))
   }
 
   configure(options: InspectoOptions): void {
@@ -82,17 +85,13 @@ class InspectoElement extends InspectoElementState {
     return this.mode
   }
 
-  private createBadge(): HTMLDivElement {
-    return createLauncherBadge(this)
+  private updateBadgeContent(): void {
+    updateLauncherBadgeContent(this)
   }
 
   private setPaused(value: boolean): void {
     setLauncherPaused(this, value)
     this.syncModeUi()
-  }
-
-  private updateBadgeContent(): void {
-    updateLauncherBadgeContent(this)
   }
 
   private setActive(value: boolean): void {
@@ -127,6 +126,15 @@ class InspectoElement extends InspectoElementState {
 
   private readonly onViewportChange = (): void => {
     handleInspectorViewportChange(this)
+  }
+
+  private readonly listenerHandlers = {
+    onMouseMove: this.onMouseMove,
+    onClick: this.onClick,
+    onContextMenu: this.onContextMenu,
+    onKeyDown: this.onKeyDown,
+    onFocusChange: this.onFocusChange,
+    onViewportChange: this.onViewportChange,
   }
 
   private syncRuntimeContextCapture(): void {
@@ -237,28 +245,6 @@ class InspectoElement extends InspectoElementState {
 
   private renderAnnotateSelectionOverlay(): void {
     renderAnnotateOverlay(this)
-  }
-
-  private setupListeners(): void {
-    setupInspectorListeners(this, {
-      onMouseMove: this.onMouseMove,
-      onClick: this.onClick,
-      onContextMenu: this.onContextMenu,
-      onKeyDown: this.onKeyDown,
-      onFocusChange: this.onFocusChange,
-      onViewportChange: this.onViewportChange,
-    })
-  }
-
-  private teardownListeners(): void {
-    teardownInspectorListeners(this, {
-      onMouseMove: this.onMouseMove,
-      onClick: this.onClick,
-      onContextMenu: this.onContextMenu,
-      onKeyDown: this.onKeyDown,
-      onFocusChange: this.onFocusChange,
-      onViewportChange: this.onViewportChange,
-    })
   }
 }
 

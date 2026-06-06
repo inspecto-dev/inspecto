@@ -3,6 +3,9 @@ import { fetchIdeInfo } from '../transport/http-client.js'
 import { inspectorStyles } from '../shared/styles/index.js'
 import { setBaseUrl } from '../transport/http-client.js'
 import { configureI18n } from '../shared/i18n.js'
+import { createBadge, setActive, updateBadgeContent } from './launcher.js'
+import { syncRuntimeContextCapture } from './evidence.js'
+import { syncModeUi, updateAnnotateSidebar } from './mode-ui.js'
 import type { InspectoOptions, InspectorMode } from './inspecto-state.js'
 import type { HotKeys, IdeType } from '@inspecto-dev/types'
 
@@ -34,14 +37,6 @@ type LifecycleContext = {
   setAttribute(name: string, value: string): void
   removeAttribute(name: string): void
   attachShadow(options: ShadowRootInit): ShadowRoot
-  createBadge(): HTMLDivElement
-  setActive(value: boolean): void
-  setupListeners(): void
-  teardownListeners(): void
-  syncRuntimeContextCapture(): void
-  syncModeUi(): void
-  updateBadgeContent(): void
-  updateAnnotateSidebar(): void
 }
 
 function asLifecycleContext(ctx: unknown): LifecycleContext {
@@ -99,6 +94,7 @@ function buildI18nConfig(input: {
 export function connect(
   ctx: unknown,
   createAnnotateOverlay: (root: ShadowRoot) => LifecycleContext['annotateOverlay'],
+  setupListeners: () => void,
 ): void {
   const state = asLifecycleContext(ctx)
   configureI18n(buildI18nConfig(state.options))
@@ -115,18 +111,18 @@ export function connect(
 
   state.overlay = createOverlay(state.shadowRootEl)
   state.annotateOverlay = createAnnotateOverlay(state.shadowRootEl)
-  state.badge = state.createBadge()
+  state.badge = createBadge(state)
 
-  state.setupListeners()
-  state.syncRuntimeContextCapture()
-  state.syncModeUi()
+  setupListeners()
+  syncRuntimeContextCapture(state)
+  syncModeUi(state)
 
   if (state.options.defaultActive) {
-    state.setActive(true)
+    setActive(state, true)
   }
 }
 
-export function disconnect(ctx: unknown): void {
+export function disconnect(ctx: unknown, teardownListeners: () => void): void {
   const state = asLifecycleContext(ctx)
   if (state.pendingAnnotateViewportFrame !== null) {
     cancelAnimationFrame(state.pendingAnnotateViewportFrame)
@@ -140,7 +136,7 @@ export function disconnect(ctx: unknown): void {
   state.cleanupRuntimeContextCapture?.()
   state.cleanupRuntimeContextCapture = null
   state.runtimeContextCollector.clear()
-  state.teardownListeners()
+  teardownListeners()
 }
 
 export function configure(ctx: unknown, options: InspectoOptions): void {
@@ -189,7 +185,7 @@ export function configure(ctx: unknown, options: InspectoOptions): void {
           ...state.options.runtimeContext,
           ...info.runtimeContext,
         }
-        state.syncRuntimeContextCapture()
+        syncRuntimeContextCapture(state)
       }
 
       const modeChanged = state.mode === 'inspect' && !canUseInspectMode(state)
@@ -198,22 +194,22 @@ export function configure(ctx: unknown, options: InspectoOptions): void {
       }
 
       if (modeChanged) {
-        state.syncRuntimeContextCapture()
-        state.syncModeUi()
+        syncRuntimeContextCapture(state)
+        syncModeUi(state)
       } else {
-        state.updateBadgeContent()
+        updateBadgeContent(state)
       }
 
       if (state.mode === 'annotate' && state.annotateSidebar) {
-        state.updateAnnotateSidebar()
+        updateAnnotateSidebar(state)
       }
     })
     .catch(() => {})
     .then(() => {})
 
   if (state.shadowRootEl) {
-    state.syncRuntimeContextCapture()
-    state.syncModeUi()
+    syncRuntimeContextCapture(state)
+    syncModeUi(state)
   }
 }
 
@@ -228,6 +224,6 @@ export function setMode(ctx: unknown, mode: 'inspect' | 'annotate'): void {
     resetAnnotateState(state)
   }
 
-  state.syncRuntimeContextCapture()
-  state.syncModeUi()
+  syncRuntimeContextCapture(state)
+  syncModeUi(state)
 }
