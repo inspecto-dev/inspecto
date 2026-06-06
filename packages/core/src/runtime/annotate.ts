@@ -16,14 +16,17 @@ export {
 export {
   clearAnnotateError,
   clearAnnotateSuccess,
-  composeAnnotateInstruction,
-  getAnnotateSidebarOptions,
   getNextRecordDisplayOrderUi as getNextRecordDisplayOrder,
   hasCurrentRecordUi as hasCurrentRecord,
   renderAnnotateSelectionOverlay,
   showAnnotateSuccess,
-  toAnnotationTransportFromRecordUi as toAnnotationTransportFromRecord,
 } from './annotate-ui.js'
+
+export {
+  composeAnnotateInstruction,
+  getAnnotateSidebarOptions,
+  toAnnotationTransportFromRecordUi as toAnnotationTransportFromRecord,
+} from './annotate-sidebar-options.js'
 
 export { toAnnotateErrorMessage } from './annotate-errors.js'
 export { sendAnnotationBatch, triggerWorkflow } from './annotate-send.js'
