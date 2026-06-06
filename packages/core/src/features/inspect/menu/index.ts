@@ -11,26 +11,15 @@ import { openFileWithDiagnostics, fetchIdeInfo } from '../../../transport/http-c
 import { applyIconToggleButtonState, createMenuHeaderDom } from './header.js'
 import { syncCssToggleButton, syncRuntimeToggleButton } from './header-actions.js'
 import { resolveMenuPosition } from './position.js'
-import {
-  createRuntimeContextUi,
-  formatRuntimeContextSummary,
-  formatRuntimeErrorCount,
-  isFixIntent,
-  isFixUiIntent,
-  showError,
-} from './helpers.js'
+import { isFixIntent, isFixUiIntent, showError } from './helpers.js'
 import { t } from '../../../shared/i18n.js'
 import { isAiIntentConfig } from '@inspecto-dev/types'
 import { attachMenuClickAway } from './click-away.js'
 import { attachCustomAskSubmit } from './custom-ask.js'
 import { createIntentMenuDom } from './dom.js'
 import { attachMenuFocusLifecycle } from './focus.js'
-import {
-  applyRuntimeToggleButtonState,
-  getRuntimeToggleAriaPressed,
-  getRuntimeToggleVisualState,
-  type RuntimeContextDefaultMode,
-} from './runtime-toggle.js'
+import { getRuntimeToggleAriaPressed, type RuntimeContextDefaultMode } from './runtime-toggle.js'
+import { renderRuntimeContextUi } from './runtime-context-renderer.js'
 
 const _DISPLAY_NAMES: Record<Provider, string> = {
   copilot: 'GitHub Copilot',
@@ -173,54 +162,19 @@ export function showIntentMenu(
     return deps.getRuntimeContext?.(location) ?? null
   }
 
-  const renderRuntimeContextUi = () => {
-    runtimeContextSection.replaceChildren()
-
-    if (!canAttachRuntimeContext) {
-      runtimeContextSection.hidden = true
-      return
-    }
-
+  const renderCurrentRuntimeContextUi = () => {
     const runtimeContextForUi = deps.getRuntimeContext?.(location) ?? null
-    const runtimeErrorCount = runtimeContextForUi?.summary.runtimeErrorCount ?? 0
-    const runtimeSummary = runtimeContextForUi
-      ? formatRuntimeContextSummary(runtimeContextForUi)
-      : ''
-    runtimeToggleBadge.textContent = formatRuntimeErrorCount(runtimeErrorCount)
-
-    const ariaPressed = getRuntimeToggleAriaPressed(
+    renderRuntimeContextUi({
+      runtimeContextSection,
+      runtimeToggleButton,
+      runtimeToggleBadge,
+      canAttachRuntimeContext,
+      runtimeContext: runtimeContextForUi,
       runtimeContextPreference,
       runtimeContextDefaultMode,
-    )
-
-    runtimeToggleButton.setAttribute('aria-pressed', ariaPressed)
-    applyRuntimeToggleButtonState(runtimeToggleButton, getRuntimeToggleVisualState(ariaPressed))
-    runtimeToggleBadge.hidden = ariaPressed !== 'true' || runtimeErrorCount <= 0
-    runtimeToggleButton.title =
-      ariaPressed === 'true'
-        ? runtimeSummary
-          ? `${t('menu.runtimeEnabled')} • ${runtimeSummary}`
-          : t('menu.runtimeEnabled')
-        : ariaPressed === 'mixed'
-          ? runtimeSummary
-            ? `${t('menu.runtimeFixOnly')} • ${runtimeSummary}`
-            : t('menu.runtimeFixOnly')
-          : runtimeSummary
-            ? `${t('menu.attachRuntime')} • ${runtimeSummary}`
-            : t('menu.attachRuntime')
-
-    if (ariaPressed !== 'true') {
-      runtimeContextSection.hidden = true
-      updatePosition()
-      return
-    }
-
-    const runtimeContextUi = createRuntimeContextUi(runtimeContextForUi, options)
-    runtimeContextSection.hidden = runtimeContextUi === null
-    if (runtimeContextUi) {
-      runtimeContextSection.appendChild(runtimeContextUi)
-    }
-    updatePosition()
+      options,
+      updatePosition,
+    })
   }
 
   runtimeToggleButton.addEventListener('click', event => {
@@ -228,7 +182,7 @@ export function showIntentMenu(
     event.stopPropagation()
     const currentEnabled = runtimeToggleButton.getAttribute('aria-pressed') === 'true'
     runtimeContextPreference = !currentEnabled
-    renderRuntimeContextUi()
+    renderCurrentRuntimeContextUi()
   })
 
   cssToggleButton.addEventListener('click', event => {
@@ -296,7 +250,7 @@ export function showIntentMenu(
       const hasFixIntent = aiIntents.some(isFixIntent)
       const hasNonFixIntent = aiIntents.some(intent => !isFixIntent(intent))
       runtimeContextDefaultMode = hasFixIntent ? (hasNonFixIntent ? 'mixed' : 'all-on') : 'off'
-      renderRuntimeContextUi()
+      renderCurrentRuntimeContextUi()
       const aiActions = createIntentActionButtons({
         intents: aiIntents,
         location,
