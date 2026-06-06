@@ -1,5 +1,5 @@
 import { createIntentActionButtons } from './actions.js'
-import { buildCustomInspectPrompt, openAndSendInspectPrompt } from './send.js'
+import { openAndSendInspectPrompt } from './send.js'
 import type {
   Provider,
   InspectorOptions,
@@ -21,6 +21,7 @@ import {
 import { t } from '../../../shared/i18n.js'
 import { isAiIntentConfig } from '@inspecto-dev/types'
 import { attachMenuClickAway } from './click-away.js'
+import { attachCustomAskSubmit } from './custom-ask.js'
 import { createIntentMenuDom } from './dom.js'
 import { attachMenuFocusLifecycle } from './focus.js'
 import {
@@ -273,47 +274,18 @@ export function showIntentMenu(
     }
   }
 
-  // Handle custom ask input
-  const submitAsk = async () => {
-    if (!input.value.trim()) return
-    input.disabled = true
-    sendIcon.style.pointerEvents = 'none'
-
-    try {
-      const requestRuntimeContext = resolveRuntimeContext()
-      const requestCssContextPrompt = resolveCssContextPrompt()
-      const built = await buildCustomInspectPrompt({
-        location,
-        ask: input.value.trim(),
-        ...(deps.targetLabel ? { targetLabel: deps.targetLabel } : {}),
-        includeSnippet,
-        maxSnippetLines,
-        runtimeContext: requestRuntimeContext,
-        cssContextPrompt: requestCssContextPrompt,
-      })
-      await openAndSendInspectPrompt({
-        location,
-        promptText: built.prompt,
-        snippetText: built.snippetText,
-        runtimeContext: requestRuntimeContext,
-        onSuccess: cleanup,
-        onRestore: () => {
-          input.disabled = false
-          sendIcon.style.pointerEvents = 'auto'
-        },
-        onError: (message, errorCode) => showError(menu, message, errorCode),
-      })
-    } catch (err) {
-      input.disabled = false
-      sendIcon.style.pointerEvents = 'auto'
-      showError(menu, (err as Error).message, (err as { errorCode?: string }).errorCode)
-    }
-  }
-
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') submitAsk()
+  attachCustomAskSubmit({
+    input,
+    sendIcon,
+    location,
+    includeSnippet,
+    maxSnippetLines,
+    ...(deps.targetLabel ? { targetLabel: deps.targetLabel } : {}),
+    resolveRuntimeContext: () => resolveRuntimeContext(),
+    resolveCssContextPrompt: () => resolveCssContextPrompt(),
+    onSuccess: cleanup,
+    onError: (message, errorCode) => showError(menu, message, errorCode),
   })
-  sendIcon.addEventListener('click', submitAsk)
 
   // Fetch only IDE info to render the menu immediately
   fetchIdeInfo()
