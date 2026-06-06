@@ -6,7 +6,6 @@ import {
   clearAnnotateError as clearAnnotateErrorState,
   clearAnnotateSuccess as clearAnnotateSuccessState,
   clearDraftForTarget as clearAnnotateDraftForTarget,
-  composeAnnotateInstruction as composeAnnotateBatchInstruction,
   createAnnotationTarget as createAnnotateTarget,
   describeElement as describeInspectableElement,
   findElementForAnnotationTarget as findAnnotateTargetElement,
@@ -20,12 +19,9 @@ import {
   renderAnnotateSelectionOverlay as renderAnnotateOverlay,
   refreshLatestAnnotateSession as refreshLatestAnnotateSessionState,
   restoreEditingRecord as restoreAnnotateEditingRecord,
-  sendAnnotationBatch as sendAnnotateBatch,
   showAnnotateSuccess as showAnnotateBatchSuccess,
   startLatestAnnotateSessionStream as startLatestAnnotateSessionStreamState,
   stopLatestAnnotateSessionStream as stopLatestAnnotateSessionStreamState,
-  toAnnotateErrorMessage as toAnnotateRequestErrorMessage,
-  toAnnotationTransportFromRecord as toAnnotateTransportFromRecord,
 } from './annotate.js'
 import {
   createBadge as createLauncherBadge,
@@ -79,8 +75,6 @@ import { InspectoElementState } from './inspecto-state.js'
 import type {
   AnnotationTransport,
   AnnotationTarget,
-  AiErrorCode,
-  FeedbackRecord,
   SourceLocation,
   HotKeys,
 } from '@inspecto-dev/types'
@@ -325,24 +319,6 @@ class InspectoElement extends InspectoElementState {
     stopLatestAnnotateSessionStreamState(this)
   }
 
-  private toAnnotateErrorMessage(errorCode?: AiErrorCode, fallback?: string): string {
-    return toAnnotateRequestErrorMessage(this, errorCode, fallback)
-  }
-
-  private toAnnotationTransportFromRecord(record: FeedbackRecord): AnnotationTransport {
-    return toAnnotateTransportFromRecord(this, record)
-  }
-
-  private async sendAnnotationBatch(
-    annotations: AnnotationTransport[],
-    scope: 'quick-ask' | 'create-task',
-    instruction: string,
-    deliveryMode: 'ide' | 'mcp',
-    onSuccess: () => void,
-  ): Promise<void> {
-    return sendAnnotateBatch(this, annotations, scope, instruction, deliveryMode, onSuccess)
-  }
-
   private syncModeUi(): void {
     syncInspectorModeUi(this)
   }
@@ -357,10 +333,6 @@ class InspectoElement extends InspectoElementState {
 
   private getAnnotateSidebarOptions(): AnnotateSidebarOptions {
     return buildAnnotateSidebarOptions(this)
-  }
-
-  private composeAnnotateInstruction(): string {
-    return composeAnnotateBatchInstruction(this)
   }
 
   private renderAnnotateSelectionOverlay(): void {
