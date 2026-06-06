@@ -1,10 +1,10 @@
-import { createEmptySession } from '../features/annotate/session/index.js'
 import { buildAnnotateFullPrompt } from '../features/annotate/prompts/full-prompt.js'
 import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/types.js'
 import type { AnnotationTransport, FeedbackRecord } from '@inspecto-dev/types'
 import { asAnnotateContext } from './annotate-shared.js'
 import { beginEditingRecord, clearDraftForTarget } from '../features/annotate/targets/index.js'
 import { t } from '../shared/i18n.js'
+import { completeQuickAskAnnotationBatch } from './annotate-quick-ask-complete.js'
 import { removeAnnotatePromptChip } from './annotate-sidebar-remove-chip.js'
 import { sendAnnotationBatch, triggerWorkflow } from './annotate-send.js'
 import { canAttachRuntimeContext } from './evidence.js'
@@ -145,12 +145,7 @@ export function getAnnotateSidebarOptions(ctx: unknown): AnnotateSidebarOptions 
         composeAnnotateInstruction(state),
         'ide',
         () => {
-          state.annotateInstructionDraft = ''
-          state.annotateDrafts.clear()
-          state.annotateEditingRecord = null
-          state.annotateSession = createEmptySession()
-          state.annotateElements.clear()
-
+          completeQuickAskAnnotationBatch(state)
           state.renderAnnotateSelectionOverlay()
         },
       )
