@@ -17,6 +17,7 @@ import { t } from '../../../shared/i18n.js'
 import { pauseIconSvg, playIconSvg } from '../../../shared/icons.js'
 import { renderWorkflowRow } from './workflow-row.js'
 import { renderLatestSession, type LatestSessionDom } from './latest-session-renderer.js'
+import { attachAnnotateSidebarEvents } from './events.js'
 import type { AnnotateSidebarOptions, PreferredAction, SidebarController } from './types.js'
 export type {
   AnnotateSidebarOptions,
@@ -38,7 +39,6 @@ export function createAnnotateSidebar(
     runtimeContextButton,
     runtimeContextBadge,
     modeButton,
-    exitButton,
     emptyState,
     draftSection,
     instructionInput,
@@ -108,51 +108,10 @@ export function createAnnotateSidebar(
     latestSessionError,
   }
 
-  latestSessionRefreshButton.addEventListener('click', event => {
-    event.preventDefault()
-    currentOptions.onRefreshLatestSession?.()
-  })
-  latestSessionTimelineToggle.addEventListener('click', event => {
-    event.preventDefault()
+  function toggleLatestSessionTimeline(): void {
     isLatestSessionTimelineExpanded = !isLatestSessionTimelineExpanded
     patch(currentOptions)
-  })
-  previewButton.addEventListener('click', event => {
-    event.preventDefault()
-    event.stopPropagation()
-    setRawPromptPreviewVisible(previewFloat.style.display !== 'block')
-  })
-  const originalCopyHtml = copyContextButton.innerHTML
-  copyContextButton.addEventListener('click', event => {
-    event.preventDefault()
-    if (!currentOptions.onCopyContext) return
-    const promise = currentOptions.onCopyContext()
-    if (promise) {
-      copyContextButton.innerHTML =
-        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
-      copyContextButton.title = t('annotate.copyContext.copied')
-      promise
-        .then(() => {
-          setTimeout(() => {
-            copyContextButton.innerHTML = originalCopyHtml
-            copyContextButton.title = t('annotate.copyContext')
-          }, 1500)
-        })
-        .catch(() => {
-          copyContextButton.innerHTML = originalCopyHtml
-          copyContextButton.title = t('annotate.copyContext')
-        })
-    }
-  })
-
-  quickAskButton.addEventListener('click', event => {
-    event.preventDefault()
-    currentOptions.onQuickAsk()
-  })
-  createTaskButton.addEventListener('click', event => {
-    event.preventDefault()
-    currentOptions.onCreateTask()
-  })
+  }
 
   function renderInstructionSegments(segments: InstructionSegment[]): void {
     isSyncingInstructionDom = true
@@ -383,7 +342,7 @@ export function createAnnotateSidebar(
     { type: 'text', text: currentOptions.instruction },
   ])
 
-  instructionInput.addEventListener('input', () => {
+  function handleInstructionInput(): void {
     if (isSyncingInstructionDom) return
     instructionSegments = captureInstructionSegmentsFromDom(
       instructionInput,
@@ -395,18 +354,13 @@ export function createAnnotateSidebar(
         id => getPromptChipRecordById(id)?.label ?? null,
       ),
     )
-  })
+  }
 
-  cssContextButton.addEventListener('click', () => currentOptions.onToggleCssContext?.())
-  runtimeContextButton.addEventListener('click', () => currentOptions.onToggleRuntimeContext?.())
-  exitButton.addEventListener('click', () => currentOptions.onExit())
-  quickCaptureButton.addEventListener('click', () => currentOptions.onToggleQuickCapture?.())
-  modeButton.addEventListener('click', () => {
-    if (currentOptions.mode === 'capture-enabled') {
-      currentOptions.onPauseCapture()
-    } else {
-      currentOptions.onResumeCapture()
-    }
+  attachAnnotateSidebarEvents({
+    dom,
+    getOptions: () => currentOptions,
+    toggleLatestSessionTimeline,
+    handleInstructionInput,
   })
 
   patch(currentOptions)
