@@ -15,6 +15,11 @@ import {
 } from '../features/annotate/targets/index.js'
 import type { AnnotationTarget, AnnotationTransport, SourceLocation } from '@inspecto-dev/types'
 import { isCssContextEnabledForTargetKey, type CssContextState } from './css-context-state.js'
+import {
+  formatRuntimeContextSummary as formatRuntimeContextSummaryValue,
+  getCollectedRuntimeErrorCount as getCollectedRuntimeErrorCountValue,
+  getRuntimeContextLimits as getRuntimeContextLimitValues,
+} from './evidence-summary.js'
 
 type EvidenceContext = {
   options: {
@@ -168,15 +173,7 @@ export function getRuntimeContextLimits(ctx: unknown): {
   maxRuntimeErrors?: number
   maxFailedRequests?: number
 } {
-  const state = asEvidenceContext(ctx)
-  return {
-    ...(state.options.runtimeContext?.maxRuntimeErrors !== undefined
-      ? { maxRuntimeErrors: state.options.runtimeContext.maxRuntimeErrors }
-      : {}),
-    ...(state.options.runtimeContext?.maxFailedRequests !== undefined
-      ? { maxFailedRequests: state.options.runtimeContext.maxFailedRequests }
-      : {}),
-  }
+  return getRuntimeContextLimitValues(asEvidenceContext(ctx))
 }
 
 export function getAnnotateRuntimeContext(
@@ -210,25 +207,9 @@ export function getAnnotateRuntimeContext(
 export function formatRuntimeContextSummary(
   runtimeContext: ReturnType<typeof createRuntimeContextEnvelope> | null,
 ): string {
-  if (!runtimeContext) return ''
-
-  const parts: string[] = []
-  if (runtimeContext.summary.runtimeErrorCount > 0) {
-    parts.push(
-      `${runtimeContext.summary.runtimeErrorCount} ${runtimeContext.summary.runtimeErrorCount === 1 ? 'runtime error' : 'runtime errors'}`,
-    )
-  }
-  if (runtimeContext.summary.failedRequestCount > 0) {
-    parts.push(
-      `${runtimeContext.summary.failedRequestCount} ${runtimeContext.summary.failedRequestCount === 1 ? 'failed request' : 'failed requests'}`,
-    )
-  }
-  return parts.join(' • ')
+  return formatRuntimeContextSummaryValue(runtimeContext)
 }
 
 export function getCollectedRuntimeErrorCount(ctx: unknown): number {
-  const state = asEvidenceContext(ctx)
-  return state.runtimeContextCollector
-    .snapshot()
-    .records.filter(record => record.kind !== 'failed-request').length
+  return getCollectedRuntimeErrorCountValue(asEvidenceContext(ctx))
 }
