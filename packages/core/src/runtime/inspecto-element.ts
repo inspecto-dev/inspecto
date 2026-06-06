@@ -18,8 +18,6 @@ import {
   stopLatestAnnotateSessionStream as stopLatestAnnotateSessionStreamState,
 } from './annotate.js'
 import {
-  setActive as setLauncherActive,
-  setPaused as setLauncherPaused,
   updateBadgeContent as updateLauncherBadgeContent,
   updateLauncherEye as syncLauncherEye,
 } from './launcher.js'
@@ -87,15 +85,6 @@ class InspectoElement extends InspectoElementState {
 
   private updateBadgeContent(): void {
     updateLauncherBadgeContent(this)
-  }
-
-  private setPaused(value: boolean): void {
-    setLauncherPaused(this, value)
-    this.syncModeUi()
-  }
-
-  private setActive(value: boolean): void {
-    setLauncherActive(this, value)
   }
 
   private readonly onMouseMove = (e: MouseEvent): void => {
