@@ -3,6 +3,7 @@ import { badgeClass } from '../shared/styles/index.js'
 import { getDeepActiveElement, hotKeysHeld } from '../shared/component-utils.js'
 import { t } from '../shared/i18n.js'
 import { pauseIconSvg, playIconSvg } from '../shared/icons.js'
+import { createLauncherDom } from './launcher-dom.js'
 
 type LauncherContext = {
   options: { hotKeys?: HotKeys }
@@ -73,67 +74,9 @@ export function getHotKeyLabel(ctx: unknown): string {
 
 export function createBadge(ctx: unknown): HTMLDivElement {
   const state = asLauncherContext(ctx)
-  const btn = document.createElement('div')
-  btn.className = badgeClass
-  // Start with visibility hidden to prevent FOUC (flash of unstyled content)
-  // before the shadow DOM styles are fully parsed by the browser.
-  btn.style.visibility = 'hidden'
+  const { badge: btn, inspectButton, annotateButton, pauseButton } = createLauncherDom()
 
-  const indicator = document.createElement('span')
-  indicator.className = `${badgeClass}-indicator`
-  indicator.dataset.inspectoLauncherIndicator = 'true'
-  indicator.dataset.state = 'ready'
-
-  const stateSpan = document.createElement('span')
-  stateSpan.className = `${badgeClass}-state`
-  stateSpan.dataset.inspectoLauncherState = 'true'
-  stateSpan.hidden = true
-
-  const titleSpan = document.createElement('span')
-  titleSpan.className = `${badgeClass}-title`
-  titleSpan.textContent = t('launcher.title')
-
-  const eyes = document.createElement('span')
-  eyes.className = `${badgeClass}-eyes`
-  eyes.setAttribute('aria-hidden', 'true')
-  const leftEye = document.createElement('span')
-  leftEye.className = `${badgeClass}-eye`
-  const leftPupil = document.createElement('span')
-  leftPupil.className = `${badgeClass}-eye-pupil`
-  leftEye.appendChild(leftPupil)
-  const rightEye = document.createElement('span')
-  rightEye.className = `${badgeClass}-eye`
-  const rightPupil = document.createElement('span')
-  rightPupil.className = `${badgeClass}-eye-pupil`
-  rightEye.appendChild(rightPupil)
-  eyes.append(leftEye, rightEye)
-
-  const content = document.createElement('div')
-  content.className = `${badgeClass}-content`
-  const titleBlock = document.createElement('div')
-  titleBlock.className = `${badgeClass}-label`
-
-  const panel = document.createElement('div')
-  panel.className = `${badgeClass}-panel`
-  panel.dataset.inspectoLauncherPanel = 'true'
-
-  const panelHeader = document.createElement('div')
-  panelHeader.className = `${badgeClass}-panel-header`
-  const panelHeaderCopy = document.createElement('div')
-  panelHeaderCopy.className = `${badgeClass}-panel-header-copy`
-  panelHeaderCopy.innerHTML = `<div data-inspecto-launcher-panel-title="true">${t('launcher.panel.title')}</div><div data-inspecto-launcher-panel-subtitle="true">${t('launcher.panel.subtitle')}</div>`
-  const panelHeaderActions = document.createElement('div')
-  panelHeaderActions.className = `${badgeClass}-panel-header-actions`
-
-  const modeGroup = document.createElement('div')
-  modeGroup.className = `${badgeClass}-panel-group`
-
-  const inspectBtn = document.createElement('button')
-  inspectBtn.type = 'button'
-  inspectBtn.className = `${badgeClass}-panel-button`
-  inspectBtn.dataset.inspectoLauncherAction = 'inspect'
-  inspectBtn.innerHTML = `<span data-inspecto-launcher-title="true">${t('launcher.action.inspect.title')}</span><span data-inspecto-launcher-description="true">${t('launcher.action.inspect.description')}</span>`
-  inspectBtn.addEventListener('click', event => {
+  inspectButton.addEventListener('click', event => {
     event.stopPropagation()
     if (state.disabled) setPaused(state, false)
     state.active = true
@@ -142,12 +85,7 @@ export function createBadge(ctx: unknown): HTMLDivElement {
     state.updateBadgeContent()
   })
 
-  const annotateBtn = document.createElement('button')
-  annotateBtn.type = 'button'
-  annotateBtn.className = `${badgeClass}-panel-button`
-  annotateBtn.dataset.inspectoLauncherAction = 'annotate'
-  annotateBtn.innerHTML = `<span data-inspecto-launcher-title="true">${t('launcher.action.annotate.title')}</span><span data-inspecto-launcher-description="true">${t('launcher.action.annotate.description')}</span>`
-  annotateBtn.addEventListener('click', event => {
+  annotateButton.addEventListener('click', event => {
     event.stopPropagation()
     if (state.disabled) setPaused(state, false)
     state.active = true
@@ -156,40 +94,10 @@ export function createBadge(ctx: unknown): HTMLDivElement {
     state.updateBadgeContent()
   })
 
-  const pauseBtn = document.createElement('button')
-  pauseBtn.type = 'button'
-  pauseBtn.className = `${badgeClass}-panel-toggle-button`
-  pauseBtn.dataset.inspectoLauncherAction = 'pause'
-  pauseBtn.setAttribute('aria-label', t('launcher.action.pause.title'))
-  pauseBtn.setAttribute('aria-pressed', 'false')
-  pauseBtn.innerHTML = pauseIconSvg
-  pauseBtn.addEventListener('click', event => {
+  pauseButton.addEventListener('click', event => {
     event.stopPropagation()
     setPaused(state, !state.disabled)
   })
-  const pauseText = document.createElement('div')
-  pauseText.className = `${badgeClass}-panel-status-text`
-  pauseText.dataset.inspectoLauncherPauseText = 'true'
-
-  const hotkeyHint = document.createElement('div')
-  hotkeyHint.className = `${badgeClass}-panel-hint`
-  hotkeyHint.dataset.inspectoLauncherHint = 'hotkey'
-
-  const utilityGroup = document.createElement('div')
-  utilityGroup.className = `${badgeClass}-panel-group`
-  utilityGroup.dataset.inspectoLauncherUtilityGroup = 'true'
-
-  const inspectNotice = document.createElement('div')
-  inspectNotice.dataset.inspectoLauncherInspectNotice = 'true'
-
-  modeGroup.append(inspectBtn, annotateBtn)
-  panelHeader.append(panelHeaderCopy, panelHeaderActions)
-  utilityGroup.append(inspectNotice, hotkeyHint)
-  panelHeaderActions.append(pauseText, pauseBtn)
-  panel.append(panelHeader, modeGroup, utilityGroup)
-  titleBlock.append(titleSpan, stateSpan)
-  content.append(indicator, titleBlock)
-  btn.append(content, eyes, panel)
 
   let isDragging = false
   let dragStartX = 0
