@@ -4,6 +4,7 @@ import { inspectorStyles } from '../shared/styles/index.js'
 import { setBaseUrl } from '../transport/http-client.js'
 import { configureI18n } from '../shared/i18n.js'
 import { createBadge, setActive, updateBadgeContent } from './launcher.js'
+import { cleanupDisconnectedRuntime } from './lifecycle-cleanup.js'
 import {
   buildI18nConfig,
   canUseInspectMode,
@@ -100,18 +101,7 @@ export function connect(
 
 export function disconnect(ctx: unknown, teardownListeners: () => void): void {
   const state = asLifecycleContext(ctx)
-  if (state.pendingAnnotateViewportFrame !== null) {
-    cancelAnimationFrame(state.pendingAnnotateViewportFrame)
-    state.pendingAnnotateViewportFrame = null
-  }
-  state.annotateSidebar?.destroy()
-  state.annotateSidebar = null
-  state.annotateElements.clear()
-  state.annotateDrafts.clear()
-  state.stopLatestAnnotateSessionStream()
-  state.cleanupRuntimeContextCapture?.()
-  state.cleanupRuntimeContextCapture = null
-  state.runtimeContextCollector.clear()
+  cleanupDisconnectedRuntime(state)
   teardownListeners()
 }
 
