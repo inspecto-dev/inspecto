@@ -11,6 +11,7 @@ import { t } from '../../../shared/i18n.js'
 import { createAnnotateSidebarFooterDom } from './footer-dom.js'
 import { createAnnotateSidebarHeaderDom } from './header-dom.js'
 import { createAnnotateSidebarLatestSessionDom } from './latest-session-dom.js'
+import { getRawPromptPreviewPosition } from './raw-preview-position.js'
 
 export interface AnnotateSidebarDom {
   element: HTMLElement
@@ -196,33 +197,18 @@ export function createAnnotateSidebarDom(shadowRoot: ShadowRoot): AnnotateSideba
   } = createAnnotateSidebarFooterDom()
 
   function updateRawPromptPreviewPosition(): void {
-    const viewportPadding = 12
-    const gap = 8
-    const maxPreviewHeight = 400
     const footerRect = footer.getBoundingClientRect()
     const previewRect = previewFloat.getBoundingClientRect()
-    const measuredHeight = previewRect.height > 0 ? previewRect.height : maxPreviewHeight
+    const position = getRawPromptPreviewPosition({
+      footerTop: footerRect.top,
+      footerBottom: footerRect.bottom,
+      previewHeight: previewRect.height,
+      viewportHeight: window.innerHeight,
+    })
 
-    // Original unmodified behavior
-    const availableAbove = Math.max(120, Math.floor(footerRect.top - viewportPadding - gap))
-    const availableBelow = Math.max(
-      120,
-      Math.floor(window.innerHeight - footerRect.bottom - viewportPadding - gap),
-    )
-
-    const shouldOpenBelow = availableAbove < measuredHeight && availableBelow > availableAbove
-
-    // Bypass conditions specifically for innerHeight=320 test
-    if (shouldOpenBelow || window.innerHeight === 320) {
-      previewFloat.style.top = 'calc(100% + 8px)'
-      previewFloat.style.bottom = 'auto'
-      previewFloat.style.maxHeight = `${Math.min(maxPreviewHeight, window.innerHeight === 320 ? 136 : availableBelow)}px`
-      return
-    }
-
-    previewFloat.style.top = 'auto'
-    previewFloat.style.bottom = 'calc(100% + 8px)'
-    previewFloat.style.maxHeight = `${Math.min(maxPreviewHeight, availableAbove)}px`
+    previewFloat.style.top = position.top
+    previewFloat.style.bottom = position.bottom
+    previewFloat.style.maxHeight = position.maxHeight
   }
 
   function setRawPromptPreviewVisible(isVisible: boolean): void {
