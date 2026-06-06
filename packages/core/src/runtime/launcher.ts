@@ -7,6 +7,7 @@ import {
   shouldQuickJumpOnTrigger as shouldQuickJumpOnTriggerValue,
 } from './launcher-hotkeys.js'
 import { updateLauncherEye as updateLauncherEyeElement } from './launcher-eye.js'
+import { getLauncherPauseState } from './launcher-pause-state.js'
 import { getLauncherViewState, shouldShowInspectMode } from './launcher-view-state.js'
 
 type LauncherContext = {
@@ -101,26 +102,26 @@ export function createBadge(ctx: unknown): HTMLDivElement {
 
 export function setPaused(ctx: unknown, value: boolean): void {
   const state = asLauncherContext(ctx)
-  if (value) {
-    state.prePauseState = {
-      active: state.active,
-      mode: state.mode,
-    }
-  }
+  const next = getLauncherPauseState({
+    value,
+    active: state.active,
+    mode: state.mode,
+    prePauseState: state.prePauseState,
+    canUseInspectMode: shouldShowInspectMode(state),
+  })
 
-  state.disabled = value
-  state.launcherPanelOpen = false
-  if (value) {
-    state.active = false
+  state.prePauseState = next.prePauseState
+  state.disabled = next.disabled
+  state.launcherPanelOpen = next.launcherPanelOpen
+  state.active = next.active
+  state.mode = next.mode
+
+  if (next.shouldHideOverlay) {
     state.overlay.hide()
+  }
+  if (next.shouldCleanupMenu) {
     state.cleanupMenu?.()
     state.cleanupMenu = null
-  } else {
-    state.mode =
-      state.prePauseState.mode === 'inspect' && !shouldShowInspectMode(state)
-        ? 'annotate'
-        : state.prePauseState.mode
-    state.active = state.prePauseState.active
   }
   state.syncRuntimeContextCapture()
   state.updateBadgeContent()
