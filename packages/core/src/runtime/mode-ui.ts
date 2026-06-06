@@ -1,7 +1,7 @@
 import { createAnnotateSidebar } from '../features/annotate/sidebar/index.js'
 import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/types.js'
-import { hotKeysHeld } from '../shared/component-utils.js'
 import { getEffectiveHotKeys } from './launcher.js'
+import { isInspectorActiveForMode } from './mode-active.js'
 
 type ModeUiContext = {
   disabled: boolean
@@ -74,13 +74,13 @@ export function updateAnnotateSidebar(ctx: unknown): void {
 
 export function isInspectorActive(ctx: unknown, event: MouseEvent): boolean {
   const state = asModeUiContext(ctx)
-  if (state.disabled) return false
-  if (state.mode === 'annotate') return true
-  if (state.active) return true
-
-  const hotKeys = getEffectiveHotKeys(state)
-  if (hotKeys === false) return false
-  return hotKeysHeld(event, hotKeys)
+  return isInspectorActiveForMode({
+    disabled: state.disabled,
+    mode: state.mode,
+    active: state.active,
+    hotKeys: getEffectiveHotKeys(state),
+    event,
+  })
 }
 
 export function setupListeners(
