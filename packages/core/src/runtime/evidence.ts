@@ -14,6 +14,7 @@ import {
   getAnnotationTargetKey,
 } from '../features/annotate/targets/index.js'
 import type { AnnotationTarget, AnnotationTransport, SourceLocation } from '@inspecto-dev/types'
+import { isCssContextEnabledForTargetKey, type CssContextState } from './css-context-state.js'
 
 type EvidenceContext = {
   options: {
@@ -93,22 +94,28 @@ export function captureCssContextPromptForElement(
   return entry ? buildCssContextPrompt([entry]) : null
 }
 
+function getCssContextState(state: EvidenceContext): CssContextState {
+  return {
+    annotateCssContextEnabled: state.annotateCssContextEnabled,
+    currentTargetKey: state.annotateSession.current.target
+      ? getAnnotationTargetKey(state, state.annotateSession.current.target)
+      : null,
+    ...(state.annotateSession.current.cssContextEnabled !== undefined
+      ? { currentCssContextEnabled: state.annotateSession.current.cssContextEnabled }
+      : {}),
+    savedRecords: state.annotateSession.records.map(record => ({
+      targetKey: getAnnotationTargetKey(state, record.target),
+      ...(record.cssContextEnabled !== undefined
+        ? { cssContextEnabled: record.cssContextEnabled }
+        : {}),
+    })),
+  }
+}
+
 export function isCssContextEnabledForTarget(ctx: unknown, target: AnnotationTarget): boolean {
   const state = asEvidenceContext(ctx)
-  if (state.annotateCssContextEnabled) return true
-
   const targetKey = getAnnotationTargetKey(state, target)
-  if (
-    state.annotateSession.current.target &&
-    getAnnotationTargetKey(state, state.annotateSession.current.target) === targetKey
-  ) {
-    return state.annotateSession.current.cssContextEnabled ?? false
-  }
-
-  const savedRecord = state.annotateSession.records.find(
-    record => getAnnotationTargetKey(state, record.target) === targetKey,
-  )
-  return savedRecord?.cssContextEnabled ?? false
+  return isCssContextEnabledForTargetKey(getCssContextState(state), targetKey)
 }
 
 export function isCssContextEnabledForTransportTarget(
@@ -116,20 +123,8 @@ export function isCssContextEnabledForTransportTarget(
   target: AnnotationTransport['targets'][number],
 ): boolean {
   const state = asEvidenceContext(ctx)
-  if (state.annotateCssContextEnabled) return true
-
   const targetKey = `${target.location.file}:${target.location.line}:${target.location.column}::${target.selector ?? ''}`
-  if (
-    state.annotateSession.current.target &&
-    getAnnotationTargetKey(state, state.annotateSession.current.target) === targetKey
-  ) {
-    return state.annotateSession.current.cssContextEnabled ?? false
-  }
-
-  const savedRecord = state.annotateSession.records.find(
-    record => getAnnotationTargetKey(state, record.target) === targetKey,
-  )
-  return savedRecord?.cssContextEnabled ?? false
+  return isCssContextEnabledForTargetKey(getCssContextState(state), targetKey)
 }
 
 export function getAnnotateCssContextPrompt(
