@@ -4,7 +4,7 @@ import {
   removeRecord,
 } from '../features/annotate/session/index.js'
 import { buildAnnotateFullPrompt } from '../features/annotate/prompts/full-prompt.js'
-import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/index.js'
+import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/types.js'
 import type { AnnotationTransport, FeedbackRecord } from '@inspecto-dev/types'
 import { asAnnotateContext } from './annotate-shared.js'
 import { beginEditingRecord, clearDraftForTarget } from '../features/annotate/targets/index.js'

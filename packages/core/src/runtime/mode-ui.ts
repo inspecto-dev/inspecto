@@ -1,5 +1,5 @@
 import { createAnnotateSidebar } from '../features/annotate/sidebar/index.js'
-import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/index.js'
+import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/types.js'
 import { hotKeysHeld } from '../shared/component-utils.js'
 import { getEffectiveHotKeys } from './launcher.js'
 

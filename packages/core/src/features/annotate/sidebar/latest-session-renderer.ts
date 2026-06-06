@@ -8,6 +8,7 @@ import {
   getLatestSessionStatusLabel,
 } from './latest-session.js'
 import { renderSessionTimeline } from './session-timeline-dom.js'
+import type { AnnotateWorkflowNotice } from './types.js'
 import { t } from '../../../shared/i18n.js'
 import { buildSessionTimelineItems } from '../session/timeline.js'
 
@@ -23,12 +24,6 @@ export type LatestSessionDom = {
   latestSessionTimelineTitle: HTMLElement
   latestSessionTimelineContainer: HTMLElement
   latestSessionError: HTMLElement
-}
-
-export type AnnotateWorkflowNotice = {
-  kind: 'ide-dispatch'
-  workflowId: string
-  workflowLabel: string
 }
 
 export type LatestSessionRenderState = {

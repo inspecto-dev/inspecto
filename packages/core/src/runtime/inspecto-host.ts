@@ -1,4 +1,4 @@
-import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/index.js'
+import type { AnnotateSidebarOptions } from '../features/annotate/sidebar/types.js'
 import {
   beginEditingRecord as beginAnnotateEditing,
   clearAnnotateError as clearAnnotateErrorState,

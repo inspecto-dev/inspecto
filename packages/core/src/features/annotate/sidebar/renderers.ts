@@ -7,7 +7,7 @@ import {
 } from '../../../shared/styles/index.js'
 import { closeIconSvg, inspectFilledIconSvg } from '../../../shared/icons.js'
 import type { PromptChipRecord } from './helpers.js'
-import type { AnnotateSidebarOptions } from './index.js'
+import type { AnnotateSidebarOptions } from './types.js'
 import { t } from '../../../shared/i18n.js'
 
 type PromptChipElement = HTMLSpanElement & {

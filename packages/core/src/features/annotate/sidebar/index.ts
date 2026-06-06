@@ -1,10 +1,4 @@
-import type {
-  AnnotationWorkSession,
-  AnnotationWorkSessionSummary,
-  FeedbackRecord,
-  FeedbackRecordSession,
-  WorkflowSlotOption,
-} from '@inspecto-dev/types'
+import type { FeedbackRecordSession } from '@inspecto-dev/types'
 import {
   captureInstructionSegmentsFromDom,
   formatRuntimeErrorCount,
@@ -15,7 +9,6 @@ import {
   normalizeInstructionSegments,
   serializeInstructionSegments,
   type InstructionSegment,
-  type AnnotateSendScope,
   type PromptChipRecord,
 } from './helpers.js'
 import { createAnnotateSidebarDom } from './dom.js'
@@ -23,65 +16,14 @@ import { createAnnotateSidebarRenderers } from './renderers.js'
 import { t } from '../../../shared/i18n.js'
 import { pauseIconSvg, playIconSvg } from '../../../shared/icons.js'
 import { renderWorkflowRow } from './workflow-row.js'
-import {
-  renderLatestSession,
-  type AnnotateWorkflowNotice,
-  type LatestSessionDom,
-} from './latest-session-renderer.js'
-export type { AnnotateWorkflowNotice } from './latest-session-renderer.js'
-
-type SidebarMode = 'capture-enabled' | 'capture-paused'
-type SendScope = AnnotateSendScope
-type SuccessScope = 'quick-ask' | 'create-task' | null
-type PreferredAction = 'quick-ask' | 'create-task'
-export type DeliveryMode = 'ide' | 'mcp'
-
-export interface AnnotateSidebarOptions {
-  mode: SidebarMode
-  canAttachCssContext?: boolean
-  cssContextEnabled?: boolean
-  canAttachRuntimeContext?: boolean
-  runtimeContextEnabled?: boolean
-  runtimeContextSummary?: string
-  runtimeErrorCount?: number
-  session: FeedbackRecordSession
-  instruction: string
-  includedRecords: FeedbackRecord[]
-  fullPrompt: string
-  isSending: boolean
-  sendingScope: SendScope
-  successScope: SuccessScope
-  preferredAction?: PreferredAction
-  deliveryMode?: DeliveryMode
-  latestSessionSummary?: AnnotationWorkSessionSummary | null
-  latestSessionDetail?: AnnotationWorkSession | null
-  latestSessionLoading?: boolean
-  latestSessionError?: string
-  workflowNotice?: AnnotateWorkflowNotice | null
-  workflows?: WorkflowSlotOption[]
-  onWorkflow?: (workflowId: string) => void
-  quickCaptureEnabled?: boolean
-  errorMessage?: string
-  onPauseCapture: () => void
-  onResumeCapture: () => void
-  onToggleQuickCapture?: () => void
-  onToggleCssContext?: () => void
-  onToggleRuntimeContext?: () => void
-  onUpdateInstruction: (instruction: string) => void
-  onRemovePromptChip: (recordId: string) => void
-  onEditRecord?: (id: string) => void
-  onRefreshLatestSession?: () => void
-  onCopyContext?: () => Promise<void>
-  onQuickAsk: () => void
-  onCreateTask: () => void
-  onExit: () => void
-}
-
-type SidebarController = {
-  element: HTMLElement
-  update(next: AnnotateSidebarOptions): void
-  destroy(): void
-}
+import { renderLatestSession, type LatestSessionDom } from './latest-session-renderer.js'
+import type { AnnotateSidebarOptions, PreferredAction, SidebarController } from './types.js'
+export type {
+  AnnotateSidebarOptions,
+  AnnotateWorkflowNotice,
+  DeliveryMode,
+  SidebarController,
+} from './types.js'
 
 export function createAnnotateSidebar(
   shadowRoot: ShadowRoot,
