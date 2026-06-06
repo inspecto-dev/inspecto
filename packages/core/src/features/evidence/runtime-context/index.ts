@@ -1,4 +1,5 @@
-export { attachRuntimeContextCapture, createRuntimeContextCollector } from './capture.js'
+export { createRuntimeContextCollector } from './collector.js'
+export { attachRuntimeContextCapture } from './capture.js'
 export {
   createRuntimeContextEnvelope,
   rankRuntimeEvidence,
