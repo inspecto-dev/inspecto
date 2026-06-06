@@ -3,7 +3,7 @@ import { badgeClass } from '../shared/styles/index.js'
 import { getDeepActiveElement, hotKeysHeld } from '../shared/component-utils.js'
 import { t } from '../shared/i18n.js'
 import { pauseIconSvg, playIconSvg } from '../shared/icons.js'
-import { createLauncherDom } from './launcher-dom.js'
+import { createLauncherDom, getLauncherDomRefs } from './launcher-dom.js'
 import { createLauncherDragController } from './launcher-drag.js'
 
 type LauncherContext = {
@@ -162,47 +162,8 @@ export function dismiss(ctx: unknown): void {
 
 export function updateBadgeContent(ctx: unknown): void {
   const state = asLauncherContext(ctx)
-  const indicator = state.badge.querySelector(
-    `[data-inspecto-launcher-indicator]`,
-  ) as HTMLSpanElement | null
-  const stateSpan = state.badge.querySelector(
-    `[data-inspecto-launcher-state]`,
-  ) as HTMLSpanElement | null
-  const titleSpan = state.badge.querySelector(`.${badgeClass}-title`) as HTMLSpanElement | null
-  const panel = state.badge.querySelector(`.${badgeClass}-panel`) as HTMLDivElement | null
-  const inspectBtn = state.badge.querySelector(
-    `[data-inspecto-launcher-action="inspect"]`,
-  ) as HTMLButtonElement | null
-  const annotateBtn = state.badge.querySelector(
-    `[data-inspecto-launcher-action="annotate"]`,
-  ) as HTMLButtonElement | null
-  const pauseBtn = state.badge.querySelector(
-    `[data-inspecto-launcher-action="pause"]`,
-  ) as HTMLButtonElement | null
-  const pauseText = state.badge.querySelector(
-    `[data-inspecto-launcher-pause-text]`,
-  ) as HTMLDivElement | null
-  const hotkeyHint = state.badge.querySelector(
-    `[data-inspecto-launcher-hint="hotkey"]`,
-  ) as HTMLDivElement | null
-  const inspectNotice = state.badge.querySelector(
-    `[data-inspecto-launcher-inspect-notice]`,
-  ) as HTMLDivElement | null
-
-  if (
-    !indicator ||
-    !titleSpan ||
-    !stateSpan ||
-    !panel ||
-    !inspectBtn ||
-    !annotateBtn ||
-    !pauseBtn ||
-    !pauseText ||
-    !hotkeyHint ||
-    !inspectNotice
-  ) {
-    return
-  }
+  const refs = getLauncherDomRefs(state.badge)
+  if (!refs) return
 
   const updateModeButton = (button: HTMLButtonElement, active: boolean) => {
     button.classList.toggle('active', active)
@@ -213,55 +174,58 @@ export function updateBadgeContent(ctx: unknown): void {
 
   if (state.disabled) {
     stateLabel = t('launcher.state.paused')
-    indicator.dataset.state = 'paused'
+    refs.indicator.dataset.state = 'paused'
     state.badge.classList.remove('active')
     state.badge.classList.add('disabled')
   } else if (state.mode === 'annotate') {
     stateLabel = t('launcher.state.annotate')
-    indicator.dataset.state = 'annotate'
+    refs.indicator.dataset.state = 'annotate'
     state.badge.classList.remove('disabled')
     state.badge.classList.add('active')
   } else if (state.active) {
     stateLabel = t('launcher.state.inspect')
-    indicator.dataset.state = 'inspect'
+    refs.indicator.dataset.state = 'inspect'
     state.badge.classList.remove('disabled')
     state.badge.classList.add('active')
   } else {
     stateLabel = t('launcher.state.ready')
-    indicator.dataset.state = 'ready'
+    refs.indicator.dataset.state = 'ready'
     state.badge.classList.remove('active', 'disabled')
   }
 
-  stateSpan.dataset.state = indicator.dataset.state
-  stateSpan.hidden = false
-  titleSpan.textContent = t('launcher.title')
-  stateSpan.textContent = stateLabel
+  refs.stateSpan.dataset.state = refs.indicator.dataset.state
+  refs.stateSpan.hidden = false
+  refs.titleSpan.textContent = t('launcher.title')
+  refs.stateSpan.textContent = stateLabel
 
-  panel.style.display = state.launcherPanelOpen ? 'flex' : 'none'
+  refs.panel.style.display = state.launcherPanelOpen ? 'flex' : 'none'
   const isPaused = state.disabled
-  pauseBtn.setAttribute(
+  refs.pauseButton.setAttribute(
     'aria-label',
     isPaused ? t('launcher.action.resume.title') : t('launcher.action.pause.title'),
   )
-  pauseBtn.setAttribute('aria-pressed', isPaused ? 'true' : 'false')
-  pauseBtn.innerHTML = isPaused ? playIconSvg : pauseIconSvg
-  pauseText.textContent = isPaused
+  refs.pauseButton.setAttribute('aria-pressed', isPaused ? 'true' : 'false')
+  refs.pauseButton.innerHTML = isPaused ? playIconSvg : pauseIconSvg
+  refs.pauseText.textContent = isPaused
     ? t('launcher.action.resume.title')
     : t('launcher.action.pause.title')
-  hotkeyHint.textContent =
+  refs.hotkeyHint.textContent =
     getEffectiveHotKeys(state) === false
       ? t('launcher.hint.hotkeyDisabled')
       : t('launcher.hint.hotkeyQuickJump', { hotkey: getHotKeyLabel(state) })
   const inspectHiddenReason = getInspectHiddenReason(state)
-  inspectBtn.style.display = state.disabled || inspectHiddenReason ? 'none' : 'inline-flex'
-  inspectNotice.style.display = !state.disabled && inspectHiddenReason ? '' : 'none'
-  inspectNotice.textContent = inspectHiddenReason
+  refs.inspectButton.style.display = state.disabled || inspectHiddenReason ? 'none' : 'inline-flex'
+  refs.inspectNotice.style.display = !state.disabled && inspectHiddenReason ? '' : 'none'
+  refs.inspectNotice.textContent = inspectHiddenReason
     ? t(`launcher.inspectUnavailable.${inspectHiddenReason}`)
     : ''
-  annotateBtn.style.display = state.disabled ? 'none' : 'inline-flex'
+  refs.annotateButton.style.display = state.disabled ? 'none' : 'inline-flex'
 
-  updateModeButton(inspectBtn, !state.disabled && state.active && state.mode === 'inspect')
-  updateModeButton(annotateBtn, !state.disabled && state.active && state.mode === 'annotate')
+  updateModeButton(refs.inspectButton, !state.disabled && state.active && state.mode === 'inspect')
+  updateModeButton(
+    refs.annotateButton,
+    !state.disabled && state.active && state.mode === 'annotate',
+  )
   updateLauncherEye(state)
 }
 

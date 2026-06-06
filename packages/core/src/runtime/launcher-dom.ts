@@ -9,6 +9,19 @@ export type LauncherDom = {
   pauseButton: HTMLButtonElement
 }
 
+export type LauncherDomRefs = {
+  indicator: HTMLSpanElement
+  stateSpan: HTMLSpanElement
+  titleSpan: HTMLSpanElement
+  panel: HTMLDivElement
+  inspectButton: HTMLButtonElement
+  annotateButton: HTMLButtonElement
+  pauseButton: HTMLButtonElement
+  pauseText: HTMLDivElement
+  hotkeyHint: HTMLDivElement
+  inspectNotice: HTMLDivElement
+}
+
 export function createLauncherDom(): LauncherDom {
   const badge = document.createElement('div')
   badge.className = badgeClass
@@ -110,6 +123,61 @@ export function createLauncherDom(): LauncherDom {
     inspectButton,
     annotateButton,
     pauseButton,
+  }
+}
+
+export function getLauncherDomRefs(badge: HTMLDivElement): LauncherDomRefs | null {
+  const indicator = badge.querySelector(
+    '[data-inspecto-launcher-indicator]',
+  ) as HTMLSpanElement | null
+  const stateSpan = badge.querySelector('[data-inspecto-launcher-state]') as HTMLSpanElement | null
+  const titleSpan = badge.querySelector(`.${badgeClass}-title`) as HTMLSpanElement | null
+  const panel = badge.querySelector(`.${badgeClass}-panel`) as HTMLDivElement | null
+  const inspectButton = badge.querySelector(
+    '[data-inspecto-launcher-action="inspect"]',
+  ) as HTMLButtonElement | null
+  const annotateButton = badge.querySelector(
+    '[data-inspecto-launcher-action="annotate"]',
+  ) as HTMLButtonElement | null
+  const pauseButton = badge.querySelector(
+    '[data-inspecto-launcher-action="pause"]',
+  ) as HTMLButtonElement | null
+  const pauseText = badge.querySelector(
+    '[data-inspecto-launcher-pause-text]',
+  ) as HTMLDivElement | null
+  const hotkeyHint = badge.querySelector(
+    '[data-inspecto-launcher-hint="hotkey"]',
+  ) as HTMLDivElement | null
+  const inspectNotice = badge.querySelector(
+    '[data-inspecto-launcher-inspect-notice]',
+  ) as HTMLDivElement | null
+
+  if (
+    !indicator ||
+    !stateSpan ||
+    !titleSpan ||
+    !panel ||
+    !inspectButton ||
+    !annotateButton ||
+    !pauseButton ||
+    !pauseText ||
+    !hotkeyHint ||
+    !inspectNotice
+  ) {
+    return null
+  }
+
+  return {
+    indicator,
+    stateSpan,
+    titleSpan,
+    panel,
+    inspectButton,
+    annotateButton,
+    pauseButton,
+    pauseText,
+    hotkeyHint,
+    inspectNotice,
   }
 }
 
