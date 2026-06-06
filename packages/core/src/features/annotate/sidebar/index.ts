@@ -20,12 +20,11 @@ import {
 } from './helpers.js'
 import { createAnnotateSidebarDom } from './dom.js'
 import { createAnnotateSidebarRenderers } from './renderers.js'
-import { createSidebarButton } from './helpers.js'
-import { annotateSidebarButtonClass } from '../../../shared/styles/index.js'
 import { t } from '../../../shared/i18n.js'
 import { pauseIconSvg, playIconSvg } from '../../../shared/icons.js'
 import { buildSessionTimelineItems } from '../session/timeline.js'
 import { renderSessionTimeline } from './session-timeline-dom.js'
+import { renderWorkflowRow } from './workflow-row.js'
 import {
   applyLatestSessionStatusStyles,
   classifySessionMessage,
@@ -410,36 +409,7 @@ export function createAnnotateSidebar(
         ? t('menu.sending')
         : t('annotate.createTask')
 
-    // ===== Workflow Buttons =====
-    const workflows = next.workflows || []
-    workflowRow.style.display = workflows.length > 0 ? 'flex' : 'none'
-
-    // Clear and rebuild workflow buttons
-    workflowRow.innerHTML = ''
-
-    for (const wf of workflows) {
-      const btn = createSidebarButton(wf.label, annotateSidebarButtonClass)
-      btn.dataset.workflowId = wf.id
-      btn.style.flex = '1'
-      btn.style.justifyContent = 'center'
-      btn.style.whiteSpace = 'nowrap'
-
-      const isSendingWorkflow = next.isSending && next.sendingScope === `workflow:${wf.id}`
-      btn.disabled = next.isSending
-      btn.textContent = isSendingWorkflow ? t('menu.sending') : wf.label
-
-      btn.addEventListener('click', () => {
-        if (wf.confirm) {
-          dom.showConfirmDialog(t('workflow.confirm', { label: wf.label }), () => {
-            next.onWorkflow?.(wf.id)
-          })
-          return
-        }
-        next.onWorkflow?.(wf.id)
-      })
-
-      workflowRow.appendChild(btn)
-    }
+    renderWorkflowRow(dom, next)
 
     const latestSession = next.latestSessionDetail
     const latestSessionSummary = next.latestSessionSummary
