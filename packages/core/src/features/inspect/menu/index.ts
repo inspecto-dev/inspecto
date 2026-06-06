@@ -9,6 +9,7 @@ import type {
 } from '@inspecto-dev/types'
 import { openFileWithDiagnostics, fetchIdeInfo } from '../../../transport/http-client.js'
 import { applyIconToggleButtonState, createMenuHeaderDom } from './header.js'
+import { syncCssToggleButton, syncRuntimeToggleButton } from './header-actions.js'
 import { resolveMenuPosition } from './position.js'
 import {
   createRuntimeContextUi,
@@ -90,44 +91,6 @@ export function showIntentMenu(
     canAttachCssContext,
   })
 
-  const syncCssToggleButton = () => {
-    cssToggleButton.hidden = !canAttachCssContext
-    if (!canAttachCssContext) {
-      cssToggleButton.remove()
-      return
-    }
-
-    if (!headerActions.contains(cssToggleButton)) {
-      const referenceNode = headerActions.contains(runtimeToggleButton)
-        ? runtimeToggleButton
-        : headerActions.contains(openButton)
-          ? openButton
-          : null
-      if (referenceNode) {
-        headerActions.insertBefore(cssToggleButton, referenceNode)
-      } else {
-        headerActions.appendChild(cssToggleButton)
-      }
-    }
-  }
-
-  const syncRuntimeToggleButton = () => {
-    runtimeToggleButton.hidden = !canAttachRuntimeContext
-    if (!canAttachRuntimeContext) {
-      runtimeToggleButton.remove()
-      return
-    }
-
-    if (!headerActions.contains(runtimeToggleButton)) {
-      const referenceNode = headerActions.contains(openButton) ? openButton : null
-      if (referenceNode) {
-        headerActions.insertBefore(runtimeToggleButton, referenceNode)
-      } else {
-        headerActions.appendChild(runtimeToggleButton)
-      }
-    }
-  }
-
   const applyCssToggleButtonState = () => {
     applyIconToggleButtonState(
       cssToggleButton,
@@ -137,8 +100,19 @@ export function showIntentMenu(
     )
   }
 
-  syncCssToggleButton()
-  syncRuntimeToggleButton()
+  syncCssToggleButton({
+    headerActions,
+    cssToggleButton,
+    runtimeToggleButton,
+    openButton,
+    canAttachCssContext,
+  })
+  syncRuntimeToggleButton({
+    headerActions,
+    runtimeToggleButton,
+    openButton,
+    canAttachRuntimeContext,
+  })
   applyCssToggleButtonState()
   headerActions.appendChild(openButton)
   menu.appendChild(header)
@@ -304,7 +278,12 @@ export function showIntentMenu(
         typeof deps.getRuntimeContext === 'function'
       ) {
         canAttachRuntimeContext = true
-        syncRuntimeToggleButton()
+        syncRuntimeToggleButton({
+          headerActions,
+          runtimeToggleButton,
+          openButton,
+          canAttachRuntimeContext,
+        })
       }
       const intents = ideInfo?.prompts || []
       if (!options.askPlaceholder) {
