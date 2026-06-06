@@ -83,6 +83,10 @@ class InspectoElement extends InspectoElementState {
     return this.mode
   }
 
+  // Runtime host hooks consumed through structural context casts.
+  // Keep these grouped by owning runtime module.
+
+  // launcher
   protected updateBadgeContent(): void {
     updateLauncherBadgeContent(this)
   }
@@ -126,6 +130,7 @@ class InspectoElement extends InspectoElementState {
     onViewportChange: this.onViewportChange,
   }
 
+  // evidence
   protected syncRuntimeContextCapture(): void {
     syncRuntimeCapture(this)
   }
@@ -164,6 +169,7 @@ class InspectoElement extends InspectoElementState {
     return getRuntimeErrorCount(this)
   }
 
+  // annotate targets and UI
   protected persistCurrentDraft(): void {
     persistAnnotateDraft(this)
   }
@@ -216,6 +222,7 @@ class InspectoElement extends InspectoElementState {
     stopLatestAnnotateSessionStreamState(this)
   }
 
+  // mode UI
   protected syncModeUi(): void {
     syncInspectorModeUi(this)
   }

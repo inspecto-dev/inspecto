@@ -101,7 +101,6 @@ export type AnnotateContext = {
     annotations: AnnotationTransport[],
     includeWhenDisabled?: boolean,
   ): string | null
-  canAttachRuntimeContext(): boolean
   formatRuntimeContextSummary(
     runtimeContext: ReturnType<
       typeof import('../evidence/runtime-context/index.js').createRuntimeContextEnvelope
