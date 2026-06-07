@@ -1,10 +1,10 @@
 import { showIntentMenu } from '../features/inspect/menu/index.js'
 import { openFile } from '../transport/http-client.js'
-import { findInspectable, getInspectableLocation } from '../shared/component-utils.js'
 import {
   createRuntimeContextEnvelope,
   selectRuntimeEvidence,
 } from '../features/evidence/runtime-context/index.js'
+import type { TargetEvidence } from '../features/evidence/target-context/index.js'
 import {
   addTargetToCurrentAnnotation,
   describeElement,
@@ -15,6 +15,7 @@ import { isFloatingUiEventTarget } from './interaction-targets.js'
 import { setPaused, shouldQuickJumpOnTrigger, updateLauncherEye } from './launcher.js'
 import { isInspectorActive } from './mode-ui.js'
 import type { InspectorOptions, SourceLocation } from '@inspecto-dev/types'
+import { collectEvidenceForTarget, resolveRuntimeInspectTarget } from './inspect-target.js'
 
 type InteractionOptions = InspectorOptions & {
   mode?: 'inspect' | 'annotate'
@@ -62,21 +63,18 @@ export function handleMouseMove(ctx: unknown, event: MouseEvent): void {
     return
   }
 
-  const target = findInspectable(event.target as Element)
+  const target = resolveRuntimeInspectTarget({ mode: state.mode, eventTarget: event.target })
   if (!target) {
     state.overlay.hide()
     return
   }
-
-  const loc = getInspectableLocation(target)
-  const label = loc ? `${loc.file.split('/').pop() ?? ''}:${loc.line}` : ''
 
   if (state.mode === 'annotate' && state.annotateCapturePaused) {
     state.overlay.hide()
     return
   }
 
-  state.overlay.show(target, label)
+  state.overlay.show(target.element, target.label)
   event.stopPropagation()
 }
 
@@ -88,7 +86,7 @@ export function handleTrigger(ctx: unknown, event: MouseEvent): void {
   }
   if (!isInspectorActive(state, event)) return
 
-  const target = findInspectable(event.target as Element)
+  const target = resolveRuntimeInspectTarget({ mode: state.mode, eventTarget: event.target })
   if (!target) return
 
   if (state.mode === 'annotate' && state.annotateCapturePaused) return
@@ -96,27 +94,34 @@ export function handleTrigger(ctx: unknown, event: MouseEvent): void {
   event.preventDefault()
   event.stopPropagation()
 
-  const loc = getInspectableLocation(target)
-  if (!loc) return
+  const targetEvidence = collectEvidenceForTarget(target)
 
   if (state.mode === 'annotate') {
+    if (!target.location && !targetEvidence) return
     if (state.annotateQuickCaptureEnabled) {
-      markTargetInAnnotateSession(state, target, loc)
+      markTargetInAnnotateSession(state, target.element, target.location, targetEvidence)
     } else {
-      addTargetToCurrentAnnotation(state, target, loc)
+      addTargetToCurrentAnnotation(state, target.element, target.location, targetEvidence)
     }
     return
   }
 
-  if (shouldQuickJumpOnTrigger(state, event)) {
+  if (target.location && shouldQuickJumpOnTrigger(state, event)) {
     state.overlay.hide()
     state.cleanupMenu = null
-    void openFile(loc)
+    void openFile(target.location)
     return
   }
 
   state.overlay.hide()
-  openInspectMenu(state, loc, event.clientX, event.clientY, target)
+  openInspectMenu(
+    state,
+    target.location,
+    event.clientX,
+    event.clientY,
+    target.element,
+    targetEvidence,
+  )
 }
 
 export function handleKeyDown(ctx: unknown, event: KeyboardEvent): void {
@@ -149,10 +154,11 @@ export function handleViewportChange(ctx: unknown): void {
 
 export function openInspectMenu(
   ctx: unknown,
-  loc: SourceLocation,
+  loc: SourceLocation | null,
   clientX: number,
   clientY: number,
   targetElement: Element,
+  targetEvidence?: TargetEvidence,
 ): void {
   const state = asInteractionContext(ctx)
   state.cleanupMenu?.()
@@ -160,7 +166,11 @@ export function openInspectMenu(
 
   state.cleanupMenu = showIntentMenu(
     state.shadowRootEl,
-    loc,
+    {
+      location: loc,
+      targetLabel: describeElement(state, targetElement),
+      ...(targetEvidence ? { targetEvidence } : {}),
+    },
     clientX,
     clientY,
     state.options,
@@ -169,7 +179,6 @@ export function openInspectMenu(
       state.cleanupMenu = null
     },
     {
-      targetLabel: describeElement(state, targetElement),
       getRuntimeContext: targetLocation =>
         createRuntimeContextEnvelope(
           selectRuntimeEvidence(

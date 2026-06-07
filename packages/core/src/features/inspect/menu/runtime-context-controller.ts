@@ -14,7 +14,7 @@ type RuntimeContextControllerInput = {
   runtimeToggleBadge: HTMLElement
   canAttachRuntimeContext: boolean
   runtimeContextDefaultMode: RuntimeContextDefaultMode
-  location: SourceLocation
+  location: SourceLocation | null
   getRuntimeContext?: (location: SourceLocation) => RuntimeContextEnvelope | null
   options: InspectorOptions
   updatePosition: () => void
@@ -35,7 +35,9 @@ export function createInspectMenuRuntimeContextController(
   let runtimeContextPreference: boolean | null = null
 
   const render = (): void => {
-    const runtimeContextForUi = input.getRuntimeContext?.(input.location) ?? null
+    const runtimeContextForUi = input.location
+      ? (input.getRuntimeContext?.(input.location) ?? null)
+      : null
     renderRuntimeContextUi({
       runtimeContextSection: input.runtimeContextSection,
       runtimeToggleButton: input.runtimeToggleButton,

@@ -12,6 +12,7 @@ import { isFixIntent } from './helpers.js'
 import { createIntentActionButtons } from './actions.js'
 import { syncRuntimeToggleButton } from './header-actions.js'
 import type { RuntimeContextDefaultMode } from './runtime-toggle.js'
+import { getSourceLocation, hasSourceLocation, type InspectMenuTargetContext } from './target.js'
 
 type RuntimeContextController = {
   render(): void
@@ -29,8 +30,9 @@ type RenderInspectMenuIdeInfoInput = {
   actionsSection: HTMLElement
   headerActions: HTMLElement
   runtimeToggleButton: HTMLButtonElement
+  copyPromptButton: HTMLButtonElement
   openButton: HTMLButtonElement
-  location: SourceLocation
+  target: InspectMenuTargetContext
   includeSnippet: boolean
   maxSnippetLines: number
   options: InspectorOptions
@@ -53,10 +55,15 @@ type RenderInspectMenuIdeInfoInput = {
 export function renderInspectMenuIdeInfo(input: RenderInspectMenuIdeInfoInput): void {
   input.loadingElement.remove()
 
-  if (input.ideInfo.runtimeContext?.enabled === true && input.hasRuntimeContextProvider) {
+  if (
+    hasSourceLocation(input.target) &&
+    input.ideInfo.runtimeContext?.enabled === true &&
+    input.hasRuntimeContextProvider
+  ) {
     syncRuntimeToggleButton({
       headerActions: input.headerActions,
       runtimeToggleButton: input.runtimeToggleButton,
+      copyPromptButton: input.copyPromptButton,
       openButton: input.openButton,
       canAttachRuntimeContext: true,
     })
@@ -75,7 +82,7 @@ export function renderInspectMenuIdeInfo(input: RenderInspectMenuIdeInfoInput): 
 
   const aiActions = createIntentActionButtons({
     intents: aiIntents,
-    location: input.location,
+    target: input.target,
     includeSnippet: input.includeSnippet,
     maxSnippetLines: input.maxSnippetLines,
     resolveRuntimeContext: intent => input.runtimeContextController.resolve(intent),
@@ -84,17 +91,22 @@ export function renderInspectMenuIdeInfo(input: RenderInspectMenuIdeInfoInput): 
     onError: input.onError,
   })
 
-  input.openButton.addEventListener('click', async event => {
-    event.stopPropagation()
-    input.openButton.disabled = true
-    const openResult = await (input.onOpenFile ?? openFileWithDiagnostics)(input.location)
-    if (openResult.success) {
-      input.onCleanup()
-      return
-    }
-    input.openButton.disabled = false
-    input.onError(t('menu.error.openIde'), openResult.errorCode ?? 'IDE_UNAVAILABLE')
-  })
+  const location = getSourceLocation(input.target)
+  if (location) {
+    input.openButton.addEventListener('click', async event => {
+      event.stopPropagation()
+      input.openButton.disabled = true
+      const openResult = await (input.onOpenFile ?? openFileWithDiagnostics)(location)
+      if (openResult.success) {
+        input.onCleanup()
+        return
+      }
+      input.openButton.disabled = false
+      input.onError(t('menu.error.openIde'), openResult.errorCode ?? 'IDE_UNAVAILABLE')
+    })
+  } else {
+    input.openButton.remove()
+  }
 
   for (const action of aiActions) {
     input.actionsSection.appendChild(action)

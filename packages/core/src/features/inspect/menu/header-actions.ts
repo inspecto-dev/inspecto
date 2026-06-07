@@ -2,6 +2,7 @@ type SyncCssToggleButtonInput = {
   headerActions: HTMLElement
   cssToggleButton: HTMLButtonElement
   runtimeToggleButton: HTMLButtonElement
+  copyPromptButton: HTMLButtonElement
   openButton: HTMLButtonElement
   canAttachCssContext: boolean
 }
@@ -9,6 +10,7 @@ type SyncCssToggleButtonInput = {
 type SyncRuntimeToggleButtonInput = {
   headerActions: HTMLElement
   runtimeToggleButton: HTMLButtonElement
+  copyPromptButton: HTMLButtonElement
   openButton: HTMLButtonElement
   canAttachRuntimeContext: boolean
 }
@@ -17,6 +19,7 @@ export function syncCssToggleButton({
   headerActions,
   cssToggleButton,
   runtimeToggleButton,
+  copyPromptButton,
   openButton,
   canAttachCssContext,
 }: SyncCssToggleButtonInput): void {
@@ -30,9 +33,11 @@ export function syncCssToggleButton({
 
   const referenceNode = headerActions.contains(runtimeToggleButton)
     ? runtimeToggleButton
-    : headerActions.contains(openButton)
-      ? openButton
-      : null
+    : headerActions.contains(copyPromptButton)
+      ? copyPromptButton
+      : headerActions.contains(openButton)
+        ? openButton
+        : null
 
   if (referenceNode) {
     headerActions.insertBefore(cssToggleButton, referenceNode)
@@ -45,6 +50,7 @@ export function syncCssToggleButton({
 export function syncRuntimeToggleButton({
   headerActions,
   runtimeToggleButton,
+  copyPromptButton,
   openButton,
   canAttachRuntimeContext,
 }: SyncRuntimeToggleButtonInput): void {
@@ -56,7 +62,11 @@ export function syncRuntimeToggleButton({
 
   if (headerActions.contains(runtimeToggleButton)) return
 
-  const referenceNode = headerActions.contains(openButton) ? openButton : null
+  const referenceNode = headerActions.contains(copyPromptButton)
+    ? copyPromptButton
+    : headerActions.contains(openButton)
+      ? openButton
+      : null
   if (referenceNode) {
     headerActions.insertBefore(runtimeToggleButton, referenceNode)
     return

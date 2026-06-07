@@ -9,7 +9,7 @@ import type { AnnotateSendScope } from './helpers.js'
 
 export type SidebarMode = 'capture-enabled' | 'capture-paused'
 export type SendScope = AnnotateSendScope
-export type SuccessScope = 'quick-ask' | 'create-task' | null
+export type SuccessScope = 'quick-ask' | 'create-task' | 'clipboard' | null
 export type PreferredAction = 'quick-ask' | 'create-task'
 export type DeliveryMode = 'ide' | 'mcp'
 

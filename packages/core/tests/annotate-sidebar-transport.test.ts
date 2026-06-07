@@ -83,4 +83,66 @@ describe('annotate sidebar transport helpers', () => {
     expect(markdown).toContain('- Location: `Form.tsx:20:5`')
     expect(markdown).toContain('- Selector: `#email`')
   })
+
+  it('keeps runtime target evidence for source-less annotation targets', () => {
+    const session: FeedbackRecordSession = {
+      current: {
+        id: 'draft-1',
+        target: {
+          id: 'target-runtime',
+          label: 'button#upgrade',
+          selector: '#upgrade',
+          rect: { x: 0, y: 0, width: 120, height: 32 },
+          targetEvidence: {
+            page: { url: 'https://app.test/billing' },
+            element: {
+              tagName: 'button',
+              id: 'upgrade',
+              classList: [],
+              text: 'Upgrade plan',
+              attributes: {},
+            },
+            selectors: { css: '#upgrade', stableCss: '#upgrade' },
+            layout: {
+              rect: { x: 0, y: 0, width: 120, height: 32 },
+              viewport: { width: 1024, height: 768 },
+              visible: true,
+            },
+            context: { parentChain: [], childrenSummary: [], nearbyText: [] },
+            framework: {
+              name: 'react',
+              componentName: 'UpgradeButton',
+              ownerChain: ['BillingPage', 'UpgradeButton'],
+              propKeys: ['planId', 'onUpgrade'],
+              renderPath: [
+                { kind: 'component', name: 'BillingPage', propKeys: [] },
+                { kind: 'component', name: 'UpgradeButton', propKeys: ['planId', 'onUpgrade'] },
+                { kind: 'host', name: 'button', selector: '#upgrade', propKeys: [] },
+              ],
+              confidence: 'medium',
+            },
+            sourceHints: { likelyFileNames: ['UpgradeButton'], textTokens: [], classTokens: [] },
+          },
+          targetEvidencePrompt:
+            'Selected target evidence:\nFramework evidence:\n- framework: react\n- component: UpgradeButton',
+        },
+        note: 'Wire the upgrade flow.',
+        intent: 'review',
+      } as any,
+      records: [],
+    }
+
+    expect(collectAnnotationTransportsFromSession(session)).toMatchObject([
+      {
+        note: 'Wire the upgrade flow.',
+        targets: [
+          {
+            label: 'button#upgrade',
+            selector: '#upgrade',
+            targetEvidencePrompt: expect.stringContaining('UpgradeButton'),
+          },
+        ],
+      },
+    ])
+  })
 })

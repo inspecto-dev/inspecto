@@ -1,4 +1,10 @@
-import type { AiErrorCode, AnnotationDeliveryMode, AnnotationTransport } from '@inspecto-dev/types'
+import type {
+  AiErrorCode,
+  AnnotationDeliveryMode,
+  AnnotationTransport,
+  RuntimeContextEnvelope,
+} from '@inspecto-dev/types'
+import { buildAnnotateFullPrompt } from '../features/annotate/prompts/full-prompt.js'
 import {
   isStandardAnnotateSendScope,
   type AnnotateSendScope,
@@ -42,6 +48,26 @@ export async function sendAnnotationBatch(
     })
 
     if (!result.success) {
+      if (result.errorCode === 'SERVER_UNAVAILABLE') {
+        const copied = await copyAnnotationPromptToClipboard({
+          instruction,
+          annotations,
+          ...(runtimeContext ? { runtimeContext } : {}),
+          ...(cssContextPrompt ? { cssContextPrompt } : {}),
+        })
+        if (copied) {
+          state.annotateErrorMessage = ''
+          state.showAnnotateSuccess('clipboard')
+          state.renderAnnotateSelectionOverlay()
+          state.updateAnnotateSidebar()
+          return
+        }
+
+        state.annotateErrorMessage = 'Unable to copy the fallback prompt to the clipboard.'
+        state.updateAnnotateSidebar()
+        return
+      }
+
       state.annotateErrorMessage = toAnnotateErrorMessage(state, result.errorCode, result.error)
       state.updateAnnotateSidebar()
       return
@@ -82,6 +108,51 @@ export async function sendAnnotationBatch(
   } finally {
     state.annotateSendState = { isSending: false, scope: null }
     state.updateAnnotateSidebar()
+  }
+}
+
+async function copyAnnotationPromptToClipboard(input: {
+  instruction: string
+  annotations: AnnotationTransport[]
+  runtimeContext?: RuntimeContextEnvelope | null
+  cssContextPrompt?: string | null
+}): Promise<boolean> {
+  const prompt = buildAnnotateFullPrompt({
+    instruction: input.instruction,
+    annotations: input.annotations,
+    ...(input.runtimeContext ? { runtimeContext: input.runtimeContext } : {}),
+    ...(input.cssContextPrompt ? { cssContextPrompt: input.cssContextPrompt } : {}),
+  })
+
+  try {
+    await navigator.clipboard.writeText(prompt)
+    return true
+  } catch {
+    return copyTextWithLegacyClipboard(prompt)
+  }
+}
+
+function copyTextWithLegacyClipboard(text: string): boolean {
+  if (typeof document === 'undefined' || typeof document.execCommand !== 'function') return false
+
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.top = '0'
+  textarea.style.left = '-9999px'
+  textarea.style.opacity = '0'
+
+  document.body.appendChild(textarea)
+  textarea.select()
+  textarea.setSelectionRange(0, textarea.value.length)
+
+  try {
+    return document.execCommand('copy')
+  } catch {
+    return false
+  } finally {
+    textarea.remove()
   }
 }
 

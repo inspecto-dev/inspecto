@@ -75,7 +75,7 @@ export abstract class InspectoElementState extends BaseElement {
   protected annotateLatestSessionLoading = false
   protected annotateLatestSessionError = ''
   protected annotateWorkflowNotice: AnnotateWorkflowNotice | null = null
-  protected annotateSuccessScope: 'quick-ask' | 'create-task' | null = null
+  protected annotateSuccessScope: 'quick-ask' | 'create-task' | 'clipboard' | null = null
   protected annotateSuccessTimeout: ReturnType<typeof setTimeout> | null = null
   protected annotateSuccessOnClear: (() => void) | null = null
   protected pendingAnnotateViewportFrame: number | null = null

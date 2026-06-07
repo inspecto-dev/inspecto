@@ -75,7 +75,7 @@ export type AnnotateContext = {
   annotateLatestSessionLoading: boolean
   annotateLatestSessionError: string
   annotateWorkflowNotice: AnnotateWorkflowNotice | null
-  annotateSuccessScope: 'quick-ask' | 'create-task' | null
+  annotateSuccessScope: 'quick-ask' | 'create-task' | 'clipboard' | null
   annotateSuccessTimeout: ReturnType<typeof setTimeout> | null
   annotateSuccessOnClear: (() => void) | null
   configLoadPromise: Promise<void> | null
@@ -90,7 +90,7 @@ export type AnnotateContext = {
   renderAnnotateSelectionOverlay(): void
   clearAnnotateError(): void
   clearAnnotateSuccess(): void
-  showAnnotateSuccess(scope: 'quick-ask' | 'create-task'): void
+  showAnnotateSuccess(scope: 'quick-ask' | 'create-task' | 'clipboard'): void
   refreshLatestAnnotateSession(): Promise<void>
   startLatestAnnotateSessionStream(sessionId: string): void
   stopLatestAnnotateSessionStream(): void

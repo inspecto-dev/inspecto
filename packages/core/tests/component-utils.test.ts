@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createSelector, findElementForLocation } from '../src/features/annotate/targets/index.js'
 import { findInspectable, getInspectableLocation } from '../src/shared/component-utils.js'
 
 describe('component-utils astro source support', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   it('finds inspectable elements using Astro source attributes', () => {
     document.body.innerHTML = `
       <section>
@@ -56,5 +60,24 @@ describe('component-utils astro source support', () => {
     `
 
     expect(createSelector(document.getElementById('target')!)).toBe('#target')
+  })
+
+  it('escapes element ids when building annotation selectors', () => {
+    document.body.innerHTML = '<button id=":r0:">Target</button>'
+
+    const selector = createSelector(document.getElementById(':r0:')!)
+
+    expect(() => document.querySelector(selector)).not.toThrow()
+    expect(document.querySelector(selector)).toBe(document.getElementById(':r0:'))
+  })
+
+  it('escapes leading digits without relying on CSS.escape', () => {
+    vi.stubGlobal('CSS', undefined)
+    document.body.innerHTML = '<button id="1target">Target</button>'
+
+    const selector = createSelector(document.getElementById('1target')!)
+
+    expect(() => document.querySelector(selector)).not.toThrow()
+    expect(document.querySelector(selector)).toBe(document.getElementById('1target'))
   })
 })

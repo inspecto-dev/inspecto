@@ -6,7 +6,7 @@ export function findElementForLocation(
   selector?: string,
 ): Element | null {
   if (selector) {
-    const bySelector = document.querySelector(selector)
+    const bySelector = querySelectorSafely(selector)
     if (bySelector instanceof Element) {
       return bySelector
     }
@@ -32,4 +32,12 @@ export function findElementForLocation(
   })
 
   return byAstroLocation instanceof Element ? byAstroLocation : null
+}
+
+function querySelectorSafely(selector: string): Element | null {
+  try {
+    return document.querySelector(selector)
+  } catch {
+    return null
+  }
 }

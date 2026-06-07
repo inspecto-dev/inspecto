@@ -1,7 +1,7 @@
-import type { SourceLocation } from '@inspecto-dev/types'
 import { bugIconSvg, cssIconSvg } from '../../../shared/icons.js'
 import { t } from '../../../shared/i18n.js'
 import { formatSourceAnchor } from './helpers.js'
+import { getSourceLocation, type InspectMenuTargetContext } from './target.js'
 import {
   applyHeaderIconButtonStyles,
   menuMetaClass,
@@ -12,11 +12,12 @@ import {
 } from '../../../shared/styles/index.js'
 
 export function createMenuHeaderDom(input: {
-  location: SourceLocation
-  targetLabel?: string
+  target: InspectMenuTargetContext
   canAttachRuntimeContext: boolean
   canAttachCssContext: boolean
 }) {
+  const { target } = input
+  const location = getSourceLocation(target)
   const header = document.createElement('div')
   header.className = menuTitleClass
 
@@ -34,17 +35,31 @@ export function createMenuHeaderDom(input: {
   title.style.overflow = 'hidden'
   title.style.textOverflow = 'ellipsis'
   title.textContent =
-    input.targetLabel?.trim() || input.location.file.split('/').pop() || input.location.file
+    target.targetLabel?.trim() ||
+    location?.file.split('/').pop() ||
+    target.targetEvidence?.element.text ||
+    target.targetEvidence?.element.tagName ||
+    'Selected element'
 
   const meta = document.createElement('div')
   meta.className = menuMetaClass
-  meta.textContent = formatSourceAnchor(input.location)
-  meta.title = `${input.location.file}:${input.location.line}:${input.location.column}`
+  meta.textContent = location ? formatSourceAnchor(location) : 'No source location'
+  meta.title = location
+    ? `${location.file}:${location.line}:${location.column}`
+    : 'No compile-time source location is available; Inspecto will use runtime target evidence.'
 
   const headerActions = document.createElement('div')
   headerActions.style.display = 'flex'
   headerActions.style.alignItems = 'center'
   headerActions.style.gap = '6px'
+
+  const copyPromptButton = document.createElement('button')
+  copyPromptButton.type = 'button'
+  copyPromptButton.dataset.role = 'copy-prompt'
+  copyPromptButton.setAttribute('aria-label', t('menu.copyPrompt'))
+  copyPromptButton.title = t('menu.copyPrompt')
+  copyPromptButton.textContent = '⧉'
+  applyHeaderIconButtonStyles(copyPromptButton)
 
   const openButton = document.createElement('button')
   openButton.type = 'button'
@@ -98,6 +113,7 @@ export function createMenuHeaderDom(input: {
   return {
     header,
     headerActions,
+    copyPromptButton,
     openButton,
     runtimeToggleButton,
     runtimeToggleBadge,

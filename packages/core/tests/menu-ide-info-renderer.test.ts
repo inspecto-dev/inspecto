@@ -40,7 +40,7 @@ describe('inspect menu IDE info renderer', () => {
           { id: 'explain', label: 'Explain Code', aiIntent: 'ask', prompt: 'Explain this' },
         ],
       },
-      location,
+      target: { location },
       includeSnippet: false,
       maxSnippetLines: 100,
       options: {},
@@ -76,7 +76,7 @@ describe('inspect menu IDE info renderer', () => {
         prompts: [],
         runtimeContext: { enabled: true },
       },
-      location,
+      target: { location },
       includeSnippet: false,
       maxSnippetLines: 100,
       options: {},
@@ -111,7 +111,7 @@ describe('inspect menu IDE info renderer', () => {
     renderInspectMenuIdeInfo({
       ...dom,
       ideInfo: { ide: 'vscode', prompts: [] },
-      location,
+      target: { location },
       includeSnippet: false,
       maxSnippetLines: 100,
       options: {},
@@ -151,7 +151,7 @@ describe('inspect menu IDE info renderer', () => {
         prompts: [],
         runtimeContext: { enabled: true },
       },
-      location,
+      target: { location },
       includeSnippet: false,
       maxSnippetLines: 100,
       options: {},
@@ -167,5 +167,35 @@ describe('inspect menu IDE info renderer', () => {
 
     expect(runtimeContextController.setCanAttachRuntimeContext).not.toHaveBeenCalled()
     expect(Array.from(dom.headerActions.querySelectorAll('button'))).toEqual([dom.openButton])
+  })
+
+  it('does not enable runtime controls for source-less target evidence', () => {
+    const dom = createDom()
+    const runtimeContextController = createRuntimeController()
+    dom.headerActions.appendChild(dom.openButton)
+
+    renderInspectMenuIdeInfo({
+      ...dom,
+      ideInfo: {
+        ide: 'vscode',
+        prompts: [],
+        runtimeContext: { enabled: true },
+      },
+      target: { location: null },
+      includeSnippet: false,
+      maxSnippetLines: 100,
+      options: {},
+      hasRuntimeContextProvider: true,
+      runtimeContextController,
+      resolveCssContextPrompt: () => null,
+      onSend: vi.fn(),
+      onOpenFile: vi.fn(),
+      onCleanup: vi.fn(),
+      onError: vi.fn(),
+      updatePosition: vi.fn(),
+    })
+
+    expect(runtimeContextController.setCanAttachRuntimeContext).not.toHaveBeenCalled()
+    expect(Array.from(dom.headerActions.querySelectorAll('button'))).toEqual([])
   })
 })

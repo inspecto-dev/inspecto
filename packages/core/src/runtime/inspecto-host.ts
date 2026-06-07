@@ -119,7 +119,7 @@ export abstract class InspectoRuntimeHost extends InspectoElementState {
     clearAnnotateSuccessState(this)
   }
 
-  protected showAnnotateSuccess(scope: 'quick-ask' | 'create-task'): void {
+  protected showAnnotateSuccess(scope: 'quick-ask' | 'create-task' | 'clipboard'): void {
     showAnnotateBatchSuccess(this, scope)
   }
 

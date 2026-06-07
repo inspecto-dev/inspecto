@@ -6,7 +6,7 @@ export type InspectMenuRuntimeContextResolverInput = {
   canAttachRuntimeContext: boolean
   runtimeContextPreference: boolean | null
   runtimeContextDefaultMode: RuntimeContextDefaultMode
-  location: SourceLocation
+  location: SourceLocation | null
   getRuntimeContext?: (location: SourceLocation) => RuntimeContextEnvelope | null
   intent?: Pick<AiIntentConfig, 'id' | 'aiIntent'>
 }
@@ -28,6 +28,6 @@ export function resolveInspectMenuRuntimeContext({
   const shouldAttach =
     ariaPressed === 'true' || (ariaPressed === 'mixed' && Boolean(intent && isFixIntent(intent)))
 
-  if (!shouldAttach) return null
+  if (!shouldAttach || !location) return null
   return getRuntimeContext?.(location) ?? null
 }

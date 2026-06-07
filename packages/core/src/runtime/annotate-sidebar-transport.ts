@@ -10,9 +10,12 @@ export function toAnnotationTransportFromRecordUi(record: FeedbackRecord): Annot
     intent: record.intent,
     targets: [
       {
-        location: record.target.location,
         ...(record.target.label ? { label: record.target.label } : {}),
+        ...(record.target.location ? { location: record.target.location } : {}),
         ...(record.target.selector ? { selector: record.target.selector } : {}),
+        ...(record.target.targetEvidencePrompt
+          ? { targetEvidencePrompt: record.target.targetEvidencePrompt }
+          : {}),
       },
     ],
   }
@@ -60,10 +63,19 @@ export function formatAnnotationContextAsMarkdown(
           md += `  - Location: \`${target.location.file.split('/').pop() || target.location.file}:${target.location.line}:${target.location.column}\`\n`
         }
         if (target.selector) md += `  - Selector: \`${target.selector}\`\n`
+        if (target.targetEvidencePrompt)
+          md += `\n  ${indentBlock(target.targetEvidencePrompt, '  ')}\n`
         if (target.snippet) md += `\n  \`\`\`\n${target.snippet}\n  \`\`\`\n`
       })
       md += '\n---\n\n'
     })
   }
   return md.trim()
+}
+
+function indentBlock(value: string, prefix: string): string {
+  return value
+    .split('\n')
+    .map(line => `${prefix}${line}`)
+    .join('\n')
 }

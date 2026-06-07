@@ -7,6 +7,10 @@ import type {
 } from '@inspecto-dev/types'
 
 function sameLocation(a: AnnotationTarget, b: AnnotationTarget): boolean {
+  if (!a.location || !b.location) {
+    return a.location === b.location && a.selector === b.selector && a.label === b.label
+  }
+
   return (
     a.location.file === b.location.file &&
     a.location.line === b.location.line &&

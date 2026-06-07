@@ -47,7 +47,7 @@ export function createSidebarButton(
 export function getLiveStatusMessage(input: {
   isSending: boolean
   sendingScope: AnnotateSendScope
-  successScope: 'quick-ask' | 'create-task' | null
+  successScope: 'quick-ask' | 'create-task' | 'clipboard' | null
 }): string {
   if (input.isSending && input.sendingScope === 'quick-ask') {
     return t('annotate.liveStatus.quickAskSending')
@@ -64,6 +64,9 @@ export function getLiveStatusMessage(input: {
   if (!input.isSending && input.successScope === 'create-task') {
     return t('annotate.liveStatus.taskCreated')
   }
+  if (!input.isSending && input.successScope === 'clipboard') {
+    return t('annotate.liveStatus.copiedToClipboard')
+  }
   return ''
 }
 
@@ -75,6 +78,8 @@ export function formatRuntimeErrorCount(count: number): string {
 export function toLocationLabel(record: FeedbackRecord | FeedbackRecordSession['current']): string {
   const target = record.target
   if (!target) return t('annotate.source.unknown')
+  if (!target.location)
+    return target.targetEvidence ? 'runtime evidence' : t('annotate.source.unknown')
   return `${target.location.file}:${target.location.line}:${target.location.column}`
 }
 

@@ -57,7 +57,10 @@ export function clearAnnotateSuccess(ctx: unknown): void {
   }
 }
 
-export function showAnnotateSuccess(ctx: unknown, scope: 'quick-ask' | 'create-task'): void {
+export function showAnnotateSuccess(
+  ctx: unknown,
+  scope: 'quick-ask' | 'create-task' | 'clipboard',
+): void {
   const state = asAnnotateContext(ctx)
   clearAnnotateSuccess(state)
   state.annotateSuccessScope = scope
@@ -125,9 +128,12 @@ export function renderAnnotateSelectionOverlay(ctx: unknown): void {
   state.annotateOverlay.render(overlayTargets, {
     targetId: getAnnotationTargetKey(state, target),
     targetLabel: target.label,
-    targetMeta: `${target.location.file.split('/').pop() || target.location.file}:${target.location.line}:${target.location.column}`,
+    targetMeta: target.location
+      ? `${target.location.file.split('/').pop() || target.location.file}:${target.location.line}:${target.location.column}`
+      : 'runtime evidence',
     note: state.annotateSession.current.note,
     onOpenInEditor: () => {
+      if (!target.location) return
       void openFile(target.location)
     },
     canAttachCssContext: canAttachCssContext(),

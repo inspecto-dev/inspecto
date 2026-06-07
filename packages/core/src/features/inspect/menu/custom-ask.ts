@@ -1,13 +1,13 @@
-import type { RuntimeContextEnvelope, SourceLocation } from '@inspecto-dev/types'
+import type { RuntimeContextEnvelope } from '@inspecto-dev/types'
 import { buildCustomInspectPrompt, openAndSendInspectPrompt } from './send.js'
+import type { InspectMenuTargetContext } from './target.js'
 
 export type CustomAskSubmitOptions = {
   input: HTMLInputElement
   sendIcon: HTMLElement
-  location: SourceLocation
+  target: InspectMenuTargetContext
   includeSnippet: boolean
   maxSnippetLines: number
-  targetLabel?: string
   resolveRuntimeContext: () => RuntimeContextEnvelope | null
   resolveCssContextPrompt: () => string | null
   onSuccess: () => void
@@ -24,16 +24,15 @@ export function attachCustomAskSubmit(options: CustomAskSubmitOptions): void {
       const requestRuntimeContext = options.resolveRuntimeContext()
       const requestCssContextPrompt = options.resolveCssContextPrompt()
       const built = await buildCustomInspectPrompt({
-        location: options.location,
+        target: options.target,
         ask: options.input.value.trim(),
-        ...(options.targetLabel ? { targetLabel: options.targetLabel } : {}),
         includeSnippet: options.includeSnippet,
         maxSnippetLines: options.maxSnippetLines,
         runtimeContext: requestRuntimeContext,
         cssContextPrompt: requestCssContextPrompt,
       })
       await openAndSendInspectPrompt({
-        location: options.location,
+        target: options.target,
         promptText: built.prompt,
         snippetText: built.snippetText,
         runtimeContext: requestRuntimeContext,

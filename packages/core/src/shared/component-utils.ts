@@ -85,7 +85,7 @@ export function getDeepActiveElement(root: Document | ShadowRoot | null): Elemen
 }
 
 export function createElementSelector(element: Element): string {
-  if (element.id) return `#${element.id}`
+  if (element.id) return createIdSelector(element.id)
 
   const segments: string[] = []
   let current: Element | null = element
@@ -102,7 +102,7 @@ export function createElementSelector(element: Element): string {
     segments.unshift(`${tag}${nth}`)
 
     if (current.id) {
-      segments[0] = `#${current.id}`
+      segments[0] = createIdSelector(current.id)
       break
     }
 
@@ -110,6 +110,16 @@ export function createElementSelector(element: Element): string {
   }
 
   return segments.join(' > ')
+}
+
+function createIdSelector(value: string): string {
+  if (globalThis.CSS?.escape) return `#${globalThis.CSS.escape(value)}`
+  if (/^[a-zA-Z_-][a-zA-Z0-9_-]*$/.test(value)) return `#${value}`
+  return `[id="${escapeAttributeSelectorValue(value)}"]`
+}
+
+function escapeAttributeSelectorValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
 }
 
 export { ATTR_NAME }

@@ -29,9 +29,13 @@ function buildSelectedElementsPrompt(annotations: AnnotationTransport[]): string
     for (const target of annotation.targets) {
       const targetLabel = (target.label || 'Unknown target').trim() || 'Unknown target'
       lines.push(`- ${targetLabel}`)
-      lines.push(
-        `file=${formatLocation(target.location.file, target.location.line, target.location.column)}`,
-      )
+      if (target.location) {
+        lines.push(
+          `file=${formatLocation(target.location.file, target.location.line, target.location.column)}`,
+        )
+      } else if (target.targetEvidencePrompt) {
+        lines.push(target.targetEvidencePrompt)
+      }
       if (trimmedNote) {
         lines.push(`note=${trimmedNote}`)
       }

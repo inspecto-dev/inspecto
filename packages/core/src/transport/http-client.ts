@@ -7,39 +7,49 @@ import type {
   SendAnnotationsToAiResponse,
   AnnotationWorkSession,
   OpenFileRequest,
+  OpenFileResult,
+  AnnotationSessionResult,
+  AnnotationSessionEventHandlers,
+  AnnotationSessionEventStreamConnection,
   InspectoConfig,
   AiErrorCode,
+  InspectoClientTransport,
 } from '@inspecto-dev/types'
 import { INSPECTO_API_PATHS } from '@inspecto-dev/types'
+export type {
+  AnnotationSessionResult,
+  AnnotationSessionEventHandlers,
+  AnnotationSessionEventStreamConnection,
+  OpenFileResult,
+} from '@inspecto-dev/types'
 
 let BASE_URL = globalThis.__AI_INSPECTOR_SERVER_URL__ || 'http://127.0.0.1:5678'
 const AI_BATCH_DISPATCH_PATH =
   INSPECTO_API_PATHS.AI_BATCH_DISPATCH ?? '/inspecto/api/v1/ai/dispatch/annotations'
-
-export interface OpenFileResult {
-  success: boolean
-  errorCode?: AiErrorCode
-}
-
-export interface AnnotationSessionResult {
-  success: boolean
-  session?: AnnotationWorkSession
-  error?: string
-  errorCode?: AiErrorCode
-}
-
-export interface AnnotationSessionEventStreamConnection {
-  close(): void
-}
 
 export function setBaseUrl(url: string): void {
   BASE_URL = url.replace(/\/$/, '')
 }
 
 let cachedConfig: InspectoConfig | null = null
+let clientTransport: InspectoClientTransport | null = null
+
+export function setClientTransport(transport: InspectoClientTransport | null | undefined): void {
+  clientTransport = transport ?? null
+  cachedConfig = null
+}
+
+export function resetClientTransport(): void {
+  clientTransport = null
+  cachedConfig = null
+}
 
 export async function fetchIdeInfo(force = false): Promise<InspectoConfig | null> {
   if (cachedConfig && !force) return cachedConfig
+  if (clientTransport?.fetchConfig) {
+    cachedConfig = await clientTransport.fetchConfig()
+    return cachedConfig
+  }
   try {
     const res = await fetch(`${BASE_URL}${INSPECTO_API_PATHS.CLIENT_CONFIG}`)
     if (!res.ok) return null
@@ -55,6 +65,10 @@ export async function openFile(req: OpenFileRequest): Promise<boolean> {
 }
 
 export async function openFileWithDiagnostics(req: OpenFileRequest): Promise<OpenFileResult> {
+  if (clientTransport?.openFile) {
+    const result = await clientTransport.openFile(req)
+    return typeof result === 'boolean' ? { success: result } : result
+  }
   try {
     const res = await fetch(`${BASE_URL}${INSPECTO_API_PATHS.SOURCE_OPEN}`, {
       method: 'POST',
@@ -78,6 +92,9 @@ export async function fetchSnippet(
   column: number,
   maxLines = 100,
 ): Promise<SnippetResponse> {
+  if (clientTransport?.fetchSnippet) {
+    return clientTransport.fetchSnippet({ file, line, column, maxLines })
+  }
   const params = new URLSearchParams({
     file,
     line: String(line),
@@ -100,6 +117,9 @@ export async function fetchSnippet(
 }
 
 export async function sendToAi(req: SendToAiRequest): Promise<SendToAiResponse> {
+  if (clientTransport?.sendToAi) {
+    return clientTransport.sendToAi(req)
+  }
   try {
     const res = await fetch(`${BASE_URL}${INSPECTO_API_PATHS.AI_DISPATCH}`, {
       method: 'POST',
@@ -127,6 +147,9 @@ export async function sendToAi(req: SendToAiRequest): Promise<SendToAiResponse> 
 export async function sendAnnotationsToAi(
   req: SendAnnotationsToAiRequest,
 ): Promise<SendAnnotationsToAiResponse> {
+  if (clientTransport?.sendAnnotationsToAi) {
+    return clientTransport.sendAnnotationsToAi(req)
+  }
   try {
     const res = await fetch(`${BASE_URL}${AI_BATCH_DISPATCH_PATH}`, {
       method: 'POST',
@@ -152,6 +175,9 @@ export async function sendAnnotationsToAi(
 }
 
 export async function fetchAnnotationSession(sessionId: string): Promise<AnnotationSessionResult> {
+  if (clientTransport?.fetchAnnotationSession) {
+    return clientTransport.fetchAnnotationSession(sessionId)
+  }
   try {
     const res = await fetch(
       `${BASE_URL}${INSPECTO_API_PATHS.SESSIONS}/${encodeURIComponent(sessionId)}`,
@@ -185,11 +211,11 @@ export async function fetchAnnotationSession(sessionId: string): Promise<Annotat
 
 export function openAnnotationSessionEventStream(
   sessionId: string,
-  handlers: {
-    onEvent: (event: AnnotationSessionEvent) => void
-    onError?: () => void
-  },
+  handlers: AnnotationSessionEventHandlers,
 ): AnnotationSessionEventStreamConnection | null {
+  if (clientTransport?.openAnnotationSessionEventStream) {
+    return clientTransport.openAnnotationSessionEventStream(sessionId, handlers)
+  }
   if (!sessionId.trim() || typeof EventSource !== 'function') {
     return null
   }

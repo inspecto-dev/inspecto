@@ -5,6 +5,7 @@ import {
   setCurrentRecordTarget,
 } from '../session/index.js'
 import type { AnnotationTarget, SourceLocation } from '@inspecto-dev/types'
+import type { TargetEvidence } from '../../evidence/target-context/index.js'
 import { asAnnotateContext } from '../context.js'
 import {
   createAnnotationTarget as createAnnotationTargetFromElement,
@@ -20,13 +21,14 @@ export { clearDraftForTarget, persistCurrentDraft, restoreEditingRecord } from '
 export function addTargetToCurrentAnnotation(
   ctx: unknown,
   element: Element,
-  location: SourceLocation,
+  location: SourceLocation | null,
+  targetEvidence?: TargetEvidence,
 ): void {
   const state = asAnnotateContext(ctx)
   state.cleanupMenu?.()
   state.cleanupMenu = null
 
-  const target = createAnnotationTarget(state, element, location)
+  const target = createAnnotationTarget(state, element, location, targetEvidence)
   const nextDraftKey = getAnnotationTargetKey(state, target)
   const currentDraftKey = state.annotateSession.current.target
     ? getAnnotationTargetKey(state, state.annotateSession.current.target)
@@ -69,13 +71,14 @@ export function addTargetToCurrentAnnotation(
 export function markTargetInAnnotateSession(
   ctx: unknown,
   element: Element,
-  location: SourceLocation,
+  location: SourceLocation | null,
+  targetEvidence?: TargetEvidence,
 ): void {
   const state = asAnnotateContext(ctx)
   state.cleanupMenu?.()
   state.cleanupMenu = null
 
-  const target = createAnnotationTarget(state, element, location)
+  const target = createAnnotationTarget(state, element, location, targetEvidence)
   const nextDraftKey = getAnnotationTargetKey(state, target)
   const currentDraftKey = state.annotateSession.current.target
     ? getAnnotationTargetKey(state, state.annotateSession.current.target)
@@ -153,7 +156,19 @@ export function findElementForAnnotationTarget(
   ctx: unknown,
   target: AnnotationTarget,
 ): Element | null {
+  if (!target.location) {
+    return querySelectorSafely(target.selector)
+  }
   return findElementForLocation(ctx, target.location, target.selector)
+}
+
+function querySelectorSafely(selector: string | undefined): Element | null {
+  if (!selector) return null
+  try {
+    return document.querySelector(selector)
+  } catch {
+    return null
+  }
 }
 
 export function findElementForLocation(
@@ -179,9 +194,10 @@ export function rebindCurrentAnnotationElements(ctx: unknown): void {
 export function createAnnotationTarget(
   ctx: unknown,
   element: Element,
-  location: SourceLocation,
+  location: SourceLocation | null,
+  targetEvidence?: TargetEvidence,
 ): AnnotationTarget {
-  return createAnnotationTargetFromElement(element, location)
+  return createAnnotationTargetFromElement(element, location, targetEvidence)
 }
 
 export function describeElement(_ctx: unknown, element: Element): string {

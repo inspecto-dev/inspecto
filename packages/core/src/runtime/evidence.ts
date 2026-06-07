@@ -81,8 +81,9 @@ export function canAttachCssContext(): boolean {
 export function captureCssContextPromptForElement(
   ctx: unknown,
   element: Element,
-  location: SourceLocation,
+  location: SourceLocation | null,
 ): string | null {
+  if (!location) return null
   return captureCssContextPromptForElementValue(ctx, element, location)
 }
 
@@ -127,7 +128,7 @@ export function getAnnotateRuntimeContext(
   }
 
   const locations = annotations.flatMap(annotation =>
-    annotation.targets.map(target => target.location),
+    annotation.targets.flatMap(target => (target.location ? [target.location] : [])),
   )
   if (locations.length === 0) return null
 

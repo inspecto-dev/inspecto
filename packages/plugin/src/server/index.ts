@@ -634,16 +634,14 @@ export async function handleRequest(
   res.end(JSON.stringify({ error: 'not found' }))
 }
 
-async function dispatchToAi(
-  req: SendToAiRequest,
-): Promise<SendToAiResponse & { fallbackPayload?: { prompt: string; file: string } }> {
+async function dispatchToAi(req: SendToAiRequest): Promise<SendToAiResponse> {
   const { location, snippet, prompt } = req
 
   if (prompt?.trim()) {
     const runtime = resolvePromptDispatchRuntime(serverState)
     return dispatchPromptThroughIde(runtime, {
       prompt: prompt.trim(),
-    }) as SendToAiResponse & { fallbackPayload?: { prompt: string; file: string } }
+    })
   }
 
   if (!location) {
@@ -662,7 +660,7 @@ async function dispatchToAi(
     line: location.line,
     column: location.column,
     ...(snippet !== undefined ? { snippet } : {}),
-  }) as SendToAiResponse & { fallbackPayload?: { prompt: string; file: string } }
+  })
 }
 
 function getBatchDispatchStatusCode(

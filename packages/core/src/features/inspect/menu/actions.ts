@@ -1,14 +1,16 @@
-import type { AiIntentConfig, RuntimeContextEnvelope, SourceLocation } from '@inspecto-dev/types'
+import type { AiIntentConfig, RuntimeContextEnvelope } from '@inspecto-dev/types'
 import { appendCssContextToPrompt } from '../../evidence/css-context/index.js'
+import { buildTargetEvidencePrompt } from '../../evidence/target-context/index.js'
 import { buildPromptForIntent } from '../prompts/fix-bug-prompt.js'
 import { fetchSnippet } from '../../../transport/http-client.js'
 import { t } from '../../../shared/i18n.js'
 import { isFixUiIntent } from './helpers.js'
 import { menuItemClass } from '../../../shared/styles/index.js'
+import { hasSourceLocation, type InspectMenuTargetContext } from './target.js'
 
 export function createIntentActionButtons(input: {
   intents: AiIntentConfig[]
-  location: SourceLocation
+  target: InspectMenuTargetContext
   includeSnippet: boolean
   maxSnippetLines: number
   resolveRuntimeContext: (
@@ -37,11 +39,11 @@ export function createIntentActionButtons(input: {
 
       try {
         let snippetResult = null
-        if (input.includeSnippet) {
+        if (input.includeSnippet && hasSourceLocation(input.target)) {
           snippetResult = await fetchSnippet(
-            input.location.file,
-            input.location.line,
-            input.location.column,
+            input.target.location.file,
+            input.target.location.line,
+            input.target.location.column,
             input.maxSnippetLines,
           )
         }
@@ -50,10 +52,20 @@ export function createIntentActionButtons(input: {
         const requestCssContextPrompt = input.resolveCssContextPrompt(
           isFixUiIntent(intent) ? intent : undefined,
         )
-        const prompt = appendCssContextToPrompt(
-          buildPromptForIntent(intent, input.location, snippetResult, requestRuntimeContext),
-          requestCssContextPrompt,
-        )
+        const sourcePrompt = hasSourceLocation(input.target)
+          ? buildPromptForIntent(
+              intent,
+              input.target.location,
+              snippetResult,
+              requestRuntimeContext,
+            )
+          : buildTargetEvidencePrompt({
+              prompt: buildPromptTemplateForTargetEvidence(intent),
+              ...(input.target.targetEvidence
+                ? { targetEvidence: input.target.targetEvidence }
+                : {}),
+            })
+        const prompt = appendCssContextToPrompt(sourcePrompt, requestCssContextPrompt)
 
         await input.onSend({
           label,
@@ -71,4 +83,17 @@ export function createIntentActionButtons(input: {
 
     return btn
   })
+}
+
+function buildPromptTemplateForTargetEvidence(
+  intent: Pick<AiIntentConfig, 'id' | 'label' | 'prompt' | 'prependPrompt' | 'appendPrompt'>,
+): string {
+  const prompt = [
+    intent.prependPrompt,
+    intent.prompt ?? intent.label ?? intent.id,
+    intent.appendPrompt,
+  ]
+    .filter(Boolean)
+    .join('\n\n')
+  return prompt
 }

@@ -1,7 +1,7 @@
 import { createOverlay } from '../features/inspect/overlay/index.js'
 import { fetchIdeInfo } from '../transport/http-client.js'
 import { inspectorStyles } from '../shared/styles/index.js'
-import { setBaseUrl } from '../transport/http-client.js'
+import { setBaseUrl, setClientTransport } from '../transport/http-client.js'
 import { configureI18n } from '../shared/i18n.js'
 import { createBadge, setActive, updateBadgeContent } from './launcher.js'
 import { cleanupDisconnectedRuntime } from './lifecycle-cleanup.js'
@@ -103,6 +103,7 @@ export function disconnect(ctx: unknown, teardownListeners: () => void): void {
   const state = asLifecycleContext(ctx)
   cleanupDisconnectedRuntime(state)
   teardownListeners()
+  setClientTransport(null)
 }
 
 export function configure(ctx: unknown, options: InspectoOptions): void {
@@ -119,6 +120,7 @@ export function configure(ctx: unknown, options: InspectoOptions): void {
   if (options.serverUrl) {
     setBaseUrl(options.serverUrl)
   }
+  setClientTransport(options.transport)
 
   applyTheme(state, options.theme)
 

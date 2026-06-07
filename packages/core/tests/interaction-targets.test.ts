@@ -30,6 +30,19 @@ describe('interaction targets', () => {
     expect(isFloatingUiEventTarget(document.querySelector('#guard-button'))).toBe(true)
   })
 
+  it('detects Inspecto launcher and shadow host chrome', () => {
+    const host = document.createElement('inspecto-overlay')
+    const launcher = document.createElement('div')
+    const title = document.createElement('span')
+
+    launcher.className = 'inspecto-badge'
+    launcher.appendChild(title)
+
+    expect(isFloatingUiEventTarget(host)).toBe(true)
+    expect(isFloatingUiEventTarget(launcher)).toBe(true)
+    expect(isFloatingUiEventTarget(title)).toBe(true)
+  })
+
   it('ignores plain elements and non-element event targets', () => {
     const plain = document.createElement('button')
 

@@ -75,6 +75,7 @@ export function isCssContextEnabledForTransportTarget(
   ctx: CssContextRuntimeState,
   target: AnnotationTransport['targets'][number],
 ): boolean {
+  if (!target.location) return false
   const targetKey = `${target.location.file}:${target.location.line}:${target.location.column}::${target.selector ?? ''}`
   return isCssContextEnabledForTargetKey(getCssContextState(ctx), targetKey)
 }
@@ -97,6 +98,7 @@ export function getAnnotateCssContextPrompt(
 
   const entries = annotations.flatMap(annotation =>
     annotation.targets.flatMap(target => {
+      if (!target.location) return []
       if (!includeWhenDisabled && !ctx.isCssContextEnabledForTransportTarget(target)) {
         return []
       }
