@@ -47,8 +47,8 @@ importers:
         specifier: ^9.0.0
         version: 9.39.4(jiti@2.7.0)
       happy-dom:
-        specifier: ^20.10.1
-        version: 20.10.1
+        specifier: ^20.10.2
+        version: 20.10.2
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -87,7 +87,7 @@ importers:
         version: 5.28.4
       vitest:
         specifier: ^1.4.0
-        version: 1.6.1(@types/node@20.19.41)(happy-dom@20.10.1)(jsdom@29.1.1(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.48.0)
+        version: 1.6.1(@types/node@20.19.41)(happy-dom@20.10.2)(jsdom@29.1.1(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.48.0)
 
   packages/cli:
     dependencies:
@@ -130,7 +130,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@20.19.41)(happy-dom@20.10.1)(jsdom@29.1.1(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.48.0)
+        version: 1.6.1(@types/node@20.19.41)(happy-dom@20.10.2)(jsdom@29.1.1(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.48.0)
 
   packages/core:
     dependencies:
@@ -154,7 +154,7 @@ importers:
         version: 1.1.0
       vitepress:
         specifier: ^1.6.4
-        version: 1.6.4(@algolia/client-search@5.50.0)(@types/node@20.19.41)(@types/react@19.2.14)(fuse.js@7.4.1)(lightningcss@1.32.0)(postcss@8.5.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(search-insights@2.17.3)(terser@5.48.0)(typescript@5.9.3)
+        version: 1.6.4(@algolia/client-search@5.50.0)(@types/node@20.19.41)(@types/react@18.3.28)(fuse.js@7.4.1)(lightningcss@1.32.0)(postcss@8.5.15)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)(terser@5.48.0)(typescript@5.9.3)
       vue:
         specifier: ^3.5.35
         version: 3.5.35(typescript@5.9.3)
@@ -173,7 +173,7 @@ importers:
         version: 2.24.0
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@20.19.41)(happy-dom@20.10.1)(jsdom@29.1.1(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.48.0)
+        version: 1.6.1(@types/node@20.19.41)(happy-dom@20.10.2)(jsdom@29.1.1(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.48.0)
 
   packages/plugin:
     dependencies:
@@ -481,10 +481,10 @@ importers:
         version: 9.2.1(@babel/core@7.29.7)(webpack@5.105.4(esbuild@0.27.4)(webpack-cli@5.1.4))
       css-loader:
         specifier: ^7.1.2
-        version: 7.1.4(@rspack/core@1.7.10(@swc/helpers@0.5.19))(webpack@5.105.4(esbuild@0.27.4)(webpack-cli@5.1.4))
+        version: 7.1.4(@rspack/core@0.3.14)(webpack@5.105.4(esbuild@0.27.4)(webpack-cli@5.1.4))
       html-webpack-plugin:
         specifier: ^5.6.0
-        version: 5.6.6(@rspack/core@1.7.10(@swc/helpers@0.5.19))(webpack@5.105.4(esbuild@0.27.4)(webpack-cli@5.1.4))
+        version: 5.6.6(@rspack/core@0.3.14)(webpack@5.105.4(esbuild@0.27.4)(webpack-cli@5.1.4))
       style-loader:
         specifier: ^4.0.0
         version: 4.0.0(webpack@5.105.4(esbuild@0.27.4)(webpack-cli@5.1.4))
@@ -6731,8 +6731,8 @@ packages:
   handle-thing@2.0.1:
     resolution: {integrity: sha512-9Qn4yBxelxoh2Ow62nP+Ka/kMnOXRi8BXnRaUwezLNhqelnN49xKz4F/dPP8OYLxLxq6JDtZb2i9XznUQbNPTg==}
 
-  happy-dom@20.10.1:
-    resolution: {integrity: sha512-awPoqPjx8CgjapJllyDlgzgVHjBExcitKK5ZJkxwhQJyQpHFkyS2bEcqCm7IeW20cQvuCI0cz2Ifq79CJKqtiw==}
+  happy-dom@20.10.2:
+    resolution: {integrity: sha512-5p9Sxis3eowDJKqx90QCsgbNA02XXqJ59NOHvD4V6cxp+rP4d/xOyVx7uY3hS8hiUbY1VeiFH8lbJ81AyuDVLQ==}
     engines: {node: '>=20.0.0'}
 
   has-bigints@1.1.0:
@@ -12990,9 +12990,9 @@ snapshots:
 
   '@docsearch/css@3.8.2': {}
 
-  '@docsearch/js@3.8.2(@algolia/client-search@5.50.0)(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(search-insights@2.17.3)':
+  '@docsearch/js@3.8.2(@algolia/client-search@5.50.0)(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)':
     dependencies:
-      '@docsearch/react': 3.8.2(@algolia/client-search@5.50.0)(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(search-insights@2.17.3)
+      '@docsearch/react': 3.8.2(@algolia/client-search@5.50.0)(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)
       preact: 10.29.0
     transitivePeerDependencies:
       - '@algolia/client-search'
@@ -13001,16 +13001,16 @@ snapshots:
       - react-dom
       - search-insights
 
-  '@docsearch/react@3.8.2(@algolia/client-search@5.50.0)(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(search-insights@2.17.3)':
+  '@docsearch/react@3.8.2(@algolia/client-search@5.50.0)(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)':
     dependencies:
       '@algolia/autocomplete-core': 1.17.7(@algolia/client-search@5.50.0)(algoliasearch@5.50.0)(search-insights@2.17.3)
       '@algolia/autocomplete-preset-algolia': 1.17.7(@algolia/client-search@5.50.0)(algoliasearch@5.50.0)
       '@docsearch/css': 3.8.2
       algoliasearch: 5.50.0
     optionalDependencies:
-      '@types/react': 19.2.14
-      react: 19.2.4
-      react-dom: 19.2.4(react@19.2.4)
+      '@types/react': 18.3.28
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
       search-insights: 2.17.3
     transitivePeerDependencies:
       - '@algolia/client-search'
@@ -17375,7 +17375,7 @@ snapshots:
       semver: 6.3.1
       webpack: 4.47.0(webpack-cli@3.3.12)
 
-  css-loader@7.1.4(@rspack/core@1.7.10(@swc/helpers@0.5.19))(webpack@5.105.4(esbuild@0.27.4)(webpack-cli@5.1.4)):
+  css-loader@7.1.4(@rspack/core@0.3.14)(webpack@5.105.4(esbuild@0.27.4)(webpack-cli@5.1.4)):
     dependencies:
       icss-utils: 5.1.0(postcss@8.5.8)
       postcss: 8.5.8
@@ -17386,7 +17386,7 @@ snapshots:
       postcss-value-parser: 4.2.0
       semver: 7.7.4
     optionalDependencies:
-      '@rspack/core': 1.7.10(@swc/helpers@0.5.19)
+      '@rspack/core': 0.3.14
       webpack: 5.105.4(esbuild@0.27.4)(webpack-cli@5.1.4)
 
   css-select@4.3.0:
@@ -18773,7 +18773,7 @@ snapshots:
 
   handle-thing@2.0.1: {}
 
-  happy-dom@20.10.1:
+  happy-dom@20.10.2:
     dependencies:
       '@types/node': 20.19.41
       '@types/whatwg-mimetype': 3.0.2
@@ -19015,7 +19015,7 @@ snapshots:
       util.promisify: 1.0.0
       webpack: 4.47.0(webpack-cli@3.3.12)
 
-  html-webpack-plugin@5.6.6(@rspack/core@1.7.10(@swc/helpers@0.5.19))(webpack@5.105.4(esbuild@0.27.4)(webpack-cli@5.1.4)):
+  html-webpack-plugin@5.6.6(@rspack/core@0.3.14)(webpack@5.105.4(esbuild@0.27.4)(webpack-cli@5.1.4)):
     dependencies:
       '@types/html-minifier-terser': 6.1.0
       html-minifier-terser: 6.1.0
@@ -19023,7 +19023,7 @@ snapshots:
       pretty-error: 4.0.0
       tapable: 2.3.2
     optionalDependencies:
-      '@rspack/core': 1.7.10(@swc/helpers@0.5.19)
+      '@rspack/core': 0.3.14
       webpack: 5.105.4(esbuild@0.27.4)(webpack-cli@5.1.4)
 
   html2canvas@1.4.1:
@@ -24093,10 +24093,10 @@ snapshots:
     optionalDependencies:
       vite: 8.0.9(@types/node@20.19.41)(esbuild@0.27.4)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0)
 
-  vitepress@1.6.4(@algolia/client-search@5.50.0)(@types/node@20.19.41)(@types/react@19.2.14)(fuse.js@7.4.1)(lightningcss@1.32.0)(postcss@8.5.15)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(search-insights@2.17.3)(terser@5.48.0)(typescript@5.9.3):
+  vitepress@1.6.4(@algolia/client-search@5.50.0)(@types/node@20.19.41)(@types/react@18.3.28)(fuse.js@7.4.1)(lightningcss@1.32.0)(postcss@8.5.15)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)(terser@5.48.0)(typescript@5.9.3):
     dependencies:
       '@docsearch/css': 3.8.2
-      '@docsearch/js': 3.8.2(@algolia/client-search@5.50.0)(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(search-insights@2.17.3)
+      '@docsearch/js': 3.8.2(@algolia/client-search@5.50.0)(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(search-insights@2.17.3)
       '@iconify-json/simple-icons': 1.2.76
       '@shikijs/core': 2.5.0
       '@shikijs/transformers': 2.5.0
@@ -24142,7 +24142,7 @@ snapshots:
       - typescript
       - universal-cookie
 
-  vitest@1.6.1(@types/node@20.19.41)(happy-dom@20.10.1)(jsdom@29.1.1(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.48.0):
+  vitest@1.6.1(@types/node@20.19.41)(happy-dom@20.10.2)(jsdom@29.1.1(@noble/hashes@1.4.0))(lightningcss@1.32.0)(terser@5.48.0):
     dependencies:
       '@vitest/expect': 1.6.1
       '@vitest/runner': 1.6.1
@@ -24166,7 +24166,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 20.19.41
-      happy-dom: 20.10.1
+      happy-dom: 20.10.2
       jsdom: 29.1.1(@noble/hashes@1.4.0)
     transitivePeerDependencies:
       - less
