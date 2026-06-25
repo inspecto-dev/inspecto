@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { type SendAnnotationsToAiRequest } from '@inspecto-dev/types'
 import { mountInspector, unmountInspector } from '../src/index.js'
-import { buildAnnotateFullPrompt } from '../src/annotate-full-prompt.js'
-import { openFileWithDiagnostics, sendAnnotationsToAi, setBaseUrl } from '../src/http.js'
-import { toAnnotateErrorMessage } from '../src/component-annotate-ui.js'
+import { buildAnnotateFullPrompt } from '../src/features/annotate/prompts/full-prompt.js'
+import {
+  openFileWithDiagnostics,
+  sendAnnotationsToAi,
+  setBaseUrl,
+} from '../src/transport/http-client.js'
+import { toAnnotateErrorMessage } from '../src/runtime/annotate-ui.js'
 
 const SYSTEM_STARTED_MESSAGE = 'Agent claimed this task through MCP.'
 
@@ -395,6 +399,58 @@ describe('annotate mode integration', () => {
       '[data-inspecto-annotate-composer] textarea',
     ) as HTMLTextAreaElement
     expect(composerNote.placeholder).toBe('What should change for this component?')
+  })
+
+  it('captures source-less runtime evidence targets in annotate mode', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(configResponse())
+    vi.stubGlobal('fetch', fetchMock)
+
+    document.body.innerHTML = `
+      <main>
+        <button id="upgrade" data-testid="upgrade-plan">Upgrade plan</button>
+      </main>
+    `
+    const target = document.getElementById('upgrade') as HTMLElement & Record<string, unknown>
+    function BillingPage() {}
+    function UpgradeButton() {}
+    target.__reactFiber$inspecto = {
+      type: 'button',
+      memoizedProps: { children: 'Upgrade plan' },
+      return: {
+        type: UpgradeButton,
+        memoizedProps: { planId: 'secret-plan', onUpgrade: () => {} },
+        return: {
+          type: BillingPage,
+          memoizedProps: {},
+          return: null,
+        },
+      },
+    }
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+    const composer = shadowRoot.querySelector('[data-inspecto-annotate-composer]') as HTMLElement
+    const previewButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.getAttribute('title') === 'View raw prompt payload',
+    )
+
+    expect(composer.style.display).toBe('block')
+    expect(shadowRoot.querySelector('[data-annotate-chip-id]')?.textContent).toContain(
+      'button#upgrade',
+    )
+
+    previewButton?.click()
+    const preview = shadowRoot.querySelector(
+      '[data-inspecto-annotate-raw-preview="true"]',
+    ) as HTMLElement
+    expect(preview.textContent).toContain('Selected target evidence:')
+    expect(preview.textContent).toContain('Framework evidence:')
+    expect(preview.textContent).toContain('react render path')
+    expect(preview.textContent).toContain('UpgradeButton')
+    expect(preview.textContent).not.toContain('secret-plan')
   })
 
   it('keeps Enter available for multi-line composer notes', async () => {
@@ -1034,7 +1090,7 @@ describe('annotate mode integration', () => {
     )
   })
 
-  it('falls back to annotate mode when inspect mode becomes unavailable', async () => {
+  it('does not auto-activate annotate mode when MCP delivery lacks an IDE connection', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       configResponse({
         deliveryMode: 'mcp',
@@ -1046,14 +1102,42 @@ describe('annotate mode integration', () => {
     const inspector = (await mountInspector({ defaultActive: true, mode: 'inspect' })) as any
     await inspector.configLoadPromise
 
-    expect(inspector.getMode()).toBe('annotate')
+    expect(inspector.getMode()).toBe('inspect')
     const host = document.querySelector('inspecto-overlay') as HTMLElement
     const shadowRoot = host.shadowRoot!
     expect(
       (shadowRoot.querySelector('[data-inspecto-launcher-state="true"]') as HTMLElement)
         .textContent,
-    ).toBe('Annotate mode')
-    expect(shadowRoot.querySelector('.inspecto-annotate-sidebar')).not.toBeNull()
+    ).toBe('Inspect mode')
+    expect(shadowRoot.querySelector('.inspecto-annotate-sidebar')).toBeNull()
+  })
+
+  it('closes MCP annotate mode from the sidebar exit button without re-entering annotate', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      configResponse({
+        deliveryMode: 'mcp',
+        ideConnected: false,
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const inspector = (await mountInspector({ defaultActive: true, mode: 'annotate' })) as any
+    await inspector.configLoadPromise
+
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+    const exitButton = shadowRoot.querySelector(
+      '.inspecto-annotate-sidebar button[aria-label="Exit annotate mode"]',
+    ) as HTMLButtonElement
+
+    exitButton.click()
+
+    expect(inspector.getMode()).toBe('inspect')
+    expect(shadowRoot.querySelector('.inspecto-annotate-sidebar')).toBeNull()
+    expect(
+      (shadowRoot.querySelector('[data-inspecto-launcher-state="true"]') as HTMLElement)
+        .textContent,
+    ).toBe('Ready')
   })
 
   it('does not restore inspect mode after resume when inspect becomes unavailable while paused', async () => {
@@ -2658,6 +2742,43 @@ describe('annotate mode integration', () => {
     const req = JSON.parse(fetchMock.mock.calls[1]![1].body as string) as SendAnnotationsToAiRequest
     expect(req.deliveryMode).toBe('mcp')
     expect(req.annotations).toHaveLength(1)
+  })
+
+  it('copies the annotation prompt instead of showing a dev-server error when Create Task is used without a server', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(configResponse())
+      .mockRejectedValueOnce(new TypeError('fetch failed'))
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('fetch', fetchMock)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
+
+    document.body.innerHTML = '<button id="target">Upgrade React plan</button>'
+
+    await mountInspector({ defaultActive: true, mode: 'annotate' })
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+
+    document
+      .getElementById('target')!
+      .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    await Promise.resolve()
+
+    const createTask = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Create Task',
+    ) as HTMLButtonElement
+
+    createTask.click()
+
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
+
+    expect(writeText.mock.calls[0]![0]).toContain('Selected elements:')
+    expect(writeText.mock.calls[0]![0]).toContain('Upgrade React plan')
+    expect(shadowRoot.textContent).not.toContain('Inspecto could not reach the local dev server')
+    expect(shadowRoot.textContent).toContain('Copied prompt to clipboard.')
   })
 
   it('preserves the annotate sidebar draft after Create Task succeeds', async () => {

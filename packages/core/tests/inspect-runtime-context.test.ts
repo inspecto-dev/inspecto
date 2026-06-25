@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountInspector, unmountInspector } from '../src/index.js'
+import { setActive, setPaused } from '../src/runtime/launcher.js'
 
 function configResponse(overrides: Record<string, unknown> = {}) {
   return {
@@ -32,24 +33,22 @@ describe('inspect runtime-context lifecycle', () => {
 
     const host = document.querySelector('inspecto-overlay') as HTMLElement & {
       runtimeContextCollector: { snapshot: () => { records: Array<unknown> } }
-      setPaused: (value: boolean) => void
-      setActive: (value: boolean) => void
     }
 
     window.dispatchEvent(new ErrorEvent('error', { message: 'active boom' }))
     expect(host.runtimeContextCollector.snapshot().records).toHaveLength(1)
 
-    host.setPaused(true)
+    setPaused(host, true)
     expect(host.runtimeContextCollector.snapshot().records).toHaveLength(1)
     window.dispatchEvent(new ErrorEvent('error', { message: 'paused boom' }))
     expect(host.runtimeContextCollector.snapshot().records).toHaveLength(2)
 
-    host.setPaused(false)
+    setPaused(host, false)
     expect(host.runtimeContextCollector.snapshot().records).toHaveLength(2)
     window.dispatchEvent(new ErrorEvent('error', { message: 'resumed boom' }))
     expect(host.runtimeContextCollector.snapshot().records).toHaveLength(3)
 
-    host.setActive(false)
+    setActive(host, false)
     expect(host.runtimeContextCollector.snapshot().records).toHaveLength(3)
     window.dispatchEvent(new ErrorEvent('error', { message: 'inactive boom' }))
     expect(host.runtimeContextCollector.snapshot().records).toHaveLength(4)

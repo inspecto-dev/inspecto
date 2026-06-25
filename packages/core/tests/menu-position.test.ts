@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveMenuPosition } from '../src/menu-position.js'
+import { resolveMenuPosition } from '../src/features/inspect/menu/position.js'
 
 describe('menu positioning', () => {
   it('repositions the menu horizontally using its rendered width so it stays within the right viewport edge', () => {

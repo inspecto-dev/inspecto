@@ -25,11 +25,11 @@ The current implementation intentionally does **not** use:
 
 ## Runtime Mapping
 
-- `packages/core/src/annotate-session.ts`
+- `packages/core/src/features/annotate/session/index.ts`
   Owns current draft and saved-record transitions.
-- `packages/core/src/annotate-sidebar.ts`
+- `packages/core/src/features/annotate/sidebar/index.ts`
   Owns the primary submit action and batch composer UI, including the instruction token/mention segments that back the inline chip experience.
-- `packages/core/src/component.ts`
+- `packages/core/src/runtime/inspecto-element.ts`
   Owns record creation, batch payload assembly, and evidence attachment.
 - `packages/types/src/index.ts`
   Defines `FeedbackRecord`, `FeedbackRecordDraft`, and `FeedbackRecordSession`.

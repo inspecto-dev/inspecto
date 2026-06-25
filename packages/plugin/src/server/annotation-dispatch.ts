@@ -20,12 +20,13 @@ import type { AnnotationSessionStore } from './session-store.js'
 import { annotationSessionStore } from './session-store.js'
 
 export interface NormalizedAnnotationTarget {
-  file: string
-  line: number
-  column: number
+  file?: string
+  line?: number
+  column?: number
   label?: string
   selector?: string
   snippet?: string
+  targetEvidencePrompt?: string
 }
 
 export interface NormalizedAnnotation {
@@ -144,13 +145,18 @@ function toSessionAnnotations(annotations: NormalizedAnnotation[]): Annotation[]
     targets: annotation.targets.map((target, targetIndex) => ({
       id: `annotation-${annotation.index}-target-${targetIndex + 1}`,
       label: target.label ?? 'Unknown target',
-      location: {
-        file: target.file,
-        line: target.line,
-        column: target.column,
-      },
+      ...(target.file && target.line !== undefined && target.column !== undefined
+        ? {
+            location: {
+              file: target.file,
+              line: target.line,
+              column: target.column,
+            },
+          }
+        : {}),
       ...(target.selector ? { selector: target.selector } : {}),
       ...(target.snippet ? { snippet: target.snippet } : {}),
+      ...(target.targetEvidencePrompt ? { targetEvidencePrompt: target.targetEvidencePrompt } : {}),
       rect: {
         x: 0,
         y: 0,
@@ -192,6 +198,13 @@ export function validateAnnotationDispatchRequest(
     }
 
     for (const target of annotation.targets) {
+      if (!target.location && !target.targetEvidencePrompt?.trim()) {
+        throw new AnnotationDispatchError(
+          'Annotation target must include either a source location or runtime target evidence.',
+          'INVALID_REQUEST',
+        )
+      }
+      if (!target.location) continue
       const absolutePath = resolveWorkspacePath(target.location.file, state.cwd)
       assertPathWithinProject(absolutePath, state.projectRoot)
     }
@@ -210,12 +223,19 @@ export function normalizeAnnotationBatch(
       note: annotation.note.trim(),
       intent: annotation.intent,
       targets: annotation.targets.map(target => ({
-        file: target.location.file,
-        line: target.location.line,
-        column: target.location.column,
+        ...(target.location
+          ? {
+              file: target.location.file,
+              line: target.location.line,
+              column: target.location.column,
+            }
+          : {}),
         ...(target.label ? { label: target.label } : {}),
         ...(target.selector ? { selector: target.selector } : {}),
         ...(target.snippet ? { snippet: target.snippet } : {}),
+        ...(target.targetEvidencePrompt
+          ? { targetEvidencePrompt: target.targetEvidencePrompt }
+          : {}),
       })),
     })),
   }
@@ -244,7 +264,11 @@ function buildSelectedElementsPrompt(annotations: NormalizedAnnotation[]): strin
     for (const target of annotation.targets) {
       const targetLabel = (target.label || 'Unknown target').trim() || 'Unknown target'
       lines.push(`- ${targetLabel}`)
-      lines.push(`file=${target.file}:${target.line}:${target.column}`)
+      if (target.file && target.line !== undefined && target.column !== undefined) {
+        lines.push(`file=${target.file}:${target.line}:${target.column}`)
+      } else if (target.targetEvidencePrompt) {
+        lines.push(target.targetEvidencePrompt)
+      }
       if (trimmedNote) {
         lines.push(`note=${trimmedNote}`)
       }

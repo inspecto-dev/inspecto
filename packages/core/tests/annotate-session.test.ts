@@ -7,7 +7,7 @@ import {
   setCurrentRecordTarget,
   updateCurrentRecordIntent,
   updateCurrentRecordNote,
-} from '../src/annotate-session.js'
+} from '../src/features/annotate/session/index.js'
 
 function createTarget(id: string, line: number, label: string) {
   return {

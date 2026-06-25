@@ -1,0 +1,111 @@
+:root {
+  color: #172033;
+  background: #f6f8fb;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+.shell {
+  width: min(1120px, calc(100vw - 48px));
+  margin: 0 auto;
+  padding: 48px 0;
+}
+
+.panel {
+  margin-bottom: 24px;
+  padding: 28px;
+  border: 1px solid #d9e2ef;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgba(30, 42, 68, 0.08);
+}
+
+.hero h1 {
+  margin: 10px 0 12px;
+  font-size: clamp(34px, 6vw, 64px);
+  letter-spacing: -0.05em;
+}
+
+.hero p,
+.framework-card p,
+.checks li {
+  color: #5c667a;
+  line-height: 1.7;
+}
+
+.eyebrow {
+  color: #4762ff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.split-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.framework-card {
+  min-height: 100%;
+  padding: 24px;
+  border: 1px solid #d9e2ef;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.framework-card h2 {
+  margin: 8px 0 10px;
+  font-size: 28px;
+}
+
+.primary-button {
+  margin-top: 14px;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  color: white;
+  background: linear-gradient(135deg, #4762ff, #8b5cf6);
+  cursor: pointer;
+  font-weight: 800;
+  box-shadow: 0 14px 32px rgba(71, 98, 255, 0.28);
+}
+
+.primary-button:hover {
+  transform: translateY(-1px);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+code {
+  border-radius: 6px;
+  padding: 2px 6px;
+  background: #eef2ff;
+  color: #3949ab;
+}
+
+@media (max-width: 760px) {
+  .split-grid {
+    grid-template-columns: 1fr;
+  }
+}

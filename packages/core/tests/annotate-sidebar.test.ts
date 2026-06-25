@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createEmptySession } from '../src/annotate-session.js'
-import { createAnnotateSidebar } from '../src/annotate-sidebar.js'
+import { createEmptySession } from '../src/features/annotate/session/index.js'
+import { createAnnotateSidebar } from '../src/features/annotate/sidebar/index.js'
+import { getRawPromptPreviewPosition } from '../src/features/annotate/sidebar/raw-preview-position.js'
 import {
   annotateQueueListClass,
   annotateSidebarActionsClass,
@@ -10,7 +11,7 @@ import {
   annotateSidebarQueueItemClass,
   annotateSidebarSectionClass,
   annotateSidebarTextClass as _annotateSidebarTextClass,
-} from '../src/styles.js'
+} from '../src/shared/styles/index.js'
 import type { FeedbackRecordSession } from '@inspecto-dev/types'
 
 const SYSTEM_STARTED_MESSAGE = 'Agent claimed this task through MCP.'
@@ -1013,6 +1014,38 @@ describe('annotate sidebar', () => {
     Object.defineProperty(window, 'innerHeight', {
       configurable: true,
       value: originalInnerHeight,
+    })
+  })
+})
+
+describe('raw prompt preview positioning', () => {
+  it('places the preview below when below has more room than above', () => {
+    expect(
+      getRawPromptPreviewPosition({
+        footerTop: 120,
+        footerBottom: 164,
+        previewHeight: 400,
+        viewportHeight: 320,
+      }),
+    ).toEqual({
+      top: 'calc(100% + 8px)',
+      bottom: 'auto',
+      maxHeight: '136px',
+    })
+  })
+
+  it('places the preview above when above can fit more content', () => {
+    expect(
+      getRawPromptPreviewPosition({
+        footerTop: 640,
+        footerBottom: 684,
+        previewHeight: 240,
+        viewportHeight: 720,
+      }),
+    ).toEqual({
+      top: 'auto',
+      bottom: 'calc(100% + 8px)',
+      maxHeight: '400px',
     })
   })
 })

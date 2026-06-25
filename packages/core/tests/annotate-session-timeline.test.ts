@@ -3,9 +3,9 @@ import type { AnnotationWorkSession } from '@inspecto-dev/types'
 import {
   buildSessionTimelineItems,
   formatTimelineTimestamp,
-} from '../src/annotate-session-timeline.js'
-import { renderSessionTimeline } from '../src/annotate-session-timeline-dom.js'
-import { configureI18n } from '../src/i18n.js'
+} from '../src/features/annotate/session/timeline.js'
+import { renderSessionTimeline } from '../src/features/annotate/sidebar/session-timeline-dom.js'
+import { configureI18n } from '../src/shared/i18n.js'
 
 function makeSession(input: Partial<AnnotationWorkSession> = {}): AnnotationWorkSession {
   return {

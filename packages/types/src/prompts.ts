@@ -1,8 +1,18 @@
 import type { HotKeys } from './common.js'
-import type { RuntimeContextConfig, RuntimeContextEnvelope } from './runtime.js'
+import type {
+  RuntimeContextConfig,
+  RuntimeContextEnvelope,
+  OpenFileRequest,
+  SnippetRequest,
+  SnippetResponse,
+  SendAnnotationsToAiRequest,
+  SendAnnotationsToAiResponse,
+  AnnotationSessionEvent,
+  AnnotationWorkSession,
+} from './runtime.js'
 import type { SourceLocation } from './common.js'
 import type { AiErrorCode } from './runtime.js'
-import type { Provider } from './providers.js'
+import type { InspectoConfig, Provider } from './providers.js'
 
 export type IntentKind = 'ai-prompt' | 'workflow'
 
@@ -55,11 +65,46 @@ export interface InspectorOptions {
   hotKeys?: HotKeys
   askPlaceholder?: string
   serverUrl?: string
+  transport?: InspectoClientTransport
   maxSnippetLines?: number
   defaultActive?: boolean
   theme?: 'light' | 'dark' | 'auto'
   includeSnippet?: boolean
   runtimeContext?: RuntimeContextConfig
+}
+
+export interface InspectoClientTransport {
+  fetchConfig?: () => Promise<InspectoConfig | null>
+  openFile?: (req: OpenFileRequest) => Promise<boolean | OpenFileResult>
+  fetchSnippet?: (req: SnippetRequest) => Promise<SnippetResponse>
+  sendToAi?: (req: SendToAiRequest) => Promise<SendToAiResponse>
+  sendAnnotationsToAi?: (req: SendAnnotationsToAiRequest) => Promise<SendAnnotationsToAiResponse>
+  fetchAnnotationSession?: (sessionId: string) => Promise<AnnotationSessionResult>
+  openAnnotationSessionEventStream?: (
+    sessionId: string,
+    handlers: AnnotationSessionEventHandlers,
+  ) => AnnotationSessionEventStreamConnection | null
+}
+
+export interface OpenFileResult {
+  success: boolean
+  errorCode?: AiErrorCode
+}
+
+export interface AnnotationSessionResult {
+  success: boolean
+  session?: AnnotationWorkSession
+  error?: string
+  errorCode?: AiErrorCode
+}
+
+export interface AnnotationSessionEventHandlers {
+  onEvent: (event: AnnotationSessionEvent) => void
+  onError?: () => void
+}
+
+export interface AnnotationSessionEventStreamConnection {
+  close(): void
 }
 
 export interface SendToAiRequest {
@@ -76,7 +121,7 @@ export interface SendToAiResponse {
   errorCode?: AiErrorCode
   fallbackPayload?: {
     prompt: string
-    file: string
+    file?: string
   }
 }
 

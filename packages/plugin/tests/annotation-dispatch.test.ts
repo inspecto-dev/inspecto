@@ -189,6 +189,67 @@ describe('annotation batch dispatch', () => {
     expect(prompt).not.toContain('For each annotation, include:')
   })
 
+  it('keeps runtime target evidence when annotation targets have no source location', async () => {
+    const {
+      buildAnnotationBatchPrompt,
+      normalizeAnnotationBatch,
+      validateAnnotationDispatchRequest,
+    } = await import('../src/server/annotation-dispatch.js')
+
+    const req: SendAnnotationsToAiRequest = {
+      annotations: [
+        {
+          note: 'Wire the upgrade action.',
+          intent: 'review',
+          targets: [
+            {
+              label: 'button#upgrade',
+              selector: '#upgrade',
+              targetEvidencePrompt:
+                'Selected target evidence:\nFramework evidence:\n- framework: react\n- component: UpgradeButton',
+            },
+          ],
+        },
+      ],
+    }
+
+    expect(() =>
+      validateAnnotationDispatchRequest(req, { projectRoot: process.cwd(), cwd: process.cwd() }),
+    ).not.toThrow()
+
+    const prompt = buildAnnotationBatchPrompt(normalizeAnnotationBatch(req))
+    expect(prompt).toContain('- button#upgrade')
+    expect(prompt).toContain('Selected target evidence:')
+    expect(prompt).toContain('Framework evidence:')
+    expect(prompt).toContain('- component: UpgradeButton')
+    expect(prompt).not.toContain('file=undefined')
+  })
+
+  it('rejects source-less annotation targets without runtime evidence', async () => {
+    const { dispatchAnnotationsToAi } = await import('../src/server/annotation-dispatch.js')
+    const { serverState } = await import('../src/server/index.js')
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const result = await dispatchAnnotationsToAi(
+      {
+        annotations: [
+          {
+            note: 'Missing target context',
+            intent: 'ask',
+            targets: [{ label: 'button#unknown' } as any],
+          },
+        ],
+      },
+      serverState,
+    )
+
+    expect(result.success).toBe(false)
+    expect(result.errorCode).toBe('INVALID_REQUEST')
+    expect(result.error).toContain('source location or runtime target evidence')
+  })
+
   it('rejects annotation targets outside the project root', async () => {
     const { dispatchAnnotationsToAi } = await import('../src/server/annotation-dispatch.js')
     const { serverState } = await import('../src/server/index.js')
@@ -941,6 +1002,50 @@ describe('annotation batch dispatch', () => {
 
     expect(ticketResponse.statusCode).toBe(200)
     expect(ticketResponse.jsonBody.prompt).toBe('Review this inspect prompt.')
+  })
+
+  it('serves prompt-only inspect dispatch tickets without requiring a source file', async () => {
+    const { handleRequest, serverState } = await import('../src/server/index.js')
+
+    serverState.projectRoot = process.cwd()
+    serverState.cwd = process.cwd()
+
+    const req: SendToAiRequest = {
+      prompt: 'Review this source-less target evidence.',
+    }
+
+    const request = createJsonRequest('POST', JSON.stringify(req))
+    const response = createMockResponse()
+    const url = new URL(`http://0.0.0.0:5678${INSPECTO_API_PATHS.AI_DISPATCH}`)
+
+    const pending = handleRequest(url, request as any, response as any)
+    request.start()
+    await pending
+
+    expect(response.statusCode).toBe(200)
+    expect(response.jsonBody).toMatchObject({
+      success: true,
+      fallbackPayload: {
+        prompt: 'Review this source-less target evidence.',
+      },
+    })
+    expect(response.jsonBody.fallbackPayload.file).toBeUndefined()
+
+    const { execFileSync } = await import('node:child_process')
+    const uri = vi.mocked(execFileSync).mock.calls[0]?.[1]?.[0] as string
+    const launchedUrl = new URL(uri)
+    const ticket = launchedUrl.searchParams.get('ticket')
+    const ticketRequest = createJsonRequest('GET', '')
+    const ticketResponse = createMockResponse()
+    const ticketUrl = new URL(`http://127.0.0.1:5678${INSPECTO_API_PATHS.AI_TICKET}/${ticket}`)
+
+    const pendingTicket = handleRequest(ticketUrl, ticketRequest as any, ticketResponse as any)
+    ticketRequest.start()
+    await pendingTicket
+
+    expect(ticketResponse.statusCode).toBe(200)
+    expect(ticketResponse.jsonBody.prompt).toBe('Review this source-less target evidence.')
+    expect(ticketResponse.jsonBody.filePath).toBeUndefined()
   })
 
   it('uses the active CodeBuddy CN scheme for AI dispatch when config uses codebuddy-cn', async () => {

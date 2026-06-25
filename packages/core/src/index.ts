@@ -1,10 +1,10 @@
 import type { InspectorOptions } from '@inspecto-dev/types'
-import type { InspectorMode } from './component.js'
+import type { InspectorMode } from './runtime/inspecto-state.js'
 
 // Export types only, avoid top-level imports of DOM-dependent code
 export type { InspectorOptions }
-export type { InspectoElement } from './component.js'
-export type { InspectorMode } from './component.js'
+export type { InspectoElement } from './runtime/inspecto-element.js'
+export type { InspectorMode } from './runtime/inspecto-state.js'
 
 type MountInspectorOptions = InspectorOptions & { mode?: InspectorMode }
 
@@ -14,7 +14,7 @@ export async function mountInspector(options: MountInspectorOptions = {}): Promi
   if (typeof document === 'undefined') return null
 
   // Lazy import the component so that module evaluation does not happen during SSR
-  const { InspectoElement: _InspectoElement } = await import('./component.js')
+  const { InspectoElement: _InspectoElement } = await import('./runtime/inspecto-element.js')
 
   const existing = document.querySelector(TAG_NAME)
   if (existing) {

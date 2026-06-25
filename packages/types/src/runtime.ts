@@ -70,9 +70,8 @@ export interface SnippetResponse {
   name?: string
 }
 
-export interface AnnotationTarget {
+export interface AnnotationTargetBase {
   id: string
-  location: SourceLocation
   label: string
   selector?: string
   rect: {
@@ -83,6 +82,20 @@ export interface AnnotationTarget {
   }
   snippet?: string
 }
+
+export interface SourceAnnotationTarget extends AnnotationTargetBase {
+  location: SourceLocation
+  targetEvidence?: unknown
+  targetEvidencePrompt?: string
+}
+
+export interface RuntimeEvidenceAnnotationTarget extends AnnotationTargetBase {
+  location?: undefined
+  targetEvidence?: unknown
+  targetEvidencePrompt: string
+}
+
+export type AnnotationTarget = SourceAnnotationTarget | RuntimeEvidenceAnnotationTarget
 
 export interface FeedbackRecord {
   id: string
@@ -202,12 +215,21 @@ export interface AnnotationSessionEvent {
   session: AnnotationWorkSession
 }
 
-export interface AnnotationTransportTarget {
-  location: SourceLocation
-  label?: string
-  selector?: string
-  snippet?: string
-}
+export type AnnotationTransportTarget =
+  | {
+      location: SourceLocation
+      label?: string
+      selector?: string
+      snippet?: string
+      targetEvidencePrompt?: string
+    }
+  | {
+      location?: undefined
+      label?: string
+      selector?: string
+      snippet?: string
+      targetEvidencePrompt: string
+    }
 
 export interface AnnotationTransport {
   note: string

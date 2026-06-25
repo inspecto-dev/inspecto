@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mountInspector, unmountInspector } from '../src/index.js'
-import { showIntentMenu } from '../src/menu.js'
+import { showIntentMenu as showIntentMenuWithTarget } from '../src/features/inspect/menu/index.js'
 import {
   menuClass,
   loadingSpinnerClass,
@@ -10,27 +10,68 @@ import {
   menuContextSummaryClass,
   runtimeToggleBadgeClass,
   tooltipClass,
-} from '../src/styles.js'
-import * as http from '../src/http.js'
-import * as promptModule from '../src/fix-bug-prompt.js'
-import type { RuntimeContextEnvelope } from '@inspecto-dev/types'
+  badgeClass,
+} from '../src/shared/styles/index.js'
+import * as http from '../src/transport/http-client.js'
+import * as promptModule from '../src/features/inspect/prompts/fix-bug-prompt.js'
+import type { InspectorOptions, RuntimeContextEnvelope, SourceLocation } from '@inspecto-dev/types'
+import type { TargetEvidence } from '../src/features/evidence/target-context/index.js'
 import {
   attachRuntimeContextCapture,
   createRuntimeContextCollector,
   createRuntimeContextEnvelope,
   selectRuntimeEvidence,
-} from '../src/runtime-context.js'
+} from '../src/features/evidence/runtime-context/index.js'
+import { collectTargetEvidence } from '../src/features/evidence/target-context/index.js'
+
+type LegacyMenuDeps = {
+  getRuntimeContext?: (location: SourceLocation) => RuntimeContextEnvelope | null
+  captureCssContextPrompt?: () => string | null
+  targetLabel?: string
+  targetEvidence?: TargetEvidence
+}
+
+function showIntentMenu(
+  shadowRoot: ShadowRoot,
+  location: SourceLocation | null,
+  clickX: number,
+  clickY: number,
+  options: InspectorOptions,
+  onClose: () => void,
+  deps: LegacyMenuDeps = {},
+): () => void {
+  return showIntentMenuWithTarget(
+    shadowRoot,
+    {
+      location,
+      ...(deps.targetLabel ? { targetLabel: deps.targetLabel } : {}),
+      ...(deps.targetEvidence ? { targetEvidence: deps.targetEvidence } : {}),
+    },
+    clickX,
+    clickY,
+    options,
+    onClose,
+    {
+      ...(deps.getRuntimeContext ? { getRuntimeContext: deps.getRuntimeContext } : {}),
+      ...(deps.captureCssContextPrompt
+        ? { captureCssContextPrompt: deps.captureCssContextPrompt }
+        : {}),
+    },
+  )
+}
 
 // Mock http module
-vi.mock('../src/http.js', () => ({
+vi.mock('../src/transport/http-client.js', () => ({
   fetchSnippet: vi.fn(),
   sendToAi: vi.fn(),
   openFile: vi.fn(),
   openFileWithDiagnostics: vi.fn(),
   fetchIdeInfo: vi.fn(),
+  setClientTransport: vi.fn(),
+  resetClientTransport: vi.fn(),
 }))
 
-vi.mock('../src/fix-bug-prompt.js', () => ({
+vi.mock('../src/features/inspect/prompts/fix-bug-prompt.js', () => ({
   buildPromptForIntent: vi.fn(
     (
       intent: { id?: string },
@@ -200,9 +241,52 @@ describe('Intent Menu DOM Interaction', () => {
 
     // Buttons should be rendered
     const buttons = shadowRoot.querySelectorAll('button')
-    expect(buttons.length).toBe(2)
-    expect(buttons[0].getAttribute('aria-label')).toContain('Open in Editor')
-    expect(buttons[1].textContent).toContain('Explain Code')
+    expect(buttons.length).toBe(3)
+    expect(buttons[0].getAttribute('aria-label')).toContain('Copy prompt')
+    expect(buttons[1].getAttribute('aria-label')).toContain('Open in Editor')
+    expect(buttons[2].textContent).toContain('Explain Code')
+  })
+
+  it('copies the current inspect prompt from the header action without dispatching to AI', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
+    document.body.innerHTML = `
+      <section class="billing-card">
+        <button id="upgrade" class="upgrade-button" data-testid="upgrade-button">
+          Upgrade plan
+        </button>
+      </section>
+    `
+    const target = document.getElementById('upgrade')!
+
+    showIntentMenu(shadowRoot, null, 100, 100, { includeSnippet: true }, onCloseMock, {
+      targetLabel: 'button#upgrade.upgrade-button',
+      targetEvidence: collectTargetEvidence(target),
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const input = shadowRoot.querySelector(`.${menuInputClass}`) as HTMLInputElement
+    input.value = 'Where is this implemented?'
+
+    const copyButton = shadowRoot.querySelector(
+      'button[aria-label="Copy prompt"]',
+    ) as HTMLButtonElement
+    expect(copyButton).not.toBeNull()
+    copyButton.click()
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(http.fetchSnippet).not.toHaveBeenCalled()
+    expect(http.openFileWithDiagnostics).not.toHaveBeenCalled()
+    expect(http.sendToAi).not.toHaveBeenCalled()
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Where is this implemented?'))
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Selected component:'))
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Selected target evidence'))
+    expect(copyButton.title).toBe('Copied')
+    expect(onCloseMock).not.toHaveBeenCalled()
   })
 
   it('uses a supplemental custom-ask placeholder when preset actions are available', async () => {
@@ -261,6 +345,27 @@ describe('Intent Menu DOM Interaction', () => {
     expect(error).not.toBeNull()
     expect(error.textContent).toContain('Inspecto is not connected to the local dev server')
     expect(error.textContent).toContain('inspecto doctor')
+  })
+
+  it('does not show setup diagnostics for runtime target evidence when client config cannot be loaded', async () => {
+    vi.mocked(http.fetchIdeInfo).mockResolvedValueOnce(null)
+    document.body.innerHTML = `
+      <button id="upgrade" data-testid="upgrade-button">Upgrade plan</button>
+    `
+    const target = document.getElementById('upgrade')!
+
+    showIntentMenu(shadowRoot, null, 100, 100, {}, onCloseMock, {
+      targetLabel: 'button#upgrade',
+      targetEvidence: collectTargetEvidence(target),
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(shadowRoot.querySelector(`.${errorMsgClass}`)).toBeNull()
+    expect(shadowRoot.querySelector(`.${loadingSpinnerClass}`)).toBeNull()
+    expect((shadowRoot.querySelector(`.${menuInputClass}`) as HTMLInputElement).placeholder).toBe(
+      'Ask anything about this component...',
+    )
   })
 
   it('styles the header open icon consistently with annotate composer actions', async () => {
@@ -1110,9 +1215,9 @@ describe('Intent Menu DOM Interaction', () => {
   })
 
   it('includes runtime evidence in the final prompt when the bug icon is enabled and a real console.error was captured', async () => {
-    const actualPromptModule = await vi.importActual<typeof import('../src/fix-bug-prompt.js')>(
-      '../src/fix-bug-prompt.js',
-    )
+    const actualPromptModule = await vi.importActual<
+      typeof import('../src/features/inspect/prompts/fix-bug-prompt.js')
+    >('../src/features/inspect/prompts/fix-bug-prompt.js')
     vi.mocked(promptModule.buildPromptForIntent).mockImplementation(
       actualPromptModule.buildPromptForIntent,
     )
@@ -1180,9 +1285,9 @@ describe('Intent Menu DOM Interaction', () => {
   })
 
   it('includes runtime evidence in the final prompt when a real uncaught window error matches the inspected file', async () => {
-    const actualPromptModule = await vi.importActual<typeof import('../src/fix-bug-prompt.js')>(
-      '../src/fix-bug-prompt.js',
-    )
+    const actualPromptModule = await vi.importActual<
+      typeof import('../src/features/inspect/prompts/fix-bug-prompt.js')
+    >('../src/features/inspect/prompts/fix-bug-prompt.js')
     vi.mocked(promptModule.buildPromptForIntent).mockImplementation(
       actualPromptModule.buildPromptForIntent,
     )
@@ -1275,9 +1380,9 @@ describe('Intent Menu DOM Interaction', () => {
   })
 
   it('includes runtime evidence in the final prompt through the real mountInspector inspect flow', async () => {
-    const actualPromptModule = await vi.importActual<typeof import('../src/fix-bug-prompt.js')>(
-      '../src/fix-bug-prompt.js',
-    )
+    const actualPromptModule = await vi.importActual<
+      typeof import('../src/features/inspect/prompts/fix-bug-prompt.js')
+    >('../src/features/inspect/prompts/fix-bug-prompt.js')
     vi.mocked(promptModule.buildPromptForIntent).mockImplementation(
       actualPromptModule.buildPromptForIntent,
     )
@@ -1755,6 +1860,34 @@ describe('Intent Menu DOM Interaction', () => {
     ).toBe(true)
   })
 
+  it('opens the launcher panel instead of the inspect menu when clicking the launcher chrome', async () => {
+    document.body.innerHTML = '<button id="page-target">Page target</button>'
+
+    const inspector = await mountInspector({ defaultActive: true })
+    expect(inspector).not.toBeNull()
+
+    const mountedShadowRoot = (document.querySelector('inspecto-overlay') as HTMLElement)
+      .shadowRoot!
+    const launcher = mountedShadowRoot.querySelector(`.${badgeClass}`) as HTMLDivElement
+    launcher.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+        clientX: 100,
+        clientY: 100,
+      }),
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(mountedShadowRoot.querySelector(`.${menuClass}`)).toBeNull()
+    expect(
+      (mountedShadowRoot.querySelector('[data-inspecto-launcher-panel]') as HTMLElement).style
+        .display,
+    ).toBe('flex')
+  })
+
   it('switches the overlay host into interactive mode while the menu is open so menu actions stay clickable', async () => {
     document.body.innerHTML =
       '<button data-inspecto="/src/App.tsx:10:5" id="target">Target</button>'
@@ -1795,5 +1928,171 @@ describe('Intent Menu DOM Interaction', () => {
     await new Promise(resolve => setTimeout(resolve, 0))
 
     expect(host.style.pointerEvents).toBe('none')
+  })
+
+  it('opens the inspect menu with target evidence when the selected element has no source location', async () => {
+    document.body.innerHTML = `
+      <main>
+        <button id="upgrade" class="upgrade-button" data-testid="upgrade-button">
+          Upgrade plan
+        </button>
+      </main>
+    `
+
+    const inspector = await mountInspector({ defaultActive: true })
+    expect(inspector).not.toBeNull()
+
+    document.getElementById('upgrade')!.dispatchEvent(
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 100,
+        clientY: 100,
+      }),
+    )
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const mountedShadowRoot = (document.querySelector('inspecto-overlay') as HTMLElement)
+      .shadowRoot!
+
+    const menu = mountedShadowRoot.querySelector(`.${menuClass}`) as HTMLElement
+    expect(menu).not.toBeNull()
+    expect(mountedShadowRoot.textContent).toContain('button#upgrade.upgrade-button')
+    expect(mountedShadowRoot.textContent).toContain('No source location')
+    expect(menu.querySelector('button[aria-label="Open in Editor"]')).toBeNull()
+    expect(menu.querySelector('button[aria-label="Attach runtime context"]')).toBeNull()
+    expect(menu.querySelector('button[aria-label="Attach CSS context"]')).toBeNull()
+  })
+
+  it('sends target evidence in custom ask prompts when no source location is available', async () => {
+    document.body.innerHTML = `
+      <section class="billing-card">
+        <button id="upgrade" class="upgrade-button" data-testid="upgrade-button">
+          Upgrade plan
+        </button>
+      </section>
+    `
+    const target = document.getElementById('upgrade')!
+
+    showIntentMenu(shadowRoot, null, 100, 100, { includeSnippet: true }, onCloseMock, {
+      targetLabel: 'button#upgrade.upgrade-button',
+      targetEvidence: collectTargetEvidence(target),
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const input = shadowRoot.querySelector(`.${menuInputClass}`) as HTMLInputElement
+    const sendIcon = shadowRoot.querySelector(`.${menuInputIconClass}`) as HTMLElement
+    input.value = 'Where is this implemented?'
+    sendIcon.click()
+    await new Promise(resolve => setTimeout(resolve, 220))
+
+    expect(http.fetchSnippet).not.toHaveBeenCalled()
+    expect(http.openFileWithDiagnostics).not.toHaveBeenCalled()
+    expect(http.sendToAi).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expect.stringContaining('Selected target evidence'),
+      }),
+    )
+    expect(http.sendToAi).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expect.stringContaining('data-testid="upgrade-button"'),
+      }),
+    )
+  })
+
+  it('copies runtime target evidence prompts to clipboard when AI dispatch cannot reach the server', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    })
+    vi.mocked(http.sendToAi).mockResolvedValueOnce({
+      success: false,
+      error: 'Local dev server unavailable',
+      errorCode: 'SERVER_UNAVAILABLE',
+    })
+    document.body.innerHTML = `
+      <section class="billing-card">
+        <button id="upgrade" class="upgrade-button" data-testid="upgrade-button">
+          Upgrade plan
+        </button>
+      </section>
+    `
+    const target = document.getElementById('upgrade')!
+
+    showIntentMenu(shadowRoot, null, 100, 100, { includeSnippet: true }, onCloseMock, {
+      targetLabel: 'button#upgrade.upgrade-button',
+      targetEvidence: collectTargetEvidence(target),
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const input = shadowRoot.querySelector(`.${menuInputClass}`) as HTMLInputElement
+    const sendIcon = shadowRoot.querySelector(`.${menuInputIconClass}`) as HTMLElement
+    input.value = 'Where is this implemented?'
+    sendIcon.click()
+    await new Promise(resolve => setTimeout(resolve, 220))
+
+    expect(http.openFileWithDiagnostics).not.toHaveBeenCalled()
+    expect(http.fetchSnippet).not.toHaveBeenCalled()
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('Selected target evidence'))
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('data-testid="upgrade-button"'))
+    expect(shadowRoot.querySelector(`.${errorMsgClass}`)).toBeNull()
+    expect(onCloseMock).toHaveBeenCalled()
+  })
+
+  it('normalizes source-location placeholders in intent prompts when target evidence is available', async () => {
+    vi.mocked(http.fetchIdeInfo).mockResolvedValue({
+      ide: 'vscode',
+      prompts: [
+        {
+          id: 'explain',
+          label: 'Explain',
+          aiIntent: 'ask',
+          prompt: 'Explain this {{framework}} component from `{{file}}` (line {{line}}).',
+        },
+      ],
+    })
+    document.body.innerHTML = `
+      <section class="billing-card">
+        <button id="upgrade" class="upgrade-button" data-testid="upgrade-button">
+          Upgrade plan
+        </button>
+      </section>
+    `
+    const target = document.getElementById('upgrade')!
+
+    showIntentMenu(shadowRoot, null, 100, 100, { includeSnippet: true }, onCloseMock, {
+      targetLabel: 'button#upgrade.upgrade-button',
+      targetEvidence: collectTargetEvidence(target),
+    })
+
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    const explainButton = Array.from(shadowRoot.querySelectorAll('button')).find(
+      button => button.textContent === 'Explain',
+    ) as HTMLButtonElement
+    explainButton.click()
+    await new Promise(resolve => setTimeout(resolve, 220))
+
+    expect(http.fetchSnippet).not.toHaveBeenCalled()
+    expect(http.openFileWithDiagnostics).not.toHaveBeenCalled()
+    expect(http.sendToAi).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expect.stringContaining('Explain this UI component from `Target evidence for'),
+      }),
+    )
+    expect(http.sendToAi).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expect.not.stringContaining(['DOM', 'evidence for'].join(' ')),
+      }),
+    )
+    expect(http.sendToAi).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expect.not.stringContaining('{{'),
+      }),
+    )
   })
 })
