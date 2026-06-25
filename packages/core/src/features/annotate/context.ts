@@ -83,6 +83,7 @@ export type AnnotateContext = {
   shadowRootEl: ShadowRoot
   overlay: { hide(): void }
   setMode(mode: 'inspect' | 'annotate'): void
+  exitAnnotateMode(): void
   syncModeUi(): void
   syncRuntimeContextCapture(): void
   updateAnnotateSidebar(): void

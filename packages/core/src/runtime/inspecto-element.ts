@@ -15,6 +15,7 @@ import {
   configure as configureInspector,
   connect as connectInspector,
   disconnect as disconnectInspector,
+  exitAnnotateMode as exitInspectorAnnotateMode,
   setMode as setInspectorMode,
 } from './lifecycle.js'
 import type { InspectorMode, InspectoOptions } from './inspecto-state.js'
@@ -43,6 +44,10 @@ class InspectoElement extends InspectoRuntimeHost {
 
   setMode(mode: InspectorMode): void {
     setInspectorMode(this, mode)
+  }
+
+  exitAnnotateMode(): void {
+    exitInspectorAnnotateMode(this)
   }
 
   getMode(): InspectorMode {

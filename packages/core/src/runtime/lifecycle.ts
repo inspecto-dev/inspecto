@@ -195,3 +195,14 @@ export function setMode(ctx: unknown, mode: 'inspect' | 'annotate'): void {
   syncRuntimeContextCapture(state)
   syncModeUi(state)
 }
+
+export function exitAnnotateMode(ctx: unknown): void {
+  const state = asLifecycleContext(ctx)
+  if (state.mode === 'annotate') {
+    resetAnnotateState(state)
+  }
+  state.mode = 'inspect'
+  setActive(state, false)
+  syncRuntimeContextCapture(state)
+  syncModeUi(state)
+}

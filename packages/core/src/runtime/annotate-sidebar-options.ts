@@ -170,7 +170,7 @@ export function getAnnotateSidebarOptions(ctx: unknown): AnnotateSidebarOptions 
       void triggerWorkflow(state, workflowId)
     },
     onExit: () => {
-      state.setMode('inspect')
+      state.exitAnnotateMode()
     },
   }
 }

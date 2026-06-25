@@ -19,7 +19,7 @@ export function canUseInspectMode(input: InspectModeAvailabilityInput): boolean 
 export function shouldFallbackToAnnotateMode(
   input: InspectModeAvailabilityInput & { mode: InspectorMode },
 ): boolean {
-  return input.mode === 'inspect' && !canUseInspectMode(input)
+  return input.mode === 'inspect' && input.ide === 'none'
 }
 
 export function getThemeAttributeValue(theme?: 'light' | 'dark' | 'auto'): 'light' | 'dark' | null {

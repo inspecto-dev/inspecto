@@ -43,6 +43,15 @@ describe('lifecycle config helpers', () => {
         deliveryMode: 'ide',
       }),
     ).toBe(false)
+    expect(
+      shouldFallbackToAnnotateMode({
+        mode: 'inspect',
+        ide: 'vscode',
+        deliveryMode: 'mcp',
+        ideConnectionKnown: true,
+        ideConnected: false,
+      }),
+    ).toBe(false)
   })
 
   it('maps configured themes to host attribute values', () => {

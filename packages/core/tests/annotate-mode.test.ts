@@ -1090,7 +1090,7 @@ describe('annotate mode integration', () => {
     )
   })
 
-  it('falls back to annotate mode when inspect mode becomes unavailable', async () => {
+  it('does not auto-activate annotate mode when MCP delivery lacks an IDE connection', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       configResponse({
         deliveryMode: 'mcp',
@@ -1102,14 +1102,42 @@ describe('annotate mode integration', () => {
     const inspector = (await mountInspector({ defaultActive: true, mode: 'inspect' })) as any
     await inspector.configLoadPromise
 
-    expect(inspector.getMode()).toBe('annotate')
+    expect(inspector.getMode()).toBe('inspect')
     const host = document.querySelector('inspecto-overlay') as HTMLElement
     const shadowRoot = host.shadowRoot!
     expect(
       (shadowRoot.querySelector('[data-inspecto-launcher-state="true"]') as HTMLElement)
         .textContent,
-    ).toBe('Annotate mode')
-    expect(shadowRoot.querySelector('.inspecto-annotate-sidebar')).not.toBeNull()
+    ).toBe('Inspect mode')
+    expect(shadowRoot.querySelector('.inspecto-annotate-sidebar')).toBeNull()
+  })
+
+  it('closes MCP annotate mode from the sidebar exit button without re-entering annotate', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      configResponse({
+        deliveryMode: 'mcp',
+        ideConnected: false,
+      }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const inspector = (await mountInspector({ defaultActive: true, mode: 'annotate' })) as any
+    await inspector.configLoadPromise
+
+    const host = document.querySelector('inspecto-overlay') as HTMLElement
+    const shadowRoot = host.shadowRoot!
+    const exitButton = shadowRoot.querySelector(
+      '.inspecto-annotate-sidebar button[aria-label="Exit annotate mode"]',
+    ) as HTMLButtonElement
+
+    exitButton.click()
+
+    expect(inspector.getMode()).toBe('inspect')
+    expect(shadowRoot.querySelector('.inspecto-annotate-sidebar')).toBeNull()
+    expect(
+      (shadowRoot.querySelector('[data-inspecto-launcher-state="true"]') as HTMLElement)
+        .textContent,
+    ).toBe('Ready')
   })
 
   it('does not restore inspect mode after resume when inspect becomes unavailable while paused', async () => {
