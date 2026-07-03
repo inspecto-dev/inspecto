@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "solid-js": "^1.9.13"
+    "solid-js": "^1.9.14"
   },
   "devDependencies": {
     "@inspecto-dev/core": "workspace:^",
