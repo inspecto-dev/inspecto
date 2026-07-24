@@ -141,8 +141,8 @@ importers:
         specifier: ^1.4.1
         version: 1.4.1
       launch-ide:
-        specifier: ^1.4.5
-        version: 1.4.5
+        specifier: ^1.4.6
+        version: 1.4.6
       portfinder:
         specifier: ^1.0.32
         version: 1.0.38(supports-color@6.1.0)
@@ -202,8 +202,8 @@ importers:
         specifier: ^6.1.7
         version: 6.1.7
       launch-ide:
-        specifier: ^1.4.5
-        version: 1.4.5
+        specifier: ^1.4.6
+        version: 1.4.6
       magic-string:
         specifier: ^0.30.0
         version: 0.30.21
@@ -7954,8 +7954,8 @@ packages:
   launch-editor@2.14.1:
     resolution: {integrity: sha512-QWBrQsMpH7gPr965dsKD/3cKWiNoTjpATQf++Xq63N6sKRGMwlVXz41O1IZTMfZQgBctD/K5Zt06+/I6pP6+HA==}
 
-  launch-ide@1.4.5:
-    resolution: {integrity: sha512-W7e4UPmJRwW/YgMn9n3dG5RyzHWGOf31Zb0SmG4pYyH5PiL2KlNZHRo9eUOvozYVY2oqglTfidNKWUiOK6PAJA==}
+  launch-ide@1.4.6:
+    resolution: {integrity: sha512-R28mid8yt1aV1ZbuRo8wOCdn6SifV0RcdA+yunasclI6M8eGQEr6JM16YBWbuWL/cuqNlQGca5W1AaNHATidVw==}
 
   lazystream@1.0.1:
     resolution: {integrity: sha512-b94GiNHQNy6JNTrt5w6zNyffMrNkXZb3KTkCZJb2V1xaEGCk093vkZ2jk3tpaeP33/OiXC+WvK9AxUebnf5nbw==}
@@ -20281,7 +20281,7 @@ snapshots:
       picocolors: 1.1.1
       shell-quote: 1.8.4
 
-  launch-ide@1.4.5:
+  launch-ide@1.4.6:
     dependencies:
       chalk: 4.1.2
       dotenv: 16.6.1
