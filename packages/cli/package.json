@@ -20,7 +20,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@inspecto-dev/types": "workspace:*",
     "cac": "^6.7.14",
     "magicast": "^0.5.3",
