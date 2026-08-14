@@ -92,7 +92,7 @@
     "@vue/compiler-dom": "^3.5.41",
     "@vue/compiler-sfc": "^3.5.41",
     "defu": "^6.1.7",
-    "launch-ide": "^1.4.6",
+    "launch-ide": "^1.4.8",
     "magic-string": "^0.30.0",
     "portfinder": "^1.0.32",
     "svelte": "5",

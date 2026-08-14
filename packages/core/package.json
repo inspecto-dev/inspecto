@@ -46,7 +46,7 @@
   "dependencies": {
     "@inspecto-dev/types": "workspace:*",
     "html2canvas": "^1.4.1",
-    "launch-ide": "^1.4.6",
+    "launch-ide": "^1.4.8",
     "portfinder": "^1.0.32"
   }
 }
