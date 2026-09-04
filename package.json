@@ -45,7 +45,7 @@
     "@changesets/cli": "^2.31.1",
     "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
+    "@testing-library/react": "^16.3.3",
     "@types/babel__traverse": "^7.28.0",
     "@types/node": "^20.19.43",
     "@types/react": "^19.2.14",
